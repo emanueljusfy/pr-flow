@@ -153,4 +153,3 @@ _Avoid_: card do hub; “atalho” no sentido de tecla de atalho do teclado
 ## Documentação operacional
 
 - `AGENTS.md` — rotas, stack, convenções
-- `docs/architecture-deepening-opportunities.md` — oportunidades de refactor

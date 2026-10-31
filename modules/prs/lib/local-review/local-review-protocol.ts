@@ -5,8 +5,15 @@ import { LOCAL_REVIEW_MODEL } from "@/modules/prs/lib/local-review/local-review-
 
 export { LOCAL_REVIEW_MODEL } from "@/modules/prs/lib/local-review/local-review-models";
 
-const SKILL_RELATIVE = path.join(".claude", "skills", "trusted-pr-review", "SKILL.md");
-const AGENTS_RELATIVE = path.join(".claude", "agents");
+const SKILL_RELATIVE = path.join(
+  "modules",
+  "prs",
+  "lib",
+  "local-review",
+  "protocol",
+  "skill.md"
+);
+const AGENTS_RELATIVE = path.join("modules", "prs", "lib", "local-review", "protocol", "agents");
 
 const AGENT_FILES = [
   "correctness.md",

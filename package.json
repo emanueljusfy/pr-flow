@@ -14,9 +14,7 @@
     "test": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-sqlite\" vitest run",
     "test:watch": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-sqlite\" vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/migrate.mjs",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "db:migrate": "node scripts/migrate.mjs"
   },
   "keywords": [],
   "author": "",
@@ -61,10 +59,7 @@
     "drizzle-kit": "^0.31.10",
     "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7",
-    "storybook": "^10.6.2",
-    "@storybook/nextjs-vite": "^10.6.2",
-    "@storybook/addon-docs": "^10.6.2",
-    "vite": "^8.0.14"
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
   }
 }
