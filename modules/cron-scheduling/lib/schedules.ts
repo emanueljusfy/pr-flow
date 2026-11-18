@@ -14,6 +14,11 @@ export const CRON_JOB_SCHEDULE_SPECS: readonly CronJobScheduleSpec[] = [
     disableEnvVar: "DISABLE_PR_LOCAL_REVIEW_CRON"
   },
   {
+    id: "cron:pr-review-reminders",
+    expression: "*/5 * * * *",
+    disableEnvVar: "DISABLE_PR_REVIEW_REMINDER_CRON"
+  },
+  {
     id: "cron:jira-sync",
     expression: "*/10 * * * *",
     disableEnvVar: "DISABLE_JIRA_SYNC_CRON",

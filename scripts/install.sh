@@ -692,8 +692,16 @@ verify_env_completeness() {
   fi
 }
 
+ensure_data_dir() {
+  # Create on the host before first `compose up` so Docker does not create
+  # ./data as root:root (which breaks the nextjs user writing SQLite).
+  mkdir -p "$root/data"
+}
+
 build_image() {
   step_header "Construindo imagem Docker"
+
+  ensure_data_dir
 
   info "Isso pode levar alguns minutos na primeira vez…"
   echo
@@ -725,6 +733,8 @@ print_finish() {
   echo -e "  ${icon_link} Gemini   ${DIM}${URL_GEMINI}${RESET}"
   echo -e "  ${icon_link} Jira     ${DIM}${URL_JIRA_TOKEN}${RESET}"
   echo -e "  ${icon_link} GitHub   ${DIM}${URL_GH_TOKEN}${RESET}"
+  echo
+  tip "SQLite fica em ./data (montado no container). Se a migração falhar com \"unable to open database file\", rode: sudo chown -R 1001:1001 data"
   echo
 }
 

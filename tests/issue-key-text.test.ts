@@ -17,4 +17,9 @@ describe("textMentionsIssueKey", () => {
   it("nao confunde prefixo numerico", () => {
     expect(textMentionsIssueKey("JOR-1234 deploy", "JOR-123")).toBe(false);
   });
+
+  it("detecta chave FT no titulo e no meio do texto", () => {
+    expect(textMentionsIssueKey("FT-3380 retry API", "FT-3380")).toBe(true);
+    expect(textMentionsIssueKey("Pair no FT-3380 com o time", "FT-3380")).toBe(true);
+  });
 });

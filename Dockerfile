@@ -28,7 +28,8 @@ RUN apk add --no-cache \
   curl \
   github-cli \
   git \
-  bash
+  bash \
+  su-exec
 
 # Criando usuário de sistema no Alpine
 RUN addgroup -S -g 1001 nodejs \
@@ -41,10 +42,12 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/modules/prs/lib/local-review/protocol ./modules/prs/lib/local-review/protocol
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-USER nextjs
+# Entrypoint starts as root only to chown the bind-mounted ./data, then drops to nextjs.
 EXPOSE 3847
 
 ENTRYPOINT ["docker-entrypoint.sh"]

@@ -5,15 +5,21 @@ export function buildSlackPrChannelText(channelLabel: string, issueKey: string):
   return `${channelLabel.trim()} - ${getJiraBrowseUrl(issueKey)}`;
 }
 
-export function buildSlackPrThreadText(prUrls: string[]): string {
+export function buildSlackPrThreadText(prUrls: string[], authorLogin?: string | null): string {
   const uniqueUrls = [...new Set(prUrls.map((url) => url.trim()).filter(Boolean))];
-  return uniqueUrls.join("\n");
+  const urlsBlock = uniqueUrls.join("\n");
+  const login = authorLogin?.trim();
+  if (!login) {
+    return urlsBlock;
+  }
+  return `@${login}\n${urlsBlock}`;
 }
 
 export function resolveSlackPrShare(input: {
   channelLabel: string;
   issueKey: string;
   prUrls: string[];
+  authorLogin?: string | null;
 }): {
   issueKey: string;
   channelText: string;
@@ -32,13 +38,14 @@ export function resolveSlackPrShare(input: {
   return {
     issueKey,
     channelText: buildSlackPrChannelText(channelLabel, issueKey),
-    threadText: buildSlackPrThreadText(input.prUrls)
+    threadText: buildSlackPrThreadText(input.prUrls, input.authorLogin)
   };
 }
 
 export function resolveSlackPrShareFromTitle(input: {
   title: string;
   prUrls: string[];
+  authorLogin?: string | null;
 }): ReturnType<typeof resolveSlackPrShare> {
   const issueKey = extractJiraIssueKey(input.title);
   if (!issueKey) {
@@ -48,6 +55,7 @@ export function resolveSlackPrShareFromTitle(input: {
   return resolveSlackPrShare({
     issueKey,
     channelLabel: resolveSlackTicketChannelLabel(input.title, issueKey),
-    prUrls: input.prUrls
+    prUrls: input.prUrls,
+    authorLogin: input.authorLogin
   });
 }

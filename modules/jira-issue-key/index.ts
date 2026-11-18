@@ -1,5 +1,5 @@
 /**
- * Chave de issue Jira (JOR-xxx): extração, normalização e URLs compartilhadas.
+ * Chave de issue Jira (JOR-/FT-): extração, normalização e URLs compartilhadas.
  * Seguro para Client Components. Para sync/cache PR, use `@/modules/jira-issue-key/server`.
  */
 
@@ -9,7 +9,8 @@ export {
   getJiraBrowseUrl,
   linkifyJiraIssueKeysInMarkdown,
   normalizeJiraIssueKey,
-  resolvePrTitleHref
+  resolvePrTitleHref,
+  textContainsJiraIssueKey
 } from "@/modules/jira-issue-key/lib/issue-key";
 
 export { extractJiraIssueKeyFromBranch } from "@/modules/jira-issue-key/lib/issue-key-branch";

@@ -27,4 +27,14 @@ describe("extractJournalMentionsForIssueKey", () => {
 
     expect(mentions).toHaveLength(0);
   });
+
+  it("retorna trechos das notas que mencionam chave FT", () => {
+    const mentions = extractJournalMentionsForIssueKey(
+      [{ notebookDay: "2026-11-06", body: "Investigar FT-3380 no djen." }],
+      "FT-3380"
+    );
+
+    expect(mentions).toHaveLength(1);
+    expect(mentions[0]?.excerpt).toMatch(/FT-3380/);
+  });
 });

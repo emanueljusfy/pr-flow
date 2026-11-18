@@ -32,6 +32,7 @@ Implementação dos tokens: `app/globals.css` (`.dark`).
 | `/summaries` | Histórico de resumos (UI pt-BR; redirect legado `/summaries`) |
 | `/jira` | Tickets Jira atribuídos ao usuário |
 | `/devtools/crons` | Forçar execução on-demand dos fluxos agendados (confirmação manual) |
+| `/api/mcp` | Servidor MCP (PRs + Slack) — ferramentas em `modules/mcp/lib/tools/` |
 | `/devtools/local-docker` | Portainer do stack Jusfy local — ligar painel e gerenciar containers |
 
 Redirect `/` → `/dashboard`.

@@ -26,6 +26,11 @@ const META: Record<CronJobId, Pick<CronJobDefinition, "schedule" | "description"
     description:
       "Revisa uma PR de colega em que você é revisor, com commit novo, no clone local, usando Claude Code (modelo barato e subagentes). O resultado aparece em Para revisar. Não aprova nem rejeita no GitHub."
   },
+  "cron:pr-review-reminders": {
+    schedule: "A cada 5 minutos",
+    description:
+      "Publica lembretes de revisão agendados na thread Slack da PR. Desativa o agendamento quando não há revisores pendentes ou a PR sai do monitor."
+  },
   "cron:jira-sync": {
     schedule: "A cada 10 minutos",
     description:

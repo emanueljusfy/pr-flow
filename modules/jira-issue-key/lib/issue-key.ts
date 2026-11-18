@@ -1,5 +1,7 @@
-const JIRA_ISSUE_PATTERN = /\b(JOR-\d+)\b/i;
-const BARE_JIRA_ISSUE_KEY_PATTERN = /\bJOR-\d+\b/gi;
+/** Project keys recognized in titles, markdown, and related text. */
+const JIRA_PROJECT_KEY_PATTERN = "JOR|FT";
+const JIRA_ISSUE_PATTERN = new RegExp(`\\b((?:${JIRA_PROJECT_KEY_PATTERN})-\\d+)\\b`, "i");
+const BARE_JIRA_ISSUE_KEY_PATTERN = new RegExp(`\\b(?:${JIRA_PROJECT_KEY_PATTERN})-\\d+\\b`, "gi");
 const MARKDOWN_LINK_PATTERN = /\[[^\]]*]\([^)]*\)/g;
 const JIRA_BROWSE_BASE_URL = "https://jusfy.atlassian.net/browse";
 
@@ -9,6 +11,14 @@ export function extractJiraIssueKey(title: string): string | null {
     return null;
   }
   return match[1].toUpperCase();
+}
+
+/** True when the text contains any recognized Jira issue key (JOR-/FT-). */
+export function textContainsJiraIssueKey(text: string): boolean {
+  BARE_JIRA_ISSUE_KEY_PATTERN.lastIndex = 0;
+  const found = BARE_JIRA_ISSUE_KEY_PATTERN.test(text);
+  BARE_JIRA_ISSUE_KEY_PATTERN.lastIndex = 0;
+  return found;
 }
 
 export function normalizeJiraIssueKey(input: string): string {
@@ -47,7 +57,7 @@ function linkifyInlineCodeAware(text: string): string {
     .join("");
 }
 
-/** Converte menções JOR-123 em links para `/jira?issue=…` (ignora blocos e inline code). */
+/** Converte menções JOR-/FT- em links para `/jira?issue=…` (ignora blocos e inline code). */
 export function linkifyJiraIssueKeysInMarkdown(markdown: string): string {
   const segments = markdown.split(/(```[\s\S]*?```)/g);
   return segments

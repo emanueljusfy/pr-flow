@@ -1,5 +1,6 @@
 import type { MonitoredPr, PrApiResponse, PrLocalReviewInfo } from "@/modules/prs/lib/domain";
 import { getLatestLocalReviewsByPullRequest } from "@/modules/prs/lib/local-review/local-review-repository";
+import { getPrReviewReminderSchedulesByUrls } from "@/modules/prs/lib/pr-review-reminder-schedule-repository";
 import { getPrSlackSharesByUrls } from "@/modules/prs/lib/pr-slack-share-repository";
 
 export async function enrichPrApiResponse(response: PrApiResponse): Promise<PrApiResponse> {
@@ -8,9 +9,10 @@ export async function enrichPrApiResponse(response: PrApiResponse): Promise<PrAp
   }
 
   const withSlack = await enrichMonitoredPrsWithSlackShares(response.data);
+  const withSchedules = await enrichMonitoredPrsWithReviewReminderSchedules(withSlack);
   return {
     ...response,
-    data: await enrichMonitoredPrsWithLocalReviews(withSlack)
+    data: await enrichMonitoredPrsWithLocalReviews(withSchedules)
   };
 }
 
@@ -28,6 +30,25 @@ export async function enrichMonitoredPrsWithSlackShares(prs: MonitoredPr[]): Pro
     }
 
     return { ...pr, slackShare };
+  });
+}
+
+export async function enrichMonitoredPrsWithReviewReminderSchedules(
+  prs: MonitoredPr[]
+): Promise<MonitoredPr[]> {
+  if (prs.length === 0) {
+    return prs;
+  }
+
+  const schedulesByUrl = await getPrReviewReminderSchedulesByUrls(prs.map((pr) => pr.url));
+
+  return prs.map((pr) => {
+    const reviewReminderSchedule = schedulesByUrl.get(pr.url) ?? null;
+    if (!reviewReminderSchedule) {
+      return pr;
+    }
+
+    return { ...pr, reviewReminderSchedule };
   });
 }
 

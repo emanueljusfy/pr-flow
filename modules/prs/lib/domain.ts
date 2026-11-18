@@ -25,6 +25,11 @@ export interface PrSlackShareInfo {
   channel: string;
 }
 
+export interface PrReviewReminderScheduleInfo {
+  intervalMinutes: number;
+  nextRunAt: string;
+}
+
 export interface MonitoredPr {
   id: string;
   number: number;
@@ -45,6 +50,8 @@ export interface MonitoredPr {
   hasUnresolvedComments?: boolean;
   /** Preenchido na leitura do monitor quando a PR já foi enviada ao Slack. */
   slackShare?: PrSlackShareInfo | null;
+  /** Agendamento ativo de lembrete de revisão na thread Slack. */
+  reviewReminderSchedule?: PrReviewReminderScheduleInfo | null;
   /** Última revisão local desta PR, quando existir. */
   localReview?: PrLocalReviewInfo | null;
 }

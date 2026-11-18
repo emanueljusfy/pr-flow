@@ -1,6 +1,6 @@
+import { textContainsJiraIssueKey } from "@/modules/jira-issue-key";
 import type { WorkContextJournalMention } from "@/modules/work-context/lib/domain";
 
-const JIRA_KEY_IN_TEXT = /\bJOR-\d+\b/gi;
 const CODE_FENCE = /```[\s\S]*?```/g;
 
 type NoteBody = {
@@ -36,11 +36,9 @@ export function extractJournalMentionsForIssueKey(
 
   for (const note of notes) {
     const searchable = stripCodeFences(note.body);
-    if (!JIRA_KEY_IN_TEXT.test(searchable)) {
-      JIRA_KEY_IN_TEXT.lastIndex = 0;
+    if (!textContainsJiraIssueKey(searchable)) {
       continue;
     }
-    JIRA_KEY_IN_TEXT.lastIndex = 0;
 
     if (!new RegExp(`\\b${normalizedKey}\\b`, "i").test(searchable)) {
       continue;

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as githubLoginRepository from "@/modules/app/lib/github-login-repository";
 import {
   buildSlackPrChannelText,
   buildSlackPrThreadText,
@@ -6,6 +7,7 @@ import {
   resolveSlackPrShareFromTitle
 } from "@/modules/prs/lib/core/pr-slack-share";
 import * as slackClient from "@/modules/slack/lib/slack-client";
+import * as slackGithubUserResolve from "@/modules/slack/lib/slack-github-user-resolve";
 import { sharePrToSlackChannel } from "@/modules/slack/lib/slack-pr-share-service";
 
 describe("pr-slack-share messages", () => {
@@ -25,6 +27,12 @@ describe("pr-slack-share messages", () => {
         "https://github.com/acme/b/pull/3"
       ])
     ).toBe("https://github.com/acme/a/pull/7\nhttps://github.com/acme/b/pull/3");
+  });
+
+  it("inclui mencao do autor no inicio da thread", () => {
+    expect(buildSlackPrThreadText(["https://github.com/acme/a/pull/7"], "emanueljusfy")).toBe(
+      "@emanueljusfy\nhttps://github.com/acme/a/pull/7"
+    );
   });
 
   it("retorna null quando nao ha chave Jira no titulo", () => {
@@ -53,7 +61,11 @@ describe("sharePrToSlackChannel", () => {
     vi.restoreAllMocks();
   });
 
-  it("envia mensagem no canal e resposta na thread", async () => {
+  it("envia mensagem no canal e resposta na thread marcando o autor", async () => {
+    vi.spyOn(githubLoginRepository, "getGithubLogin").mockResolvedValue("emanueljusfy");
+    vi.spyOn(slackGithubUserResolve, "resolveGithubLoginsToSlackIds").mockResolvedValue(
+      new Map([["emanueljusfy", "U093ERW57E0"]])
+    );
     const postSlackMessage = vi
       .spyOn(slackClient, "postSlackMessage")
       .mockResolvedValueOnce({ ok: true, ts: "1234.5678" })
@@ -69,19 +81,25 @@ describe("sharePrToSlackChannel", () => {
     expect(postSlackMessage.mock.calls[0]?.[0]).toMatchObject({
       channel: "squad-jornada-pr",
       text: "JOR-42 - Feature - https://jusfy.atlassian.net/browse/JOR-42",
+      linkNames: true,
       unfurlLinks: false,
       unfurlMedia: false
     });
     expect(postSlackMessage.mock.calls[1]?.[0]).toMatchObject({
       channel: "squad-jornada-pr",
-      text: "https://github.com/acme/a/pull/7",
+      text: "<@U093ERW57E0>\nhttps://github.com/acme/a/pull/7",
       threadTs: "1234.5678",
+      linkNames: true,
       unfurlLinks: false,
       unfurlMedia: false
     });
   });
 
   it("envia varias PRs na mesma thread", async () => {
+    vi.spyOn(githubLoginRepository, "getGithubLogin").mockResolvedValue("emanueljusfy");
+    vi.spyOn(slackGithubUserResolve, "resolveGithubLoginsToSlackIds").mockResolvedValue(
+      new Map([["emanueljusfy", "U093ERW57E0"]])
+    );
     const postSlackMessage = vi
       .spyOn(slackClient, "postSlackMessage")
       .mockResolvedValueOnce({ ok: true, ts: "1234.5678" })
@@ -96,7 +114,7 @@ describe("sharePrToSlackChannel", () => {
     });
 
     expect(postSlackMessage.mock.calls[1]?.[0]).toMatchObject({
-      text: "https://github.com/acme/a/pull/7\nhttps://github.com/acme/b/pull/3"
+      text: "<@U093ERW57E0>\nhttps://github.com/acme/a/pull/7\nhttps://github.com/acme/b/pull/3"
     });
   });
 });

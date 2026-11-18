@@ -28,6 +28,12 @@ type JiraSprintListResponse = {
   values: JiraSprintApi[];
 };
 
+type ResolvedSprintBoard = {
+  boardId: number;
+  boardName: string;
+  boardType: string;
+};
+
 const SPRINT_STATE_ORDER: Record<JiraSprintDto["state"], number> = {
   active: 0,
   future: 1,
@@ -55,11 +61,28 @@ function sortSprints(a: JiraSprintDto, b: JiraSprintDto): number {
   return bEnd - aEnd;
 }
 
-export async function resolveSprintBoard(): Promise<{ boardId: number; boardName: string }> {
+function emptySprintsResponse(board: ResolvedSprintBoard): JiraSprintsResponse {
+  return {
+    boardId: board.boardId,
+    boardName: board.boardName,
+    projectKey: getJiraSprintProjectKey(),
+    sprints: [],
+    cachedAt: null
+  };
+}
+
+function isBoardWithoutSprintsError(error: unknown): boolean {
+  if (!(error instanceof JiraApiError) || error.status !== 400) {
+    return false;
+  }
+  return /não aceita sprints|does not support sprints/i.test(error.message);
+}
+
+export async function resolveSprintBoard(): Promise<ResolvedSprintBoard> {
   const override = getJiraSprintBoardIdOverride();
   if (override) {
     const board = await jiraAgileFetch<JiraBoard>(`/board/${override}`);
-    return { boardId: board.id, boardName: board.name };
+    return { boardId: board.id, boardName: board.name, boardType: board.type };
   }
 
   const projectKey = getJiraSprintProjectKey();
@@ -72,23 +95,39 @@ export async function resolveSprintBoard(): Promise<{ boardId: number; boardName
     throw new JiraApiError(`Nenhum board encontrado para o projeto ${projectKey}.`, 404);
   }
 
-  return { boardId: scrumBoard.id, boardName: scrumBoard.name };
+  return {
+    boardId: scrumBoard.id,
+    boardName: scrumBoard.name,
+    boardType: scrumBoard.type
+  };
 }
 
 export async function fetchJiraSprints(maxResults = 50): Promise<JiraSprintsResponse> {
-  const { boardId, boardName } = await resolveSprintBoard();
+  const board = await resolveSprintBoard();
 
-  const payload = await jiraAgileFetch<JiraSprintListResponse>(
-    `/board/${boardId}/sprint?state=active,future,closed&maxResults=${maxResults}`
-  );
+  // Kanban boards have no sprint API; keep sync/UI working with filter "all".
+  if (board.boardType === "kanban") {
+    return emptySprintsResponse(board);
+  }
 
-  const sprints = (payload.values ?? []).map(mapSprint).sort(sortSprints);
+  try {
+    const payload = await jiraAgileFetch<JiraSprintListResponse>(
+      `/board/${board.boardId}/sprint?state=active,future,closed&maxResults=${maxResults}`
+    );
 
-  return {
-    boardId,
-    boardName,
-    projectKey: getJiraSprintProjectKey(),
-    sprints,
-    cachedAt: null
-  };
+    const sprints = (payload.values ?? []).map(mapSprint).sort(sortSprints);
+
+    return {
+      boardId: board.boardId,
+      boardName: board.boardName,
+      projectKey: getJiraSprintProjectKey(),
+      sprints,
+      cachedAt: null
+    };
+  } catch (error) {
+    if (isBoardWithoutSprintsError(error)) {
+      return emptySprintsResponse(board);
+    }
+    throw error;
+  }
 }

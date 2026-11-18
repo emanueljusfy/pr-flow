@@ -4,6 +4,7 @@ import type { CronJobId } from "@/modules/devtools/lib/cron-job-definitions";
 import type { CronLogSourceId } from "@/modules/observability/lib/log-domain";
 import { writeSystemLogFireAndForget } from "@/modules/observability/lib/system-logger";
 import { runLocalPrReview } from "@/modules/prs/lib/local-review/local-review-service";
+import { processDuePrReviewReminderSchedules } from "@/modules/prs/lib/pr-review-reminder-schedule-service";
 import { syncPrCache } from "@/modules/prs/lib/pr-sync-service";
 import { generateAndPersistDashboardBriefing } from "@/modules/dashboard/lib/dashboard-briefing-service";
 import {
@@ -98,6 +99,35 @@ export async function runPrLocalReviewCron(ctx: RunContext): Promise<CronRunResu
     };
   } catch (error) {
     const message = "Erro inesperado na revisão local de PRs.";
+    logOutcome(source, "error", message, error instanceof Error ? error.message : error);
+    return { jobId: source, status: "error", message, details: error };
+  }
+}
+
+export async function runPrReviewRemindersCron(ctx: RunContext): Promise<CronRunResult> {
+  const source: CronJobId = "cron:pr-review-reminders";
+  const prefix = ctx.manual ? "manual" : "agendada";
+  logStart(source, `Iniciando envio ${prefix} de lembretes de revisão agendados.`);
+
+  try {
+    const result = await processDuePrReviewReminderSchedules();
+    if (result.processed === 0) {
+      const message = "Nenhum lembrete de revisão agendado estava vencido.";
+      logOutcome(source, "info", message, result);
+      return { jobId: source, status: "ok", message, details: result };
+    }
+
+    const message = `Lembretes processados: ${result.processed} (enviados: ${result.sent}, desativados: ${result.disabled}, erros: ${result.errors}).`;
+    const level = result.errors > 0 ? "warn" : "info";
+    logOutcome(source, level, message, result);
+    return {
+      jobId: source,
+      status: result.errors > 0 && result.sent === 0 && result.disabled === 0 ? "error" : "ok",
+      message,
+      details: result
+    };
+  } catch (error) {
+    const message = "Erro inesperado ao processar lembretes de revisão agendados.";
     logOutcome(source, "error", message, error instanceof Error ? error.message : error);
     return { jobId: source, status: "error", message, details: error };
   }
@@ -227,6 +257,7 @@ export async function runSummariesWeeklyCron(ctx: RunContext): Promise<CronRunRe
 const RUNNERS: Record<CronJobId, (ctx: RunContext) => Promise<CronRunResult>> = {
   "cron:prs-sync": runPrSyncCron,
   "cron:pr-local-review": runPrLocalReviewCron,
+  "cron:pr-review-reminders": runPrReviewRemindersCron,
   "cron:jira-sync": runJiraSyncCron,
   "cron:summaries-daily": runSummariesDailyCron,
   "cron:summaries-weekly": runSummariesWeeklyCron,

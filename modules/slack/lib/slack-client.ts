@@ -20,6 +20,11 @@ export async function postSlackMessage(input: {
   channel: string;
   text: string;
   threadTs?: string;
+  /**
+   * When true, Slack turns `@usergroup` handles into real mentions.
+   * Needed for review reminders that include `@justracker`.
+   */
+  linkNames?: boolean;
   /** Evita cards de preview (Jira, GitHub, etc.) no Slack. Padrão: false. */
   unfurlLinks?: boolean;
   unfurlMedia?: boolean;
@@ -32,6 +37,9 @@ export async function postSlackMessage(input: {
     unfurl_links: input.unfurlLinks ?? false,
     unfurl_media: input.unfurlMedia ?? false
   };
+  if (input.linkNames) {
+    body.link_names = true;
+  }
   if (input.threadTs) {
     body.thread_ts = input.threadTs;
   }

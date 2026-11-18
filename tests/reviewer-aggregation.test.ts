@@ -36,6 +36,25 @@ describe("aggregateReviewerStatus", () => {
 
     expect(result.avaliou).toEqual(["ana"]);
     expect(result.naoAvaliou).toEqual([]);
+    expect(result.aprovou).toEqual(["ana"]);
+    expect(result.solicitouAlteracoes).toEqual([]);
+  });
+
+  it("classifica changes requested no status geral e na lista de quem pediu alteracoes", () => {
+    const result = aggregateReviewerStatus({
+      ...basePr,
+      requestedReviewers: ["ana", "bruno"],
+      reviews: [
+        { login: "ana", state: "CHANGES_REQUESTED", submittedAt: "2026-05-28T10:00:00Z" },
+        { login: "bruno", state: "APPROVED", submittedAt: "2026-05-28T10:01:00Z" }
+      ]
+    });
+
+    expect(result.solicitouAlteracoes).toEqual(["ana"]);
+    expect(result.aprovou).toEqual(["bruno"]);
+    expect(result.pendente).toEqual([]);
+    expect(result.statusGeral).toBe("changes_requested");
+    expect(result.readyToMerge).toBe(false);
   });
 
   it("ignora review de usuario fora da lista de requested reviewers", () => {

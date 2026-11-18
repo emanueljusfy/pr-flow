@@ -8,11 +8,16 @@ import {
   type PrImpediment
 } from "@/modules/prs/lib/core/pr-impediments";
 import { extractJiraIssueKey, resolvePrTitleHref } from "@/modules/prs/lib/core/jira-issue";
+import {
+  buildReviewerList,
+  type ReviewerListEntry
+} from "@/modules/prs/lib/core/reviewer-list";
 
 export interface PrCardViewModel {
   pendente: string[];
   solicitouAlteracoes: string[];
   avaliou: string[];
+  reviewers: ReviewerListEntry[];
   statusGeral: MonitoredPr["statusGeral"];
   statusClass: string;
   statusLabel: string;
@@ -44,6 +49,7 @@ export function usePrCardViewModel(pr: MonitoredPr): PrCardViewModel {
     const pendente = pr.pendente ?? pr.naoAvaliou ?? [];
     const solicitouAlteracoes = pr.solicitouAlteracoes ?? [];
     const avaliou = pr.avaliou ?? [];
+    const reviewers = buildReviewerList(pr);
     const statusGeral = resolveStatusGeral(pr);
 
     const sufficientApprovalsWithConflict = hasSufficientApprovalsWithConflict({
@@ -84,6 +90,7 @@ export function usePrCardViewModel(pr: MonitoredPr): PrCardViewModel {
       pendente,
       solicitouAlteracoes,
       avaliou,
+      reviewers,
       statusGeral,
       statusClass,
       statusLabel,

@@ -1,6 +1,15 @@
 #!/bin/sh
 set -e
 
+mkdir -p /app/data
+
+# Bind mounts of a host path created by Docker are often root:root.
+# Start as root, fix ownership, then drop to nextjs before migrations/app.
+if [ "$(id -u)" = "0" ]; then
+  chown -R nextjs:nodejs /app/data
+  exec su-exec nextjs:nodejs "$0" "$@"
+fi
+
 echo "Running database migrations..."
 node scripts/migrate.mjs
 

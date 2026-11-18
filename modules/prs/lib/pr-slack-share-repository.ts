@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import type { PrSlackShareInfo } from "@/modules/prs/lib/domain";
 import { prSlackShares } from "@/modules/prs/lib/schema";
 import { getDb } from "@/modules/db/lib/db";
@@ -67,4 +67,30 @@ export async function getPrSlackSharesByUrls(urls: string[]): Promise<Map<string
       }
     ])
   );
+}
+
+/** Channel + thread used to reply in the Slack share thread for a PR URL. */
+export async function getPrSlackShareThreadByUrl(
+  prUrl: string
+): Promise<{ channel: string; threadTs: string } | null> {
+  const trimmed = prUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const db = getDb();
+  const [row] = await db
+    .select({
+      channel: prSlackShares.channel,
+      threadTs: prSlackShares.threadTs
+    })
+    .from(prSlackShares)
+    .where(eq(prSlackShares.prUrl, trimmed))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  return { channel: row.channel, threadTs: row.threadTs };
 }

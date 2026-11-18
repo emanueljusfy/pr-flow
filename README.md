@@ -221,15 +221,44 @@ Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 | `GEMINI_MODEL_FALLBACK` | Não | Modelos reserva (vírgula) se 503 |
 | `JIRA_EMAIL` / `JIRA_TOKEN` | Sim (Jira) | [API token Atlassian](https://id.atlassian.com/manage-profile/security/api-tokens) |
 | `JIRA_SITE_URL` | Não | Padrão `https://jusfy.atlassian.net` |
+| `PR_REVIEW_REMINDER_MESSAGE` | Não | Texto do lembrete na thread do Slack (sino em `/prs`). Use `{reviewers}` para os pendentes |
+| `SLACK_JUSTRACKER_USERGROUP_ID` | Não | ID do user group `@justracker` se a mensagem custom ainda marcar o time |
 | `SLACK_BOT_OAUTH_TOKEN` | Não | Bot com escopo `chat:write` |
 | `SLACK_PR_CHANNEL` | Não | Padrão `squad-jornada-pr` |
 | `GOOGLE_CALENDAR_ICAL_URL` | Não | Feed iCal secreto (não commitar) |
 | `SUMMARY_CAREER_LEVEL` | Não | `junior` \| `pleno` \| `senior` |
 | `PORT` | Não | Padrão **3847** |
+| `PR_FLOW_MCP_TOKEN` | Não | Se definido, `/api/mcp` exige `Authorization: Bearer <token>` |
 | `LOCAL_DOCKER_ROOT` / `JUSFY_ROOT` | Não | Stack Jusfy no Devtools |
 | `LOCAL_DOCKER_PORTAINER_URL` | Não | Padrão `https://localhost:9443` |
 
 Lista completa e flags de cron: `.env.example`.
+
+## MCP (Claude Code e outros clientes)
+
+O app expõe um servidor MCP (Streamable HTTP, stateless) em `/api/mcp`, com as ferramentas de PRs e Slack:
+
+| Ferramenta | O que faz |
+|------------|-----------|
+| `list_my_prs` | Minhas PRs abertas (filtros: repositório, status, só com revisores pendentes) |
+| `get_pr` | Detalhe de uma PR pela URL, com a última revisão local |
+| `list_review_queue` | PRs em que sou revisor |
+| `sync_prs` | Força a sincronização com o GitHub |
+| `share_pr_to_slack` | Envia a(s) PR(s) ao canal do Slack (título precisa da chave Jira) |
+| `send_pr_review_reminder` | Lembrete na thread do Slack para os revisores pendentes; opcionalmente recorrente |
+| `cancel_pr_review_reminder` | Cancela o lembrete recorrente |
+| `start_local_review` | Inicia a revisão local (Claude Code) de uma PR |
+
+Registrar no Claude Code (com o app rodando):
+
+```bash
+claude mcp add --transport http --scope user pr-flow http://localhost:3847/api/mcp
+# com PR_FLOW_MCP_TOKEN definido:
+claude mcp add --transport http --scope user pr-flow http://localhost:3847/api/mcp \
+  --header "Authorization: Bearer $PR_FLOW_MCP_TOKEN"
+```
+
+Novos grupos de ferramentas entram em `modules/mcp/lib/tools/` e são registrados em `modules/mcp/lib/mcp-server.ts`.
 
 ## Como obter o GH_TOKEN
 

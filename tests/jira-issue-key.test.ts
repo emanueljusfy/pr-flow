@@ -14,19 +14,31 @@ describe("jira-issue-key", () => {
     expect(extractJiraIssueKey("jor-99 fix")).toBe("JOR-99");
   });
 
-  it("extrai chave JOR em qualquer posicao do titulo", () => {
+  it("extrai chave FT no titulo e normaliza para maiusculas", () => {
+    expect(extractJiraIssueKey("FT-3380 retry quando API falha")).toBe("FT-3380");
+    expect(
+      extractJiraIssueKey(
+        "fix(br-search_by_doc): djen tenta de novo quando a API responde fora do esperado (FT-3380)"
+      )
+    ).toBe("FT-3380");
+    expect(extractJiraIssueKey("ft-12 patch")).toBe("FT-12");
+  });
+
+  it("extrai chave JOR ou FT em qualquer posicao do titulo", () => {
     expect(extractJiraIssueKey("feat(JOR-88): ajuste")).toBe("JOR-88");
     expect(extractJiraIssueKey("[JOR-1] titulo")).toBe("JOR-1");
     expect(extractJiraIssueKey("feat JOR-1 no meio")).toBe("JOR-1");
+    expect(extractJiraIssueKey("feat(FT-9): ajuste")).toBe("FT-9");
   });
 
-  it("retorna null quando titulo nao contem JOR-xxx", () => {
+  it("retorna null quando titulo nao contem JOR-/FT-xxx", () => {
     expect(extractJiraIssueKey("fix: sem ticket")).toBeNull();
   });
 
   it("normaliza entrada bruta ou titulo com chave embutida", () => {
     expect(normalizeJiraIssueKey("jor-42")).toBe("JOR-42");
     expect(normalizeJiraIssueKey("JOR-7 titulo")).toBe("JOR-7");
+    expect(normalizeJiraIssueKey("ft-3380")).toBe("FT-3380");
   });
 
   it("monta url de browse no Jira para a chave", () => {
@@ -44,12 +56,15 @@ describe("jira-issue-key", () => {
     expect(getJiraAppIssueHref("jor-42")).toBe("/jira?issue=JOR-42");
   });
 
-  it("linkifica chaves JOR no markdown para a rota interna", () => {
+  it("linkifica chaves JOR e FT no markdown para a rota interna", () => {
     expect(linkifyJiraIssueKeysInMarkdown("Trabalhei em jor-99 hoje.")).toBe(
       "Trabalhei em [JOR-99](/jira?issue=JOR-99) hoje."
     );
     expect(linkifyJiraIssueKeysInMarkdown("Ver [JOR-1](/jira?issue=JOR-1) e JOR-2.")).toBe(
       "Ver [JOR-1](/jira?issue=JOR-1) e [JOR-2](/jira?issue=JOR-2)."
+    );
+    expect(linkifyJiraIssueKeysInMarkdown("Ticket ft-3380 em andamento.")).toBe(
+      "Ticket [FT-3380](/jira?issue=FT-3380) em andamento."
     );
     expect(linkifyJiraIssueKeysInMarkdown("Código `jor-5` intacto.")).toBe("Código `jor-5` intacto.");
     expect(linkifyJiraIssueKeysInMarkdown("```\njor-7\n```")).toBe("```\njor-7\n```");
@@ -60,10 +75,9 @@ describe("collectJiraIssueKeysFromTexts", () => {
   it("deduplica chaves extraidas de varios textos", async () => {
     const { collectJiraIssueKeysFromTexts } = await import("@/modules/jira-issue-key");
 
-    expect(collectJiraIssueKeysFromTexts(["JOR-1: a", "feat jor-2", "JOR-1 de novo", "sem ticket"])).toEqual([
-      "JOR-1",
-      "JOR-2"
-    ]);
+    expect(
+      collectJiraIssueKeysFromTexts(["JOR-1: a", "feat jor-2", "JOR-1 de novo", "sem ticket", "FT-3380 fix"])
+    ).toEqual(["JOR-1", "JOR-2", "FT-3380"]);
   });
 });
 

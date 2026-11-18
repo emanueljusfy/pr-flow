@@ -1,8 +1,16 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { toast } from "sonner";
 import { describe, expect, it, vi } from "vitest";
 import { PrCard } from "@/modules/prs/components/pr-card";
 import type { MonitoredPr } from "@/modules/prs/lib/domain";
 import { renderWithProviders } from "@/tests/render-with-providers";
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn()
+  }
+}));
 
 const samplePr: MonitoredPr = {
   id: "PR_1",
@@ -60,22 +68,37 @@ describe("PrCard", () => {
     expect(container.querySelector(".status-pill")).not.toBeInTheDocument();
   });
 
-  it("exibe listas de revisao sem badge de pendencia", () => {
+  it("exibe lista unica de revisores sem badge de pendencia", () => {
     renderWithProviders(<PrCard pr={{ ...samplePr, createdAt: "2026-05-28T10:00:00Z" }} />);
     expect(screen.queryByText("peding")).not.toBeInTheDocument();
-    expect(screen.getByText("Quem falta revisar")).toBeInTheDocument();
+    expect(screen.getByText("Revisores")).toBeInTheDocument();
+    expect(screen.queryByText("Quem falta revisar")).not.toBeInTheDocument();
+    expect(screen.queryByText("Quem já revisou")).not.toBeInTheDocument();
     expect(screen.getByText("ana")).toBeInTheDocument();
     expect(screen.getByLabelText("1 revisão pendente")).toBeInTheDocument();
   });
 
-  it("mostra pin verde para quem revisou e vermelho para quem falta", () => {
-    const { container } = renderWithProviders(<PrCard pr={samplePr} />);
-    const reviewedPin = container.querySelector(".reviewer-status-pin--reviewed");
-    const pendingPin = container.querySelector(".reviewer-status-pin--pending");
-    expect(reviewedPin).toBeInTheDocument();
-    expect(pendingPin).toBeInTheDocument();
-    expect(reviewedPin?.parentElement).toHaveTextContent("ana");
-    expect(pendingPin?.parentElement).toHaveTextContent("bruno");
+  it("mostra status por revisor na lista unica, incluindo change requested", () => {
+    const { container } = renderWithProviders(
+      <PrCard
+        pr={{
+          ...samplePr,
+          statusGeral: "changes_requested",
+          aprovou: ["ana"],
+          solicitouAlteracoes: ["marcos"],
+          pendente: ["bruno"],
+          naoAvaliou: ["bruno"],
+          avaliou: ["ana", "marcos"]
+        }}
+      />
+    );
+
+    expect(screen.getByLabelText("marcos: pediu alterações")).toBeInTheDocument();
+    expect(screen.getByLabelText("bruno: revisão pendente")).toBeInTheDocument();
+    expect(screen.getByLabelText("ana: aprovou")).toBeInTheDocument();
+    expect(container.querySelector(".reviewer-status-pin--changes-requested")).toBeInTheDocument();
+    expect(container.querySelector(".reviewer-status-pin--pending")).toBeInTheDocument();
+    expect(container.querySelector(".reviewer-status-pin--approved")).toBeInTheDocument();
   });
 
   it("renderiza icones de impedimento sempre com estilo vermelho", () => {
@@ -94,7 +117,7 @@ describe("PrCard", () => {
         }}
       />
     );
-    const icons = document.querySelectorAll(".pr-alert-icon");
+    const icons = document.querySelectorAll(".pr-alert-icons .pr-alert-icon");
     expect(icons.length).toBeGreaterThan(0);
     for (const icon of icons) {
       expect(icon).toHaveClass("danger");
@@ -107,6 +130,123 @@ describe("PrCard", () => {
     renderWithProviders(<PrCard pr={{ ...samplePr, hasConflicts: true, hasUnresolvedComments: true }} />);
     expect(screen.getByLabelText("Conflitos detectados")).toBeInTheDocument();
     expect(screen.getByLabelText("Comentários não resolvidos")).toBeInTheDocument();
+  });
+
+  it("exibe o sino de lembrete de revisao e pede confirmacao antes de publicar", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithProviders(
+      <PrCard
+        pr={{
+          ...samplePr,
+          slackShare: { sharedAt: "2026-11-06T12:00:00.000Z", channel: "squad-justracker-pr" }
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText("Lembrar revisão na thread do Slack"));
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(screen.getByText(/Publicar lembrete de revisão\?/)).toBeInTheDocument();
+
+    const messageField = screen.getByLabelText("Mensagem do lembrete");
+    expect(messageField).toHaveValue(
+      "Olá @bruno! Lembrete gentil: esta PR ainda aguarda a revisão de vocês. Quando puderem, peço uma olhada. Obrigado!"
+    );
+    fireEvent.change(messageField, {
+      target: { value: "Olá @bruno, revisem esta PR." }
+    });
+
+    expect(screen.getByLabelText("Repetir lembrete")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Publicar lembrete" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/prs/review-reminder",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            url: "https://github.com/acme/a/pull/7",
+            repository: "acme/a",
+            number: 7,
+            message: "Olá @bruno, revisem esta PR.",
+            pendingReviewers: ["bruno"]
+          })
+        })
+      );
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("cancela agendamento ativo pelo dialogo do lembrete", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, cancelled: true })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithProviders(
+      <PrCard
+        pr={{
+          ...samplePr,
+          slackShare: { sharedAt: "2026-11-06T12:00:00.000Z", channel: "squad-justracker-pr" },
+          reviewReminderSchedule: {
+            intervalMinutes: 120,
+            nextRunAt: "2026-11-06T14:00:00.000Z"
+          }
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText("Lembrar revisão na thread do Slack"));
+    expect(screen.getByLabelText("Repetir lembrete")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar agendamento" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/prs/review-reminder",
+        expect.objectContaining({
+          method: "DELETE",
+          body: JSON.stringify({ url: "https://github.com/acme/a/pull/7" })
+        })
+      );
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("impede o lembrete quando a PR ainda nao foi enviada ao Slack", () => {
+    vi.mocked(toast.error).mockClear();
+    renderWithProviders(<PrCard pr={samplePr} />);
+
+    fireEvent.click(screen.getByLabelText("Lembrar revisão na thread do Slack"));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith(
+      "Envie a PR ao Slack antes de publicar o lembrete na thread."
+    );
+  });
+
+  it("impede o lembrete quando nao ha revisores pendentes", () => {
+    vi.mocked(toast.error).mockClear();
+    renderWithProviders(
+      <PrCard
+        pr={{
+          ...samplePr,
+          pendente: [],
+          naoAvaliou: [],
+          statusGeral: "approved",
+          slackShare: { sharedAt: "2026-11-06T12:00:00.000Z", channel: "squad-justracker-pr" }
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText("Lembrar revisão na thread do Slack"));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(toast.error).toHaveBeenCalledWith("Ninguém está pendente de revisão nesta PR.");
   });
 
   it("mantem barra verde e icone de aprovacoes suficientes quando houver conflito com maioria aprovada", () => {
@@ -233,6 +373,26 @@ describe("PrCard", () => {
   it("habilita envio ao Slack quando o titulo tem chave Jira", async () => {
     renderWithProviders(
       <PrCard pr={{ ...samplePr, title: "JOR-99 Ajuste", url: "https://github.com/acme/a/pull/7" }} />
+    );
+
+    fireEvent.contextMenu(document.querySelector(".pr-card")!);
+
+    expect(await screen.findByRole("menuitem", { name: "Enviar ao Slack" })).not.toHaveAttribute(
+      "aria-disabled",
+      "true"
+    );
+  });
+
+  it("habilita envio ao Slack quando o titulo tem chave FT", async () => {
+    renderWithProviders(
+      <PrCard
+        pr={{
+          ...samplePr,
+          title: "fix(br-search_by_doc): retry fora do esperado (FT-3380)",
+          url: "https://github.com/acme/a/pull/7"
+        }}
+        slackConfigured
+      />
     );
 
     fireEvent.contextMenu(document.querySelector(".pr-card")!);

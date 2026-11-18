@@ -286,3 +286,27 @@ export async function collectOpenAuthorPrs(
     githubLogin
   };
 }
+
+export async function commentOnPullRequest(
+  input: { repository: string; number: number; body: string },
+  run: CommandRunner = defaultRunner
+): Promise<void> {
+  const output = await run([
+    "pr",
+    "comment",
+    String(input.number),
+    "--repo",
+    input.repository,
+    "--body",
+    input.body
+  ]);
+
+  if (output.exitCode !== 0) {
+    if (isGhUnauthenticated(output.stderr)) {
+      throw new GhUnauthenticatedError(
+        "GitHub CLI sem autenticacao. Defina GH_TOKEN no .env ou execute `gh auth login`."
+      );
+    }
+    throw new GhCommandError(output.stderr || "Falha ao comentar na pull request");
+  }
+}

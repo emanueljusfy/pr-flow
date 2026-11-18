@@ -2,6 +2,7 @@ import {
   runDashboardBriefingCron,
   runJiraSyncCron,
   runPrLocalReviewCron,
+  runPrReviewRemindersCron,
   runPrSyncCron,
   runSummariesDailyCron,
   runSummariesWeeklyCron
@@ -12,6 +13,7 @@ import type { CronJobSchedule } from "@/modules/cron-scheduling/lib/types";
 const RUNNERS = {
   "cron:prs-sync": () => runPrSyncCron({ manual: false }),
   "cron:pr-local-review": () => runPrLocalReviewCron({ manual: false }),
+  "cron:pr-review-reminders": () => runPrReviewRemindersCron({ manual: false }),
   "cron:jira-sync": () => runJiraSyncCron({ manual: false }),
   "cron:summaries-daily": () => runSummariesDailyCron({ manual: false }),
   "cron:summaries-weekly": () => runSummariesWeeklyCron({ manual: false }),

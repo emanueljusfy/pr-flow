@@ -290,6 +290,49 @@ export const ptBR = {
     retry: "Tentar novamente",
     calendarHasNote: "Dia com nota"
   },
+  prReviewers: {
+    sectionTitle: "Revisores",
+    empty: "Ninguém revisou ainda",
+    status: {
+      approved: "Aprovou",
+      changes_requested: "Pediu alterações",
+      commented: "Comentou",
+      pending: "Pendente"
+    },
+    statusAriaLabel: {
+      approved: (login: string) => `${login}: aprovou`,
+      changes_requested: (login: string) => `${login}: pediu alterações`,
+      commented: (login: string) => `${login}: comentou`,
+      pending: (login: string) => `${login}: revisão pendente`
+    }
+  },
+  reviewReminder: {
+    ariaLabel: "Lembrar revisão na thread do Slack",
+    tooltip: "Lembrar revisores pendentes no Slack",
+    tooltipScheduled: (intervalLabel: string) =>
+      `Lembrete agendado (${intervalLabel}). Clique para publicar de novo ou alterar.`,
+    confirmTitle: "Publicar lembrete de revisão?",
+    confirmDescription: (prNumber: number) =>
+      `A mensagem marca quem ainda não revisou. Edite se quiser e publique na thread do Slack da PR #${prNumber}.`,
+    messageLabel: "Mensagem do lembrete",
+    frequencyLabel: "Repetir lembrete",
+    frequencyNone: "Não repetir",
+    frequencyOption: (hours: number) => (hours === 1 ? "A cada 1 hora" : `A cada ${hours} horas`),
+    confirm: "Publicar lembrete",
+    cancel: "Cancelar",
+    cancelSchedule: "Cancelar agendamento",
+    cancellingSchedule: "Cancelando…",
+    sending: "Publicando…",
+    success: "Lembrete publicado na thread do Slack.",
+    successScheduled: (intervalLabel: string) =>
+      `Lembrete publicado e agendado (${intervalLabel}).`,
+    scheduleCancelled: "Agendamento de lembrete cancelado.",
+    error: "Não foi possível publicar o lembrete de revisão.",
+    cancelScheduleError: "Não foi possível cancelar o agendamento.",
+    emptyMessage: "Escreva uma mensagem antes de publicar.",
+    notShared: "Envie a PR ao Slack antes de publicar o lembrete na thread.",
+    noPending: "Ninguém está pendente de revisão nesta PR."
+  },
   followUp: {
     panelTitle: "Acompanhamento do dia",
     scriptTitle: "Roteiro de daily",

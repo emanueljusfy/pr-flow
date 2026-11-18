@@ -100,6 +100,33 @@ export const prSlackShares = sqliteTable(
 
 export type PrSlackShareRow = typeof prSlackShares.$inferSelect;
 
+/** Agendamento recorrente de lembrete de revisão na thread Slack da PR. */
+export const prReviewReminderSchedules = sqliteTable(
+  "pr_review_reminder_schedules",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    prUrl: text("pr_url").notNull(),
+    repository: text("repository").notNull(),
+    number: integer("number").notNull(),
+    intervalMinutes: integer("interval_minutes").notNull(),
+    message: text("message"),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    nextRunAt: integer("next_run_at", { mode: "timestamp_ms" }).notNull(),
+    lastRemindedAt: integer("last_reminded_at", { mode: "timestamp_ms" }),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date())
+  },
+  (table) => [uniqueIndex("pr_review_reminder_schedules_pr_url_unique").on(table.prUrl)]
+);
+
+export type PrReviewReminderScheduleRow = typeof prReviewReminderSchedules.$inferSelect;
+
 /** Branch destino (base) escolhida no wizard de abrir PR, por branch de feature. */
 export const openPrBranchBases = sqliteTable(
   "open_pr_branch_bases",

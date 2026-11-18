@@ -36,6 +36,14 @@ describe("cron-scheduling", () => {
       expect(isCronJobDisabled(briefing, { DISABLE_DASHBOARD_BRIEFING_CRON: "1" })).toBe(true);
       expect(isCronJobDisabled(briefing, {})).toBe(false);
     });
+
+    it("desliga lembretes de revisão com DISABLE_PR_REVIEW_REMINDER_CRON", () => {
+      const reminders = getScheduledCronJob("cron:pr-review-reminders");
+
+      expect(isCronJobDisabled(reminders, { DISABLE_PR_REVIEW_REMINDER_CRON: "1" })).toBe(true);
+      expect(isCronJobDisabled(reminders, {})).toBe(false);
+      expect(reminders.expression).toBe("*/5 * * * *");
+    });
   });
 
   describe("registerScheduledCrons", () => {

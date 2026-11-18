@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { MonitoredPr, PrSlackShareInfo } from "@/modules/prs/lib/domain";
+import type {
+  MonitoredPr,
+  PrReviewReminderScheduleInfo,
+  PrSlackShareInfo
+} from "@/modules/prs/lib/domain";
+import { ptBR } from "@/modules/messages/pt-BR";
 import { PrAlertIcons } from "@/modules/prs/components/pr-alert-icons";
 import { PrCardContextMenu } from "@/modules/prs/components/pr-card-context-menu";
 import { PrCardSlackSharedBadge } from "@/modules/prs/components/pr-card-slack-shared-badge";
 import { PrLocalReviewStatusIcon } from "@/modules/prs/components/pr-local-review-icon";
 import { PrOpenDuration } from "@/modules/prs/components/pr-open-duration";
+import { PrReviewReminderIcon } from "@/modules/prs/components/pr-review-reminder-icon";
 import { ReviewerListItem } from "@/modules/prs/components/reviewer-list-item";
 import { usePrCardViewModel } from "@/modules/prs/lib/hooks/use-pr-card-view-model";
 import { useWorkContext } from "@/modules/work-context/components/work-context-provider";
@@ -29,12 +35,16 @@ export function PrCard({
   const vm = usePrCardViewModel(pr);
   const { openWorkContext } = useWorkContext();
   const [slackShare, setSlackShare] = useState<PrSlackShareInfo | null>(pr.slackShare ?? null);
-  const useCompactApprovedLayout =
-    !pr.readyToMerge && vm.statusGeral === "approved" && vm.avaliou.length > 0 && vm.pendente.length === 0;
+  const [reviewReminderSchedule, setReviewReminderSchedule] =
+    useState<PrReviewReminderScheduleInfo | null>(pr.reviewReminderSchedule ?? null);
 
   useEffect(() => {
     setSlackShare(pr.slackShare ?? null);
   }, [pr.slackShare]);
+
+  useEffect(() => {
+    setReviewReminderSchedule(pr.reviewReminderSchedule ?? null);
+  }, [pr.reviewReminderSchedule]);
 
   return (
     <PrCardContextMenu
@@ -63,6 +73,15 @@ export function PrCard({
           </div>
           <div className="pr-meta-right">
             {slackShare ? <PrCardSlackSharedBadge slackShare={slackShare} /> : null}
+            <PrReviewReminderIcon
+              hasSlackShare={Boolean(slackShare)}
+              number={pr.number}
+              onScheduleChange={setReviewReminderSchedule}
+              pendingReviewers={vm.pendente}
+              repository={pr.repository}
+              schedule={reviewReminderSchedule}
+              url={pr.url}
+            />
             <PrLocalReviewStatusIcon prNumber={pr.number} repository={pr.repository} review={pr.localReview} />
             <PrAlertIcons impediments={vm.impediments} />
             {vm.shouldShowStatusPill && <span className={`status-pill ${vm.statusClass}`}>{vm.statusLabel}</span>}
@@ -92,53 +111,24 @@ export function PrCard({
         )}
       </header>
 
-      {useCompactApprovedLayout ? (
-        <section className="grid-3">
-          <section className="pr-reviewer-group">
-            <h4>Quem já revisou</h4>
-            <ul className="reviewer-list">
-              {vm.avaliou.map((login) => (
-                <ReviewerListItem key={login} login={login} reviewed />
-              ))}
-            </ul>
-          </section>
-        </section>
-      ) : (
-        <section className="pr-sections">
-          <div className={vm.pendente.length > 0 ? "reviewers-duo reviewers-duo--split" : "reviewers-duo"}>
-            <section className="pr-reviewer-group">
-              <h4>Quem já revisou</h4>
-              {vm.avaliou.length > 0 ? (
-                <ul className="reviewer-list">
-                  {vm.avaliou.map((login) => (
-                    <ReviewerListItem key={login} login={login} reviewed />
-                  ))}
-                </ul>
-              ) : (
-                <p className="small muted">Ninguem revisou ainda</p>
-              )}
-            </section>
-
-            {vm.pendente.length > 0 && (
-              <section className="pr-reviewer-group">
-                <h4>Quem falta revisar</h4>
-                <ul className="reviewer-list">
-                  {vm.pendente.map((login) => (
-                    <ReviewerListItem key={login} login={login} reviewed={false} />
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-
-        </section>
-      )}
-
-      {vm.statusGeral === "no_reviewers" && (
+      {vm.statusGeral === "no_reviewers" ? (
         <div className="no-reviewers-row">
           <span className="empty-dot">N</span>
           <p className="small muted">0 reviewers solicitados</p>
         </div>
+      ) : (
+        <section className="pr-reviewer-group">
+          <h4>{ptBR.prReviewers.sectionTitle}</h4>
+          {vm.reviewers.length > 0 ? (
+            <ul className="reviewer-list">
+              {vm.reviewers.map((reviewer) => (
+                <ReviewerListItem key={reviewer.login} login={reviewer.login} status={reviewer.status} />
+              ))}
+            </ul>
+          ) : (
+            <p className="small muted">{ptBR.prReviewers.empty}</p>
+          )}
+        </section>
       )}
 
     </PrCardContextMenu>
