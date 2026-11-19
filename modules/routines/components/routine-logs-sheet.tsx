@@ -9,6 +9,8 @@ import {
   SheetTitle
 } from "@/components/ui/sheet";
 import { ptBR } from "@/modules/messages/pt-BR";
+import { RoutineStdoutPreview } from "@/modules/routines/components/routine-stdout-preview";
+import { formatRoutineCostUsd } from "@/modules/routines/lib/claude-agent-output";
 import type { RoutineDto, RoutineRunDto } from "@/modules/routines/lib/domain";
 import { ROUTINE_LOGS_POLL_MS } from "@/modules/routines/lib/routine-run-ui";
 
@@ -22,6 +24,11 @@ function statusLabel(status: RoutineRunDto["status"]): string {
     return copy.statusSucceeded;
   }
   return copy.statusFailed;
+}
+
+function costSuffix(costUsd: number | null | undefined): string {
+  const formatted = formatRoutineCostUsd(costUsd);
+  return formatted ? copy.costSuffix(formatted) : "";
 }
 
 type RoutineLogsSheetProps = {
@@ -104,7 +111,7 @@ export function RoutineLogsSheet({ routine, open, onOpenChange }: RoutineLogsShe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg">
+      <SheetContent side="right" className="flex w-full flex-col sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>{routine ? copy.logsSheetTitle(routine.name) : copy.recentRuns}</SheetTitle>
           <SheetDescription>{copy.logsSheetDescription}</SheetDescription>
@@ -116,7 +123,7 @@ export function RoutineLogsSheet({ routine, open, onOpenChange }: RoutineLogsShe
             <p className="text-xs text-[var(--app-text-muted)]">{copy.logsEmpty}</p>
           ) : (
             <>
-              <ul className="flex max-h-40 flex-col gap-1 overflow-y-auto" role="listbox" aria-label={copy.recentRuns}>
+              <ul className="flex max-h-32 shrink-0 flex-col gap-1 overflow-y-auto" role="listbox" aria-label={copy.recentRuns}>
                 {runs.map((run) => {
                   const selectedRun = run.id === selectedId;
                   return (
@@ -135,26 +142,33 @@ export function RoutineLogsSheet({ routine, open, onOpenChange }: RoutineLogsShe
                         <span className="font-medium text-[var(--app-text)]">{statusLabel(run.status)}</span>
                         {" · "}
                         {new Date(run.startedAt).toLocaleString("pt-BR")}
+                        {costSuffix(run.costUsd)}
                       </button>
                     </li>
                   );
                 })}
               </ul>
               {selected ? (
-                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-                  <p className="text-xs text-[var(--app-text-muted)]">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+                  <p className="shrink-0 text-xs text-[var(--app-text-muted)]">
                     <span className="font-medium text-[var(--app-text)]">{statusLabel(selected.status)}</span>
                     {selected.reason ? ` · ${selected.reason}` : ""}
+                    {" · "}
+                    {formatRoutineCostUsd(selected.costUsd) ?? copy.logsCostUnknown}
                   </p>
-                  <div>
-                    <h3 className="mb-1 text-xs font-semibold text-[var(--app-text)]">{copy.logsStdoutLabel}</h3>
-                    <pre className="max-h-48 overflow-auto rounded-md border border-[var(--app-border)] bg-[var(--app-surface-inset)] p-2 text-[11px] whitespace-pre-wrap text-[var(--app-text)]">
-                      {selected.stdout && selected.stdout.length > 0 ? selected.stdout : copy.logsStdoutEmpty}
-                    </pre>
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <h3 className="mb-1 shrink-0 text-xs font-semibold text-[var(--app-text)]">{copy.logsStdoutLabel}</h3>
+                    <RoutineStdoutPreview
+                      markdown={selected.stdout ?? ""}
+                      emptyLabel={copy.logsStdoutEmpty}
+                    />
                   </div>
-                  <div>
+                  <div className="shrink-0">
                     <h3 className="mb-1 text-xs font-semibold text-[var(--app-text)]">{copy.logsStderrLabel}</h3>
-                    <pre className="max-h-48 overflow-auto rounded-md border border-[var(--app-border)] bg-[var(--app-surface-inset)] p-2 text-[11px] whitespace-pre-wrap text-[var(--app-text)]">
+                    <pre
+                      data-testid="routine-stderr"
+                      className="max-h-28 overflow-auto rounded-md border border-[var(--app-border)] bg-[var(--app-surface-inset)] p-2 font-mono text-[11px] whitespace-pre-wrap text-[var(--app-text)]"
+                    >
                       {selected.stderr && selected.stderr.length > 0 ? selected.stderr : copy.logsStderrEmpty}
                     </pre>
                   </div>

@@ -41,6 +41,7 @@ function runningRun(overrides: Partial<RoutineRunDto> = {}): RoutineRunDto {
     reason: null,
     stdout: null,
     stderr: null,
+    costUsd: null,
     slackSkipped: null,
     startedAt: "2026-11-19T14:00:00.000Z",
     finishedAt: null,
@@ -58,6 +59,7 @@ function succeededRun(overrides: Partial<RoutineRunDto> = {}): RoutineRunDto {
     reason: null,
     stdout: "hello out",
     stderr: "warn err",
+    costUsd: null,
     slackSkipped: false,
     startedAt: "2026-11-19T13:00:00.000Z",
     finishedAt: "2026-11-19T13:01:00.000Z",
@@ -198,6 +200,72 @@ describe("RoutinesPage run visibility", () => {
       expect(screen.getByText(copy.logsStdoutEmpty)).toBeInTheDocument();
     });
     expect(screen.getByText(copy.logsStderrEmpty)).toBeInTheDocument();
+    expect(screen.getByText(copy.logsStdoutLabel)).toBeInTheDocument();
+    expect(screen.getByText(copy.logsStderrLabel)).toBeInTheDocument();
+  });
+
+  it("renders selected run stdout as Markdown", async () => {
+    const markdown = "**aprovado**\n\n| col |\n| --- |\n| val |";
+    stubPageFetch({
+      runs: [succeededRun({ stdout: markdown, stderr: "" })],
+      routineRuns: [succeededRun({ stdout: markdown, stderr: "" })]
+    });
+    renderWithProviders(<RoutinesPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(copy.logsAria(sampleRoutine.name))).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByLabelText(copy.logsAria(sampleRoutine.name)));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("routine-stdout-preview")).toBeInTheDocument();
+    });
+    const preview = screen.getByTestId("routine-stdout-preview");
+    expect(within(preview).queryByText(/\*\*aprovado\*\*/)).not.toBeInTheDocument();
+    expect(within(preview).getByText("aprovado").tagName).toBe("STRONG");
+    expect(within(preview).getByRole("table")).toBeInTheDocument();
+  });
+
+  it("shows stderr as monospaced plain text", async () => {
+    const stderr = "Warning: redirect stdin explicitly: < /dev/null to skip";
+    stubPageFetch({
+      runs: [succeededRun({ stdout: "ok", stderr })],
+      routineRuns: [succeededRun({ stdout: "ok", stderr })]
+    });
+    renderWithProviders(<RoutinesPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(copy.logsAria(sampleRoutine.name))).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByLabelText(copy.logsAria(sampleRoutine.name)));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("routine-stderr")).toBeInTheDocument();
+    });
+    const stderrBox = screen.getByTestId("routine-stderr");
+    expect(stderrBox.tagName).toBe("PRE");
+    expect(stderrBox).toHaveClass("font-mono");
+    expect(stderrBox).toHaveTextContent(stderr);
+    expect(stderrBox.querySelector("strong")).toBeNull();
+    expect(stderrBox.querySelector("table")).toBeNull();
+  });
+
+  it("logs sheet uses wide max width", async () => {
+    stubPageFetch({
+      runs: [succeededRun()],
+      routineRuns: [succeededRun()]
+    });
+    renderWithProviders(<RoutinesPage />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(copy.logsAria(sampleRoutine.name))).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByLabelText(copy.logsAria(sampleRoutine.name)));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("dialog").className).toMatch(/sm:max-w-2xl/);
   });
 
   it("logs sheet empty state", async () => {
