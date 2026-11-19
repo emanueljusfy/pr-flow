@@ -25,9 +25,13 @@ services:
       DISABLE_PR_SYNC_CRON: ${DISABLE_PR_SYNC_CRON:-}
       DISABLE_SUMMARY_CRON: ${DISABLE_SUMMARY_CRON:-}
       DISABLE_DASHBOARD_BRIEFING_CRON: ${DISABLE_DASHBOARD_BRIEFING_CRON:-}
+      DISABLE_ROUTINES_CRON: ${DISABLE_ROUTINES_CRON:-}
+      JUSFY_ROOT: ${JUSFY_ROOT:-}
       SLACK_BOT_OAUTH_TOKEN: ${SLACK_BOT_OAUTH_TOKEN:-}
       SLACK_PR_CHANNEL: ${SLACK_PR_CHANNEL:-}
       GOOGLE_CALENDAR_ICAL_URL: ${GOOGLE_CALENDAR_ICAL_URL:-}
     volumes:
       - ./data:/app/data
+      # Host tree for routines cwd (same path inside the container). Set JUSFY_ROOT in .env.
+      - ${JUSFY_ROOT:-./data}:${JUSFY_ROOT:-/app/data}
     mem_limit: 768m

@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { isKnownAgentId } from "@/modules/routines/lib/agent-registry";
@@ -33,19 +32,17 @@ export type ValidatedCreateRoutineInput = z.output<typeof createBaseSchema> & {
 
 export type UpdateRoutineInput = Partial<CreateRoutineInput>;
 
+/**
+ * Create/update only require an absolute path. Existence is checked at run time
+ * (`assertRoutineCwd`) so Docker can accept host paths that are mounted later
+ * (e.g. JUSFY_ROOT) without failing the save.
+ */
 function cwdError(cwd: string | null | undefined): string | null {
   if (cwd == null || cwd === "") {
     return null;
   }
   if (!path.isAbsolute(cwd)) {
     return "cwd deve ser um caminho absoluto.";
-  }
-  try {
-    if (!fs.existsSync(cwd) || !fs.statSync(cwd).isDirectory()) {
-      return "cwd deve apontar para um diretório existente.";
-    }
-  } catch {
-    return "cwd deve apontar para um diretório existente.";
   }
   return null;
 }

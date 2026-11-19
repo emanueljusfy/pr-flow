@@ -57,6 +57,7 @@ describe("routines validation", () => {
       expect(badCwd.errors.cwd).toBeTruthy();
     }
 
+    // Absolute paths that are not visible yet (e.g. Docker host mounts) are allowed at create.
     const missingDir = path.join(os.tmpdir(), `missing-cwd-${Date.now()}`);
     const missingCwd = validateCreateRoutineInput({
       name: "x",
@@ -66,10 +67,7 @@ describe("routines validation", () => {
       intervalMinutes: 15,
       cwd: missingDir
     });
-    expect(missingCwd.ok).toBe(false);
-    if (!missingCwd.ok) {
-      expect(missingCwd.errors.cwd).toBeTruthy();
-    }
+    expect(missingCwd.ok).toBe(true);
   });
 
   it("allows known agentId when not installed", async () => {
