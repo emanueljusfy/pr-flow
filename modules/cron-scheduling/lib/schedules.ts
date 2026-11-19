@@ -42,6 +42,11 @@ export const CRON_JOB_SCHEDULE_SPECS: readonly CronJobScheduleSpec[] = [
     disableEnvVar: "DISABLE_DASHBOARD_BRIEFING_CRON",
     useSummaryTimezone: true,
     runOnStart: true
+  },
+  {
+    id: "cron:routines",
+    expression: "*/1 * * * *",
+    disableEnvVar: "DISABLE_ROUTINES_CRON"
   }
 ] as const;
 

@@ -16,6 +16,7 @@ import {
   lastCompletedWeekMonday,
   yesterdayLocalDay
 } from "@/modules/summaries/lib/summary-period";
+import { processDueRoutines } from "@/modules/routines/lib/process-due-routines";
 export type { CronJobId } from "@/modules/devtools/lib/cron-job-definitions";
 
 export type CronRunResult = {
@@ -254,6 +255,33 @@ export async function runSummariesWeeklyCron(ctx: RunContext): Promise<CronRunRe
   return { jobId: source, status: "error", message, details: result };
 }
 
+export async function runRoutinesCron(ctx: RunContext): Promise<CronRunResult> {
+  const source: CronJobId = "cron:routines";
+  const prefix = ctx.manual ? "manual" : "agendada";
+  logStart(source, `Iniciando execução ${prefix} de rotinas vencidas.`);
+
+  try {
+    const result = await processDueRoutines();
+    if (result.started === 0) {
+      const message =
+        result.skippedRunning > 0
+          ? `Nenhuma rotina nova iniciada (${result.skippedRunning} já em execução).`
+          : "Nenhuma rotina vencida.";
+      logOutcome(source, "info", message, result);
+      return { jobId: source, status: "ok", message, details: result };
+    }
+
+    const message = `Rotinas: iniciadas ${result.started}, sucesso ${result.succeeded}, falha ${result.failed}, ignoradas em execução ${result.skippedRunning}.`;
+    const level = result.failed > 0 ? "warn" : "info";
+    logOutcome(source, level, message, result);
+    return { jobId: source, status: "ok", message, details: result };
+  } catch (error) {
+    const message = "Erro inesperado ao processar rotinas.";
+    logOutcome(source, "error", message, error instanceof Error ? error.message : error);
+    return { jobId: source, status: "error", message, details: error };
+  }
+}
+
 const RUNNERS: Record<CronJobId, (ctx: RunContext) => Promise<CronRunResult>> = {
   "cron:prs-sync": runPrSyncCron,
   "cron:pr-local-review": runPrLocalReviewCron,
@@ -261,7 +289,8 @@ const RUNNERS: Record<CronJobId, (ctx: RunContext) => Promise<CronRunResult>> = 
   "cron:jira-sync": runJiraSyncCron,
   "cron:summaries-daily": runSummariesDailyCron,
   "cron:summaries-weekly": runSummariesWeeklyCron,
-  "cron:dashboard-briefing": runDashboardBriefingCron
+  "cron:dashboard-briefing": runDashboardBriefingCron,
+  "cron:routines": runRoutinesCron
 };
 
 export async function runCronJob(jobId: CronJobId, manual: boolean): Promise<CronRunResult> {

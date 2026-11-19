@@ -9,7 +9,8 @@ export const CRON_LOG_SOURCES = [
   { id: "cron:jira-sync", label: "Jira — sincronização (10 min)" },
   { id: "cron:summaries-daily", label: "Resumos — diário (meia-noite)" },
   { id: "cron:summaries-weekly", label: "Resumos — semanal (segunda)" },
-  { id: "cron:dashboard-briefing", label: "Dash — briefing (a cada hora)" }
+  { id: "cron:dashboard-briefing", label: "Dash — briefing (a cada hora)" },
+  { id: "cron:routines", label: "Rotinas — poller (1 min)" }
 ] as const;
 
 export type CronLogSourceId = (typeof CRON_LOG_SOURCES)[number]["id"];

@@ -16,7 +16,8 @@ export default defineConfig({
     "./modules/summaries/lib/schema.ts",
     "./modules/jira/lib/schema.ts",
     "./modules/prs/lib/schema.ts",
-    "./modules/day-follow-up/lib/schema.ts"
+    "./modules/day-follow-up/lib/schema.ts",
+    "./modules/routines/lib/schema.ts"
   ],
   out: "./drizzle",
   dialect: "sqlite",

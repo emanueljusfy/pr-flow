@@ -9,6 +9,7 @@ import {
   GitBranch,
   GitPullRequest,
   LayoutDashboard,
+  Repeat,
   Ticket,
   Container,
   Timer,
@@ -59,6 +60,11 @@ const navItems = [
     title: "Resumos",
     href: "/summaries",
     icon: FileText
+  },
+  {
+    title: "Rotinas",
+    href: "/routines",
+    icon: Repeat
   }
 ] as const;
 

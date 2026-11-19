@@ -13,7 +13,8 @@ import {
   jiraSprintsCache,
   jiraSyncMeta
 } from "@/modules/jira/lib/schema";
-import { prLocalReviews, prTimelineEvents } from "@/modules/prs/lib/schema";
+import { prTimelineEvents } from "@/modules/prs/lib/schema";
+import { routineRuns, routines } from "@/modules/routines/lib/schema";
 import { summaries } from "@/modules/summaries/lib/schema";
 import { tasks } from "@/modules/tasks/lib/schema";
 import { openNodeSqlite, type NodeSqliteClient } from "@/modules/db/lib/node-sqlite";
@@ -28,9 +29,10 @@ const schema = {
   jiraIssuesCache,
   jiraIssueDetails,
   prTimelineEvents,
-  prLocalReviews,
   standupScripts,
-  quizAnswers
+  quizAnswers,
+  routines,
+  routineRuns
 };
 
 const POSTGRES_URL_ERROR =

@@ -48,6 +48,11 @@ const META: Record<CronJobId, Pick<CronJobDefinition, "schedule" | "description"
     schedule: "A cada hora (fuso SUMMARY_CRON_TZ)",
     description:
       "Atualiza o briefing do dashboard: entregas do último dia útil por ticket, projeção para hoje e motivação."
+  },
+  "cron:routines": {
+    schedule: "A cada 1 minuto",
+    description:
+      "Executa rotinas vencidas (agente local com prompt e contexto limpo). Desligue com DISABLE_ROUTINES_CRON=1."
   }
 };
 

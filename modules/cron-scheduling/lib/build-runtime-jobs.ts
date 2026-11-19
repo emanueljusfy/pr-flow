@@ -4,6 +4,7 @@ import {
   runPrLocalReviewCron,
   runPrReviewRemindersCron,
   runPrSyncCron,
+  runRoutinesCron,
   runSummariesDailyCron,
   runSummariesWeeklyCron
 } from "@/modules/devtools/lib/cron-job-runners";
@@ -17,7 +18,8 @@ const RUNNERS = {
   "cron:jira-sync": () => runJiraSyncCron({ manual: false }),
   "cron:summaries-daily": () => runSummariesDailyCron({ manual: false }),
   "cron:summaries-weekly": () => runSummariesWeeklyCron({ manual: false }),
-  "cron:dashboard-briefing": () => runDashboardBriefingCron({ manual: false })
+  "cron:dashboard-briefing": () => runDashboardBriefingCron({ manual: false }),
+  "cron:routines": () => runRoutinesCron({ manual: false })
 } as const;
 
 export function buildScheduledCronJobs(): CronJobSchedule[] {

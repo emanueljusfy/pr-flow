@@ -31,6 +31,7 @@ Implementação dos tokens: `app/globals.css` (`.dark`).
 | `/journal` | Notas markdown por dia |
 | `/summaries` | Histórico de resumos (UI pt-BR; redirect legado `/summaries`) |
 | `/jira` | Tickets Jira atribuídos ao usuário |
+| `/routines` | Rotinas locais (prompt + agente + frequência) |
 | `/devtools/crons` | Forçar execução on-demand dos fluxos agendados (confirmação manual) |
 | `/api/mcp` | Servidor MCP (PRs + Slack) — ferramentas em `modules/mcp/lib/tools/` |
 | `/devtools/local-docker` | Portainer do stack Jusfy local — ligar painel e gerenciar containers |
@@ -56,3 +57,7 @@ Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN`, `
 - Dados não confiáveis (request, env, APIs externas, `sessionStorage`): validar com **Zod** quando possível. Ver `docs/zod-validation.md`.
 - Não commitar `.env`.
 - Testes: Vitest em `tests/`; atualizar se mudar labels pt-BR ou `aria-label`.
+
+## tlc-spec-lean
+
+mutations: 3
