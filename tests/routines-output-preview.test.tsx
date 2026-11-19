@@ -27,12 +27,15 @@ describe("RoutineStdoutPreview", () => {
   it("does not execute script tags from stdout markdown", () => {
     render(
       <RoutineStdoutPreview
-        markdown={'# Title\n<script>alert("xss")</script>'}
+        markdown={'# Title\n<script>alert("xss")</script>\n\n[evil](javascript:alert(1))'}
         emptyLabel="Sem saída padrão."
       />
     );
 
     expect(screen.getByText("Title")).toBeInTheDocument();
     expect(document.querySelector("script")).toBeNull();
+    const evil = screen.getByRole("link", { name: "evil" });
+    expect(evil.getAttribute("href")).toBeNull();
   });
 });
+
