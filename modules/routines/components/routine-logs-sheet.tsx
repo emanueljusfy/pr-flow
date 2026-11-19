@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/sheet";
 import { ptBR } from "@/modules/messages/pt-BR";
 import { RoutineStdoutPreview } from "@/modules/routines/components/routine-stdout-preview";
-import { formatRoutineCostUsd } from "@/modules/routines/lib/claude-agent-output";
 import type { RoutineDto, RoutineRunDto } from "@/modules/routines/lib/domain";
 import { ROUTINE_LOGS_POLL_MS } from "@/modules/routines/lib/routine-run-ui";
 
@@ -24,11 +23,6 @@ function statusLabel(status: RoutineRunDto["status"]): string {
     return copy.statusSucceeded;
   }
   return copy.statusFailed;
-}
-
-function costSuffix(costUsd: number | null | undefined): string {
-  const formatted = formatRoutineCostUsd(costUsd);
-  return formatted ? copy.costSuffix(formatted) : "";
 }
 
 type RoutineLogsSheetProps = {
@@ -142,7 +136,6 @@ export function RoutineLogsSheet({ routine, open, onOpenChange }: RoutineLogsShe
                         <span className="font-medium text-[var(--app-text)]">{statusLabel(run.status)}</span>
                         {" · "}
                         {new Date(run.startedAt).toLocaleString("pt-BR")}
-                        {costSuffix(run.costUsd)}
                       </button>
                     </li>
                   );
@@ -153,8 +146,6 @@ export function RoutineLogsSheet({ routine, open, onOpenChange }: RoutineLogsShe
                   <p className="shrink-0 text-xs text-[var(--app-text-muted)]">
                     <span className="font-medium text-[var(--app-text)]">{statusLabel(selected.status)}</span>
                     {selected.reason ? ` · ${selected.reason}` : ""}
-                    {" · "}
-                    {formatRoutineCostUsd(selected.costUsd) ?? copy.logsCostUnknown}
                   </p>
                   <div className="flex min-h-0 flex-1 flex-col">
                     <h3 className="mb-1 shrink-0 text-xs font-semibold text-[var(--app-text)]">{copy.logsStdoutLabel}</h3>
