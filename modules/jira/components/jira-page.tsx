@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LayoutGrid, Ticket } from "lucide-react";
@@ -19,9 +18,7 @@ import { StaleDataBanner } from "@/components/stale-data-banner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Surface } from "@/components/ui/surface";
 import { JiraIssueCard } from "@/modules/jira/components/jira-issue-card";
-import { useWorkContext } from "@/modules/work-context/components/work-context-provider";
 import type { JiraIssuesResponse, JiraSprintDto, JiraSprintsResponse } from "@/modules/jira/lib/domain";
-import { extractJiraIssueKey } from "@/modules/jira-issue-key";
 import {
   resolveDefaultSprintFilter,
   type JiraSprintFilterValue
@@ -68,7 +65,6 @@ function JiraIssueCardSkeleton() {
 }
 
 export function JiraPage() {
-  const searchParams = useSearchParams();
   const [data, setData] = useState<JiraIssuesResponse | null>(null);
   const [sprintsMeta, setSprintsMeta] = useState<JiraSprintsResponse | null>(null);
   const [sprintFilter, setSprintFilter] = useState<JiraSprintFilterValue>("all");
@@ -79,28 +75,6 @@ export function JiraPage() {
   const [sprintsError, setSprintsError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingSprints, setIsLoadingSprints] = useState(true);
-  const { openWorkContext } = useWorkContext();
-
-  const openIssueDetail = useCallback(
-    (issueKey: string) => {
-      openWorkContext(issueKey);
-    },
-    [openWorkContext]
-  );
-
-  const issueFromUrl = searchParams.get("issue");
-
-  useEffect(() => {
-    if (!issueFromUrl) {
-      return;
-    }
-    const issueKey = extractJiraIssueKey(issueFromUrl);
-    if (!issueKey) {
-      return;
-    }
-    openIssueDetail(issueKey);
-  }, [issueFromUrl, openIssueDetail]);
-
   const loadSprints = useCallback(async () => {
     setIsLoadingSprints(true);
     setSprintsError(null);
@@ -360,7 +334,6 @@ export function JiraPage() {
               <JiraIssueCard
                 issue={issue}
                 updatedLabel={formatUpdated(issue.updated)}
-                onOpenDetail={() => openIssueDetail(issue.key)}
               />
             </li>
           ))}

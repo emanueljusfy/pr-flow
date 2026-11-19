@@ -10,6 +10,10 @@ const sharePrToSlackChannel = vi.fn();
 const recordPrSlackShare = vi.fn();
 const postPrReviewReminder = vi.fn();
 const schedulePrReviewReminderAfterSend = vi.fn();
+const renderPrReviewReminderDigest = vi.fn();
+const postPrReviewReminderDigest = vi.fn();
+const findPrMentionsInSlackChannel = vi.fn();
+const getPrSlackShareThreadByUrl = vi.fn();
 
 vi.mock("@/modules/prs/lib/pr-read-service", () => ({
   getMonitorFromCache: () => getMonitorFromCache(),
@@ -20,7 +24,15 @@ vi.mock("@/modules/slack/lib/slack-pr-share-service", () => ({
   sharePrToSlackChannel: (...args: unknown[]) => sharePrToSlackChannel(...args)
 }));
 vi.mock("@/modules/prs/lib/pr-slack-share-repository", () => ({
-  recordPrSlackShare: (...args: unknown[]) => recordPrSlackShare(...args)
+  recordPrSlackShare: (...args: unknown[]) => recordPrSlackShare(...args),
+  getPrSlackShareThreadByUrl: (...args: unknown[]) => getPrSlackShareThreadByUrl(...args)
+}));
+vi.mock("@/modules/prs/lib/pr-review-reminder-digest-service", () => ({
+  renderPrReviewReminderDigest: (...args: unknown[]) => renderPrReviewReminderDigest(...args),
+  postPrReviewReminderDigest: (...args: unknown[]) => postPrReviewReminderDigest(...args)
+}));
+vi.mock("@/modules/slack/lib/slack-channel-history", () => ({
+  findPrMentionsInSlackChannel: (...args: unknown[]) => findPrMentionsInSlackChannel(...args)
 }));
 vi.mock("@/modules/prs/lib/pr-review-reminder-service", () => ({
   postPrReviewReminder: (...args: unknown[]) => postPrReviewReminder(...args)
@@ -30,7 +42,6 @@ vi.mock("@/modules/prs/lib/pr-review-reminder-schedule-service", () => ({
   cancelPrReviewReminderSchedule: vi.fn().mockResolvedValue(true)
 }));
 vi.mock("@/modules/prs/lib/pr-sync-service", () => ({ syncPrCache: vi.fn() }));
-vi.mock("@/modules/prs/lib/local-review/local-review-service", () => ({ startLocalPrReview: vi.fn() }));
 vi.mock("@/modules/observability/lib/system-logger", () => ({ writeSystemLogFireAndForget: vi.fn() }));
 
 const PR_URL = "https://github.com/acme/api/pull/7";
@@ -100,9 +111,11 @@ describe("/api/mcp", () => {
         "share_pr_to_slack",
         "send_pr_review_reminder",
         "cancel_pr_review_reminder",
-        "start_local_review"
+        "send_review_reminder_digest",
+        "find_pr_in_slack"
       ])
     );
+    expect(tools.map((tool) => tool.name)).not.toContain("start_local_review");
   });
 
   it("list_my_prs filters by pending reviewers", async () => {
@@ -152,6 +165,49 @@ describe("/api/mcp", () => {
 
     expect(result.isError).toBe(true);
     expect(parseText(result).code).toBe("not_shared");
+  });
+
+  it("send_review_reminder_digest previews PRs with pending reviewers without posting", async () => {
+    const approvedPr: MonitoredPr = { ...pr, id: "PR_8", number: 8, url: "https://github.com/acme/api/pull/8", pendente: [] };
+    getMonitorFromCache.mockResolvedValue({
+      status: "ok",
+      data: [{ ...pr, pendente: ["bruno", "felipe"], dismissed: ["felipe"] }, approvedPr],
+      fetchedAt: "2026-11-18T10:00:00.000Z",
+      githubLogin: "me"
+    });
+    renderPrReviewReminderDigest.mockResolvedValue("preview");
+
+    const client = await connectClient();
+    const result = await client.callTool({ name: "send_review_reminder_digest", arguments: { dryRun: true } });
+    const body = parseText(result);
+
+    expect(result.isError).toBeFalsy();
+    expect(body).toMatchObject({ dryRun: true, text: "preview", skippedNoPending: [approvedPr.url] });
+    expect(renderPrReviewReminderDigest).toHaveBeenCalledWith(
+      [expect.objectContaining({ url: PR_URL, pendingReviewers: ["bruno", "felipe"], dismissedReviewers: ["felipe"] })],
+      undefined
+    );
+    expect(postPrReviewReminderDigest).not.toHaveBeenCalled();
+  });
+
+  it("find_pr_in_slack adopts a hand-posted thread only when no share is on record", async () => {
+    findPrMentionsInSlackChannel.mockResolvedValue({
+      channelId: "C9",
+      scannedMessages: 40,
+      oldestScannedAt: "2026-11-01T00:00:00.000Z",
+      truncated: false,
+      mentionsByUrl: new Map([[PR_URL, [{ ts: "111.2", threadTs: "111.2", text: PR_URL, permalink: null }]]])
+    });
+    getPrSlackShareThreadByUrl.mockResolvedValue(null);
+    recordPrSlackShare.mockResolvedValue({ sharedAt: "x", channel: "C9" });
+
+    const client = await connectClient();
+    const result = await client.callTool({ name: "find_pr_in_slack", arguments: { urls: [PR_URL], recordAsShare: true } });
+    const body = parseText(result);
+
+    expect(result.isError).toBeFalsy();
+    expect(body.results[0]).toMatchObject({ url: PR_URL, found: true, recorded: true });
+    expect(recordPrSlackShare).toHaveBeenCalledWith({ prUrl: PR_URL, prId: "PR_7", channel: "C9", threadTs: "111.2" });
   });
 
   it("requires the bearer token when PR_FLOW_MCP_TOKEN is set", async () => {

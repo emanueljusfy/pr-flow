@@ -1,12 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { NotePreview } from "@/modules/journal/lib/note-preview";
-
-vi.mock("@/modules/work-context/components/work-context-provider", () => ({
-  useWorkContext: () => ({
-    openWorkContext: vi.fn()
-  })
-}));
 
 describe("NotePreview", () => {
   it("does not render executable script tags from unsafe markdown", () => {
@@ -16,10 +10,11 @@ describe("NotePreview", () => {
     expect(document.querySelector("script")).toBeNull();
   });
 
-  it("linkifica JOR-xxx para abrir contexto de trabalho no preview", () => {
+  it("linkifica JOR-xxx para a tela do Jira no preview", () => {
     render(<NotePreview markdown="Revisar jor-182 amanhã." />);
 
-    const link = screen.getByRole("button", { name: "JOR-182" });
+    const link = screen.getByRole("link", { name: "JOR-182" });
     expect(link).toHaveAttribute("data-jira-issue-link");
+    expect(link).toHaveAttribute("href", "/jira?issue=JOR-182");
   });
 });

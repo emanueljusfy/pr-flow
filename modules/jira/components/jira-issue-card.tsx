@@ -9,10 +9,9 @@ import { cn } from "@/lib/utils";
 interface Props {
   issue: JiraIssueDto;
   updatedLabel: string;
-  onOpenDetail: () => void;
 }
 
-export function JiraIssueCard({ issue, updatedLabel, onOpenDetail }: Props) {
+export function JiraIssueCard({ issue, updatedLabel }: Props) {
   const statusClass = jiraStatusCardClass(issue.statusCategoryKey);
 
   return (
@@ -22,11 +21,12 @@ export function JiraIssueCard({ issue, updatedLabel, onOpenDetail }: Props) {
       summary={issue.summary}
     >
       <article className={cn("jira-issue-card panel", statusClass)}>
-        <button
-          type="button"
+        <a
           className="jira-issue-card__main"
-          onClick={onOpenDetail}
-          aria-label={`Ver detalhes de ${issue.key}: ${issue.summary}`}
+          href={issue.browseUrl}
+          rel="noopener noreferrer"
+          target="_blank"
+          aria-label={`Abrir ${issue.key} no Jira: ${issue.summary}`}
         >
           <header className="jira-issue-card__header">
             <p className="jira-task-dialog__key">
@@ -47,7 +47,7 @@ export function JiraIssueCard({ issue, updatedLabel, onOpenDetail }: Props) {
             ) : null}
             <span className="jira-issue-card__updated">Atualizado {updatedLabel}</span>
           </div>
-        </button>
+        </a>
 
         <a
           href={issue.browseUrl}

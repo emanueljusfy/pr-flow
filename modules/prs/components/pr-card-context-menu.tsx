@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Loader2, ScanSearch } from "lucide-react";
+import { Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   ContextMenu,
@@ -13,23 +13,30 @@ import type { MonitoredPr, PrSlackShareInfo } from "@/modules/prs/lib/domain";
 import { buildPrShareMessage } from "@/modules/prs/lib/core/pr-share-message";
 import { findOpenPrsByJiraIssueKey } from "@/modules/prs/lib/core/pr-slack-related";
 import { PrCardSlackIcon } from "@/modules/prs/components/pr-card-slack-icon";
-import { PrLocalReviewStartDialog } from "@/modules/prs/components/pr-local-review-start-dialog";
-import { ptBR } from "@/modules/messages";
 import { PrSlackReshareDialog } from "@/modules/prs/components/pr-slack-reshare-dialog";
 import { PrSlackShareDialog } from "@/modules/prs/components/pr-slack-share-dialog";
 import { patchPrSlackShareInMonitorCache } from "@/modules/prs/lib/pr-monitor-cache";
 import { SLACK_PR_CHANNEL_DEFAULT } from "@/modules/slack/lib/slack-config";
+import { cn } from "@/lib/utils";
 
 interface Props {
-  pr: Pick<MonitoredPr, "id" | "title" | "url" | "slackShare" | "repository" | "number" | "localReview">;
+  pr: Pick<MonitoredPr, "id" | "title" | "url" | "slackShare" | "repository" | "number">;
   jiraIssueKey: string | null;
   allOpenPrs: MonitoredPr[];
   statusClass: string;
+  className?: string;
   children: React.ReactNode;
   slackConfigured?: boolean;
-  reviewInProgress?: boolean;
-  onReviewStarted?: () => void;
+  selected?: boolean;
+  onSelect?: () => void;
   onSlackShareChange?: (slackShare: PrSlackShareInfo | null) => void;
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  return Boolean(target.closest("a, button, input, textarea, select, [role='menuitem'], [data-slot='context-menu-item']"));
 }
 
 type ShareState = "idle" | "loading";
@@ -56,14 +63,14 @@ export function PrCardContextMenu({
   jiraIssueKey,
   allOpenPrs,
   statusClass,
+  className,
   children,
   slackConfigured = false,
-  reviewInProgress = false,
-  onReviewStarted,
+  selected = false,
+  onSelect,
   onSlackShareChange
 }: Props) {
   const [shareState, setShareState] = useState<ShareState>("idle");
-  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [slackShare, setSlackShare] = useState<PrSlackShareInfo | null>(pr.slackShare ?? null);
   const [confirmReshareOpen, setConfirmReshareOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -173,19 +180,35 @@ export function PrCardContextMenu({
   }, [hasMultipleRelatedPrs, jiraIssueKey, pr.url, shareState, shareToSlack, slackShare]);
 
   const slackMenuLabel = slackShare ? "Reenviar ao Slack" : "Enviar ao Slack";
-  const reviewRunning = pr.localReview?.status === "running";
-  const reviewLabel = reviewRunning
-    ? ptBR.localReview.running
-    : pr.localReview?.status === "error"
-      ? ptBR.localReview.retry
-      : pr.localReview?.status === "ok"
-        ? ptBR.localReview.again
-        : ptBR.localReview.trigger;
 
   return (
     <>
       <ContextMenu>
-        <ContextMenuTrigger render={<article className={`panel pr-card ${statusClass}`} />}>
+        <ContextMenuTrigger
+          render={
+            <article
+              aria-selected={selected || undefined}
+              className={cn("panel pr-card", statusClass, className, selected && "pr-card--selected")}
+              data-selected={selected ? "true" : undefined}
+              onClick={(event) => {
+                if (!onSelect || isInteractiveTarget(event.target)) {
+                  return;
+                }
+                onSelect();
+              }}
+              onKeyDown={(event) => {
+                if (!onSelect || event.target !== event.currentTarget) {
+                  return;
+                }
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect();
+                }
+              }}
+              tabIndex={onSelect ? 0 : undefined}
+            />
+          }
+        >
           <div className="pr-card-content">{children}</div>
         </ContextMenuTrigger>
         <ContextMenuContent>
@@ -206,23 +229,8 @@ export function PrCardContextMenu({
             )}
             {slackMenuLabel}
           </ContextMenuItem>
-          <ContextMenuItem
-            disabled={reviewRunning || reviewInProgress}
-            onClick={() => setReviewDialogOpen(true)}
-          >
-            {reviewRunning ? <Loader2 aria-hidden className="animate-spin" /> : <ScanSearch aria-hidden />}
-            {reviewLabel}
-          </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-
-      <PrLocalReviewStartDialog
-        open={reviewDialogOpen}
-        onOpenChange={setReviewDialogOpen}
-        onStarted={onReviewStarted}
-        prNumber={pr.number}
-        repository={pr.repository}
-      />
 
       <PrSlackShareDialog
         currentPrUrl={pr.url}

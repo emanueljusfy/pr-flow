@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppNotificationProvider } from "@/modules/notifications/components/app-notification-provider";
+import { NotificationBell } from "@/modules/notifications/components/notification-bell";
 import { QuickNoteDialog } from "@/components/quick-note/quick-note-dialog";
-import { WorkContextProvider } from "@/modules/work-context/components/work-context-provider";
 import { VacationCountdownBootstrap } from "@/modules/vacation-countdown/components/vacation-setup-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { getGithubLogin } from "@/modules/app/lib/github-login-repository";
@@ -16,12 +16,12 @@ export default async function ShellLayout({ children }: Readonly<{ children: Rea
   }
 
   return (
-    <WorkContextProvider>
     <SidebarProvider>
       <AppSidebar initialGithubLogin={initialGithubLogin} />
       <SidebarInset className="bg-transparent">
         <header className="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--app-border)]/70 px-4">
           <SidebarTrigger className="-ml-1" />
+          <NotificationBell />
           <span className="hidden text-sm font-semibold tracking-tight text-[var(--app-text)] sm:inline">
             PR <span className="text-[var(--brand)]">Flow</span>
           </span>
@@ -35,6 +35,5 @@ export default async function ShellLayout({ children }: Readonly<{ children: Rea
       <VacationCountdownBootstrap />
       <AppNotificationProvider />
     </SidebarProvider>
-    </WorkContextProvider>
   );
 }

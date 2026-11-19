@@ -1,7 +1,9 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import type { MonitoredPrRaw, PrReview } from "@/modules/prs/lib/domain";
+import type { MonitoredPrRaw, PrHistoryEvent, PrReview } from "@/modules/prs/lib/domain";
+import { mapPullRequestHistory } from "@/modules/prs/lib/core/pr-history-map";
 import { ghLogger } from "@/modules/prs/lib/gh-logger";
+import { prHistoryGraphqlResponseSchema } from "@/modules/prs/lib/pr-history-validation";
 
 const execFileAsync = promisify(execFile);
 
@@ -30,6 +32,8 @@ query($owner: String!, $name: String!) {
         title
         url
         createdAt
+        baseRefName
+        headRefName
         mergeStateStatus
         mergeable
         author {
@@ -164,6 +168,8 @@ function mapGraphqlPrNode(
     title: string;
     url: string;
     createdAt?: string;
+    baseRefName?: string;
+    headRefName?: string;
     mergeable?: string;
     author?: { login?: string };
     reviewThreads?: { nodes?: Array<{ isResolved?: boolean }> };
@@ -195,6 +201,8 @@ function mapGraphqlPrNode(
     url: pr.url,
     createdAt: pr.createdAt ?? new Date(0).toISOString(),
     repository: repo,
+    baseRefName: pr.baseRefName,
+    headRefName: pr.headRefName,
     authorLogin: pr.author?.login,
     requestedReviewers,
     reviews,
@@ -256,6 +264,8 @@ export async function collectOpenPrsFromRepos(
             title: string;
             url: string;
             createdAt?: string;
+            baseRefName?: string;
+            headRefName?: string;
             mergeStateStatus?: string;
             mergeable?: string;
             author?: { login?: string };
@@ -309,4 +319,166 @@ export async function commentOnPullRequest(
     }
     throw new GhCommandError(output.stderr || "Falha ao comentar na pull request");
   }
+}
+
+const historyQuery = `
+query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      id
+      number
+      url
+      createdAt
+      author {
+        login
+      }
+      timelineItems(first: 100, itemTypes: [ISSUE_COMMENT, PULL_REQUEST_COMMIT, PULL_REQUEST_REVIEW, MERGED_EVENT, CLOSED_EVENT, REOPENED_EVENT]) {
+        nodes {
+          __typename
+          ... on IssueComment {
+            id
+            createdAt
+            url
+            body
+            author {
+              login
+            }
+          }
+          ... on PullRequestCommit {
+            commit {
+              oid
+              committedDate
+              messageHeadline
+              url
+              author {
+                name
+                user {
+                  login
+                }
+              }
+            }
+          }
+          ... on PullRequestReview {
+            id
+            createdAt
+            url
+            state
+            body
+            author {
+              login
+            }
+          }
+          ... on MergedEvent {
+            id
+            createdAt
+            url
+            actor {
+              login
+            }
+          }
+          ... on ClosedEvent {
+            id
+            createdAt
+            url
+            actor {
+              login
+            }
+          }
+          ... on ReopenedEvent {
+            id
+            createdAt
+            actor {
+              login
+            }
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+export async function fetchPullRequestHistory(
+  input: { repository: string; number: number },
+  run: CommandRunner = defaultRunner
+): Promise<{ events: PrHistoryEvent[] }> {
+  const { owner, name } = parseRepo(input.repository);
+  const output = await run([
+    "api",
+    "graphql",
+    "-f",
+    `query=${historyQuery}`,
+    "-F",
+    `owner=${owner}`,
+    "-F",
+    `name=${name}`,
+    "-F",
+    `number=${input.number}`
+  ]);
+
+  if (output.exitCode !== 0) {
+    if (isGhUnauthenticated(output.stderr)) {
+      throw new GhUnauthenticatedError(
+        "GitHub CLI sem autenticacao. Defina GH_TOKEN no .env ou execute `gh auth login`."
+      );
+    }
+    throw new GhCommandError(output.stderr || "Falha ao consultar o histórico da PR");
+  }
+
+  if (!output.stdout.trim()) {
+    throw new GhCommandError(
+      `GraphQL retornou resposta vazia para o histórico de ${input.repository}#${input.number}.`
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(output.stdout);
+  } catch (error) {
+    const parseError = error instanceof Error ? error.message : String(error);
+    throw new GhCommandError(`Falha ao parsear histórico da PR: ${parseError}`);
+  }
+
+  const parsed = prHistoryGraphqlResponseSchema.safeParse(payload);
+  if (!parsed.success) {
+    throw new GhCommandError("Resposta GraphQL do histórico da PR inválida.");
+  }
+
+  if (parsed.data.errors && parsed.data.errors.length > 0) {
+    throw new GhCommandError(
+      `Erro GraphQL no histórico da PR: ${parsed.data.errors.map((entry) => entry.message).join("; ")}`
+    );
+  }
+
+  const pullRequest = parsed.data.data?.repository?.pullRequest;
+  if (!pullRequest) {
+    throw new GhCommandError(`PR ${input.repository}#${input.number} não encontrada.`);
+  }
+
+  return { events: mapPullRequestHistory(pullRequest) };
+}
+
+export type PullRequestState = "OPEN" | "CLOSED" | "MERGED";
+
+/** Current state of one PR. Used to tell a merge apart from a plain close once it leaves the open list. */
+export async function getPullRequestState(
+  input: { repository: string; number: number },
+  run: CommandRunner = defaultRunner
+): Promise<PullRequestState> {
+  const output = await run(["pr", "view", String(input.number), "--repo", input.repository, "--json", "state"]);
+
+  if (output.exitCode !== 0) {
+    if (isGhUnauthenticated(output.stderr)) {
+      throw new GhUnauthenticatedError(
+        "GitHub CLI sem autenticacao. Defina GH_TOKEN no .env ou execute `gh auth login`."
+      );
+    }
+    throw new GhCommandError(output.stderr || "Falha ao consultar a pull request");
+  }
+
+  const state = (JSON.parse(output.stdout) as { state?: unknown }).state;
+  if (state !== "OPEN" && state !== "CLOSED" && state !== "MERGED") {
+    throw new GhCommandError(`Estado inesperado da pull request: ${String(state)}`);
+  }
+  return state;
 }

@@ -26,4 +26,17 @@ describe("NotificationPreferencesDialog", () => {
 
     expect(loadNotificationPreferences().alerts.prApproved).toBe(false);
   });
+
+  it("lets the user toggle sound and poll monitoring prefs", () => {
+    render(<NotificationPreferencesDialog open onOpenChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Alerta sonoro/i }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Sync rápido no expediente/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Salvar preferências" }));
+
+    const loaded = loadNotificationPreferences();
+    expect(loaded.soundEnabled).toBe(false);
+    expect(loaded.pollEnabled).toBe(false);
+  });
 });
+

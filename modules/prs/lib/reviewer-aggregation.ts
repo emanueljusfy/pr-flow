@@ -25,15 +25,36 @@ function getLatestReviewPerLogin(reviews: PrReview[]): Map<string, PrReview> {
   return latestByLogin;
 }
 
+const DECISION_REVIEW_STATES = new Set(["APPROVED", "CHANGES_REQUESTED", "DISMISSED"]);
+
+/**
+ * Logins whose latest decision (approve / request changes) was dismissed, e.g. by a new push
+ * with "dismiss stale approvals". COMMENTED reviews (thread replies) do not restore a decision,
+ * so they are ignored here. GitHub does not put these people back in reviewRequests.
+ */
+function getDismissedReviewers(reviews: PrReview[]): Set<string> {
+  const latestDecision = getLatestReviewPerLogin(reviews.filter((review) => DECISION_REVIEW_STATES.has(review.state)));
+  return new Set(
+    Array.from(latestDecision.entries())
+      .filter(([, review]) => review.state === "DISMISSED")
+      .map(([login]) => login)
+  );
+}
+
 function withoutExcludedReviews(reviews: PrReview[], excluded: Set<string>): PrReview[] {
   return reviews.filter((review) => !isExcludedFromReviewCalculation(review.login, excluded));
 }
 
 export function aggregateReviewerStatus(pr: MonitoredPrRaw): MonitoredPr {
   const excluded = buildExcludedReviewLogins(pr.authorLogin);
-  const latestByLogin = getLatestReviewPerLogin(withoutExcludedReviews(pr.reviews, excluded));
+  const reviews = withoutExcludedReviews(pr.reviews, excluded);
+  const latestByLogin = getLatestReviewPerLogin(reviews);
+  const dismissedSet = getDismissedReviewers(reviews);
   const pendingRequests = filterExcludedLogins(pr.requestedReviewers, excluded);
   const solicitedSet = buildSolicitedReviewerSet(pendingRequests, latestByLogin, excluded);
+  for (const login of dismissedSet) {
+    solicitedSet.add(login);
+  }
   const avaliou = Array.from(latestByLogin.entries())
     .filter(([, review]) => VALID_REVIEW_STATES.has(review.state))
     .map(([login]) => login);
@@ -41,8 +62,15 @@ export function aggregateReviewerStatus(pr: MonitoredPrRaw): MonitoredPr {
   const aprovou: string[] = [];
   const solicitouAlteracoes: string[] = [];
   const pendente: string[] = [];
+  const dismissed: string[] = [];
 
   for (const login of solicitedSet) {
+    if (dismissedSet.has(login)) {
+      dismissed.push(login);
+      naoAvaliou.push(login);
+      pendente.push(login);
+      continue;
+    }
     const review = latestByLogin.get(login);
     if (review && VALID_REVIEW_STATES.has(review.state)) {
       if (review.state === "APPROVED") {
@@ -81,12 +109,15 @@ export function aggregateReviewerStatus(pr: MonitoredPrRaw): MonitoredPr {
     url: pr.url,
     repository: pr.repository,
     createdAt: pr.createdAt,
+    ...(pr.baseRefName ? { baseRefName: pr.baseRefName } : {}),
+    ...(pr.headRefName ? { headRefName: pr.headRefName } : {}),
     avaliou,
     naoAvaliou,
     semReviewersSolicitados,
     aprovou,
     solicitouAlteracoes,
     pendente,
+    dismissed,
     requestedReviewersCount: solicitedSet.size,
     statusGeral,
     readyToMerge,

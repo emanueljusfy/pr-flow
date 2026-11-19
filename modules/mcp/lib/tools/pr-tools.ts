@@ -10,19 +10,19 @@ import {
   formatPendingReviewerMentions
 } from "@/modules/prs/lib/core/pr-review-reminder";
 import type { MonitoredPr, PrApiResponse, ReviewerQueueApiResponse } from "@/modules/prs/lib/domain";
-import { LOCAL_REVIEW_MODEL_IDS } from "@/modules/prs/lib/local-review/local-review-models";
-import { startLocalPrReview } from "@/modules/prs/lib/local-review/local-review-service";
 import { PrCacheNotReadyError } from "@/modules/prs/lib/pr-cache-errors";
 import { getMonitorFromCache, getReviewerQueueFromCache } from "@/modules/prs/lib/pr-read-service";
 import {
   cancelPrReviewReminderSchedule,
   schedulePrReviewReminderAfterSend
 } from "@/modules/prs/lib/pr-review-reminder-schedule-service";
+import { postPrReviewReminderDigest, renderPrReviewReminderDigest } from "@/modules/prs/lib/pr-review-reminder-digest-service";
 import { postPrReviewReminder } from "@/modules/prs/lib/pr-review-reminder-service";
-import { recordPrSlackShare } from "@/modules/prs/lib/pr-slack-share-repository";
+import { getPrSlackShareThreadByUrl, recordPrSlackShare } from "@/modules/prs/lib/pr-slack-share-repository";
 import { syncPrCache } from "@/modules/prs/lib/pr-sync-service";
 import { SlackApiError } from "@/modules/slack/lib/slack-client";
-import { SlackConfigError } from "@/modules/slack/lib/slack-config";
+import { findPrMentionsInSlackChannel } from "@/modules/slack/lib/slack-channel-history";
+import { SlackConfigError, getSlackPrChannel } from "@/modules/slack/lib/slack-config";
 import { SlackPrShareError, sharePrToSlackChannel } from "@/modules/slack/lib/slack-pr-share-service";
 
 const MCP_PR_TOOLS_LOG_SOURCE = "mcp:prs";
@@ -98,24 +98,27 @@ export function toMcpPr(pr: MonitoredPr) {
       approved: pr.aprovou,
       changesRequested: pr.solicitouAlteracoes,
       pending: pr.pendente,
+      /** Pending because their approval / change request was dismissed (e.g. by a new push). */
+      dismissed: pr.dismissed ?? [],
       requestedCount: pr.requestedReviewersCount
     },
     slackShare: pr.slackShare ?? null,
-    reviewReminderSchedule: pr.reviewReminderSchedule ?? null,
-    localReview: pr.localReview
-      ? {
-          status: pr.localReview.status,
-          summary: pr.localReview.summary,
-          findingsCount: pr.localReview.findings.length,
-          finishedAt: pr.localReview.finishedAt
-        }
-      : null
+    reviewReminderSchedule: pr.reviewReminderSchedule ?? null
   };
 }
 
 function findPrInMonitor(monitor: MonitorData, url: string): MonitoredPr | undefined {
   const normalized = url.trim().replace(/\/+$/, "");
   return monitor.data.find((pr) => pr.url.replace(/\/+$/, "") === normalized);
+}
+
+function slackToolError(error: unknown, fallback: string, details: Record<string, unknown>) {
+  if (error instanceof SlackConfigError || error instanceof SlackApiError) {
+    logToolFailure(error instanceof SlackApiError ? "error" : "warn", error.message, details);
+    return errorToolResult(error.message);
+  }
+  logToolFailure("error", fallback, { ...details, error: sanitizeErrorForLog(error) });
+  return errorToolResult(fallback);
 }
 
 function logToolFailure(level: "warn" | "error", message: string, details: Record<string, unknown>) {
@@ -179,7 +182,7 @@ export function registerPrTools(server: McpServer): void {
 
       return jsonToolResult({
         ...cacheMeta(loaded.monitor),
-        pr: { ...toMcpPr(pr), localReview: pr.localReview ?? null }
+        pr: toMcpPr(pr)
       });
     }
   );
@@ -383,6 +386,153 @@ export function registerPrTools(server: McpServer): void {
   );
 
   server.registerTool(
+    "send_review_reminder_digest",
+    {
+      title: "Send one review reminder for several PRs",
+      description:
+        "Posts ONE top-level message in the team's Slack PR channel listing several PRs, each with its pending reviewers mentioned (including reviewers whose approval was dismissed by a new push). Use instead of calling send_pr_review_reminder once per PR. Defaults to every open PR of the user that has pending reviewers. Use dryRun to preview the text. Unless dryRun, this publishes a message visible to the team: confirm with the user before calling.",
+      inputSchema: {
+        urls: z
+          .array(prUrlSchema)
+          .min(1)
+          .max(30)
+          .optional()
+          .describe("PRs to include. Omit to include every PR with pending reviewers."),
+        message: z
+          .string()
+          .trim()
+          .min(1)
+          .max(1000)
+          .optional()
+          .describe("Intro line shown above the list. Defaults to the standard reminder."),
+        dryRun: z.boolean().default(false).describe("Return the rendered text without posting.")
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+    },
+    async ({ urls, message, dryRun }) => {
+      const loaded = await loadMonitor();
+      if (!loaded.ok) {
+        return errorToolResult(loaded.message);
+      }
+
+      const uniqueUrls = urls ? [...new Set(urls)] : null;
+      const notFound: string[] = [];
+      const candidates: MonitoredPr[] = [];
+      if (uniqueUrls) {
+        for (const url of uniqueUrls) {
+          const pr = findPrInMonitor(loaded.monitor, url);
+          if (pr) {
+            candidates.push(pr);
+          } else {
+            notFound.push(url);
+          }
+        }
+      } else {
+        candidates.push(...loaded.monitor.data);
+      }
+
+      const included = candidates.filter((pr) => pr.pendente.length > 0);
+      const skippedNoPending = candidates.filter((pr) => pr.pendente.length === 0).map((pr) => pr.url);
+      if (included.length === 0) {
+        return errorToolResult("Nenhuma das PRs tem revisor pendente.", { notFound, skippedNoPending });
+      }
+
+      const items = included.map((pr) => ({
+        url: pr.url,
+        repository: pr.repository,
+        number: pr.number,
+        title: pr.title,
+        pendingReviewers: pr.pendente,
+        dismissedReviewers: pr.dismissed ?? []
+      }));
+      const summary = {
+        prs: included.map((pr) => ({ url: pr.url, pending: pr.pendente, dismissed: pr.dismissed ?? [] })),
+        notFound,
+        skippedNoPending
+      };
+
+      try {
+        if (dryRun) {
+          const text = await renderPrReviewReminderDigest(items, message);
+          return jsonToolResult({ ok: true, dryRun: true, text, ...summary });
+        }
+
+        const result = await postPrReviewReminderDigest({ items, intro: message });
+        writeSystemLogFireAndForget({
+          level: "info",
+          source: MCP_PR_TOOLS_LOG_SOURCE,
+          message: `Lembrete de revisão em lote publicado via MCP (${items.length} PRs).`,
+          details: { urls: items.map((item) => item.url), channel: result.channel }
+        });
+        return jsonToolResult({ ok: true, channel: result.channel, ts: result.ts, postedText: result.text, ...summary });
+      } catch (error) {
+        return slackToolError(error, "Não foi possível publicar o lembrete em lote.", {
+          urls: items.map((item) => item.url)
+        });
+      }
+    }
+  );
+
+  server.registerTool(
+    "find_pr_in_slack",
+    {
+      title: "Find PR links already posted in the Slack channel",
+      description:
+        "Searches the team's Slack PR channel history for messages that link the given PRs, including ones posted by hand (PR Flow otherwise only knows the shares it made itself). Returns each message with its thread, author and permalink, newest first, plus the share PR Flow has on record. Thread replies are not scanned. With recordAsShare, a PR that PR Flow has no share for adopts the newest message's thread, so send_pr_review_reminder can reply there.",
+      inputSchema: {
+        urls: z.array(prUrlSchema).min(1).max(20),
+        lookbackDays: z.number().int().min(1).max(90).default(30).describe("How far back to scan the channel."),
+        recordAsShare: z
+          .boolean()
+          .default(false)
+          .describe("Record the newest found message as the PR's Slack share when none is on record.")
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    },
+    async ({ urls, lookbackDays, recordAsShare }) => {
+      const uniqueUrls = [...new Set(urls.map((url) => url.trim()))];
+      const loaded = await loadMonitor();
+      const monitor = loaded.ok ? loaded.monitor : null;
+
+      try {
+        const found = await findPrMentionsInSlackChannel({ channel: getSlackPrChannel(), urls: uniqueUrls, lookbackDays });
+
+        const results = [];
+        for (const url of uniqueUrls) {
+          const pr = monitor ? findPrInMonitor(monitor, url) : undefined;
+          const prUrl = pr?.url ?? url;
+          const mentions = found.mentionsByUrl.get(url) ?? [];
+          const knownShare = await getPrSlackShareThreadByUrl(prUrl);
+
+          let recorded = false;
+          if (recordAsShare && !knownShare && mentions[0]) {
+            await recordPrSlackShare({
+              prUrl,
+              prId: pr?.id ?? null,
+              channel: found.channelId,
+              threadTs: mentions[0].threadTs
+            });
+            recorded = true;
+          }
+
+          results.push({ url: prUrl, found: mentions.length > 0, knownShare, recorded, mentions });
+        }
+
+        return jsonToolResult({
+          channel: found.channelId,
+          lookbackDays,
+          scannedMessages: found.scannedMessages,
+          oldestScannedAt: found.oldestScannedAt,
+          truncated: found.truncated,
+          results
+        });
+      } catch (error) {
+        return slackToolError(error, "Não foi possível buscar a PR no canal do Slack.", { urls: uniqueUrls });
+      }
+    }
+  );
+
+  server.registerTool(
     "cancel_pr_review_reminder",
     {
       title: "Cancel scheduled review reminder",
@@ -393,28 +543,6 @@ export function registerPrTools(server: McpServer): void {
     async ({ url }) => {
       const cancelled = await cancelPrReviewReminderSchedule(url.trim());
       return jsonToolResult({ ok: true, cancelled });
-    }
-  );
-
-  server.registerTool(
-    "start_local_review",
-    {
-      title: "Start a local AI review of a PR",
-      description:
-        "Starts PR Flow's local code review (Claude Code in a checkout) for a PR in a monitored repository. Runs in the background; check the result later with list_review_queue or get_pr (localReview).",
-      inputSchema: {
-        repository: repositorySchema.describe("owner/repo"),
-        number: z.number().int().positive(),
-        model: z.enum(LOCAL_REVIEW_MODEL_IDS).default("haiku")
-      },
-      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
-    },
-    async ({ repository, number, model }) => {
-      const result = await startLocalPrReview({ repository, number, model });
-      if (result.status === "error") {
-        return errorToolResult(result.message ?? "Falha ao iniciar a revisão local.");
-      }
-      return jsonToolResult(result);
     }
   );
 }

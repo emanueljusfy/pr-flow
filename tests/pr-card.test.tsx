@@ -284,32 +284,7 @@ describe("PrCard", () => {
     expect(container.querySelector(".pr-card")).toHaveClass("status-changes");
   });
 
-  it("abre GitHub ao clicar no numero da PR e contexto de trabalho no titulo quando houver JOR", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        issueKey: "JOR-1234",
-        jira: {
-          summary: {
-            key: "JOR-1234",
-            summary: "Ajuste no monitor",
-            statusName: "Em progresso",
-            statusCategoryKey: "indeterminate",
-            issueTypeName: "Story",
-            priorityName: null,
-            updated: "2026-05-28T10:00:00.000Z",
-            browseUrl: "https://jusfy.atlassian.net/browse/JOR-1234"
-          },
-          detail: null
-        },
-        pullRequests: [],
-        tasks: [],
-        journalMentions: [],
-        gaps: []
-      })
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
+  it("abre GitHub pelo numero e pelo titulo mesmo com chave JOR", () => {
     renderWithProviders(
       <PrCard
         pr={{
@@ -320,25 +295,15 @@ describe("PrCard", () => {
       />
     );
 
-    const prBadgeLink = screen.getByRole("link", { name: "Abrir PR #7 no GitHub" });
-    expect(prBadgeLink).toHaveAttribute("href", "https://github.com/acme/a/pull/7");
-
-    expect(screen.queryByRole("link", { name: /abrir jor-1234 no jira/i })).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: /ver contexto de trabalho de jor-1234/i }));
-
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith("/api/work-context/JOR-1234");
-    });
-
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Ajuste no monitor")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Abrir JOR-1234 no Jira" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Abrir PR #7 no GitHub" })).toHaveAttribute(
       "href",
-      "https://jusfy.atlassian.net/browse/JOR-1234"
+      "https://github.com/acme/a/pull/7"
     );
-
-    vi.unstubAllGlobals();
+    expect(screen.getByRole("link", { name: "Abrir titulo da PR no GitHub" })).toHaveAttribute(
+      "href",
+      "https://github.com/acme/a/pull/7"
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("mantem link do GitHub no titulo quando nao houver chave JOR", () => {
@@ -569,60 +534,5 @@ describe("PrCard", () => {
       />
     );
     expect(screen.getByText("0 reviewers solicitados")).toBeInTheDocument();
-  });
-
-  it("mostra a revisão local sem tratar como aprovação", () => {
-    renderWithProviders(
-      <PrCard
-        pr={{
-          ...samplePr,
-          localReview: {
-            status: "ok",
-            headSha: "abc1234",
-            summary: "Um null esquecido no retry.",
-            findings: [
-              {
-                agent: "correctness",
-                path: "src/retry.ts",
-                line: 12,
-                message: "retry ignora null",
-                confidence: 0.91
-              }
-            ],
-            finishedAt: "2026-05-28T12:00:00.000Z",
-            error: null
-          }
-        }}
-      />
-    );
-
-    expect(screen.getByRole("link", { name: "Ler revisão" })).toHaveAttribute("href", "/prs/acme/a/7");
-    expect(screen.queryByText(/retry ignora null/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/A IA sugere/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Revisar de novo" })).not.toBeInTheDocument();
-  });
-
-  it("mostra início e tempo da revisão local em andamento", () => {
-    const startedAt = new Date(Date.now() - 65_000).toISOString();
-    renderWithProviders(
-      <PrCard
-        pr={{
-          ...samplePr,
-          localReview: {
-            status: "running",
-            headSha: "abc1234",
-            summary: null,
-            findings: [],
-            startedAt,
-            finishedAt: null,
-            error: null
-          }
-        }}
-      />
-    );
-
-    expect(screen.getByRole("status", { name: "Revisão local em andamento" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Ler revisão" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Revisar agora" })).not.toBeInTheDocument();
   });
 });

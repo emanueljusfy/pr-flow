@@ -33,16 +33,18 @@ export type DeliverPrAlertOptions = {
   now?: number;
 };
 
-export function deliverPrAlert(event: PrAlertEvent, options: DeliverPrAlertOptions): void {
+/** Returns true when the alert was delivered (not suppressed by cooldown). */
+export function deliverPrAlert(event: PrAlertEvent, options: DeliverPrAlertOptions): boolean {
   const now = options.now ?? Date.now();
   if (isDebounced(event.id, now)) {
-    return;
+    return false;
   }
 
   if (shouldDeliverBrowserNotification(options.permission, options.documentVisible)) {
     options.notify(event.title, event.body);
-    return;
+    return true;
   }
 
   options.toast(event.title, event.body);
+  return true;
 }

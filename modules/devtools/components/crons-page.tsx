@@ -171,11 +171,6 @@ export function CronsPage() {
                 phrase.length > 0 && !phraseValid && "border-amber-500/50 focus-visible:ring-amber-500/30"
               )}
             />
-            {isRunning && selectedJob?.id === "cron:pr-local-review" ? (
-              <p className="text-xs text-[var(--app-text)]" role="status">
-                {messages.localReview.cronRunning}
-              </p>
-            ) : null}
             {phrase.length > 0 && !phraseValid ? (
               <p className="text-xs text-amber-300" role="status">
                 A frase ainda não confere com o texto exigido ({phrase.length}/

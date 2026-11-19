@@ -8,6 +8,11 @@ import {
   type CronScheduler
 } from "@/modules/cron-scheduling";
 
+/** Partial env for tests; production code receives the full `process.env`. */
+function env(vars: Record<string, string> = {}): NodeJS.ProcessEnv {
+  return vars as NodeJS.ProcessEnv;
+}
+
 describe("cron-scheduling", () => {
   afterEach(() => {
     resetCronSchedulingForTests();
@@ -17,31 +22,31 @@ describe("cron-scheduling", () => {
   describe("isCronJobDisabled", () => {
     it("retorna true quando a variável de desabilitação do job está em 1", () => {
       const job = getScheduledCronJob("cron:prs-sync");
-      expect(isCronJobDisabled(job, { DISABLE_PR_SYNC_CRON: "1" })).toBe(true);
-      expect(isCronJobDisabled(job, { DISABLE_PR_SYNC_CRON: "0" })).toBe(false);
+      expect(isCronJobDisabled(job, env({ DISABLE_PR_SYNC_CRON: "1" }))).toBe(true);
+      expect(isCronJobDisabled(job, env({ DISABLE_PR_SYNC_CRON: "0" }))).toBe(false);
     });
 
     it("não desliga o briefing do dash com DISABLE_SUMMARY_CRON (só resumos)", () => {
       const resumos = getScheduledCronJob("cron:summaries-daily");
       const briefing = getScheduledCronJob("cron:dashboard-briefing");
-      const env = { DISABLE_SUMMARY_CRON: "1" };
+      const summaryOff = env({ DISABLE_SUMMARY_CRON: "1" });
 
-      expect(isCronJobDisabled(resumos, env)).toBe(true);
-      expect(isCronJobDisabled(briefing, env)).toBe(false);
+      expect(isCronJobDisabled(resumos, summaryOff)).toBe(true);
+      expect(isCronJobDisabled(briefing, summaryOff)).toBe(false);
     });
 
     it("desliga o briefing do dash apenas com DISABLE_DASHBOARD_BRIEFING_CRON", () => {
       const briefing = getScheduledCronJob("cron:dashboard-briefing");
 
-      expect(isCronJobDisabled(briefing, { DISABLE_DASHBOARD_BRIEFING_CRON: "1" })).toBe(true);
-      expect(isCronJobDisabled(briefing, {})).toBe(false);
+      expect(isCronJobDisabled(briefing, env({ DISABLE_DASHBOARD_BRIEFING_CRON: "1" }))).toBe(true);
+      expect(isCronJobDisabled(briefing, env({}))).toBe(false);
     });
 
     it("desliga lembretes de revisão com DISABLE_PR_REVIEW_REMINDER_CRON", () => {
       const reminders = getScheduledCronJob("cron:pr-review-reminders");
 
-      expect(isCronJobDisabled(reminders, { DISABLE_PR_REVIEW_REMINDER_CRON: "1" })).toBe(true);
-      expect(isCronJobDisabled(reminders, {})).toBe(false);
+      expect(isCronJobDisabled(reminders, env({ DISABLE_PR_REVIEW_REMINDER_CRON: "1" }))).toBe(true);
+      expect(isCronJobDisabled(reminders, env({}))).toBe(false);
       expect(reminders.expression).toBe("*/5 * * * *");
     });
   });
@@ -69,7 +74,7 @@ describe("cron-scheduling", () => {
       const scheduler = fakeScheduler();
       const job = sampleJob();
 
-      registerScheduledCrons([job], { scheduler, env: {} });
+      registerScheduledCrons([job], { scheduler, env: env() });
 
       expect(scheduler.calls).toEqual([{ expression: "*/10 * * * *", timezone: undefined }]);
     });
@@ -81,7 +86,7 @@ describe("cron-scheduling", () => {
 
       registerScheduledCrons([job], {
         scheduler,
-        env: { DISABLE_PR_SYNC_CRON: "1" },
+        env: env({ DISABLE_PR_SYNC_CRON: "1" }),
         onDisabled
       });
 
@@ -94,7 +99,7 @@ describe("cron-scheduling", () => {
       const run = vi.fn();
       const job = sampleJob({ runOnStart: true, run });
 
-      registerScheduledCrons([job], { scheduler, env: {} });
+      registerScheduledCrons([job], { scheduler, env: env() });
 
       expect(run).toHaveBeenCalledOnce();
       expect(scheduler.calls).toHaveLength(1);
@@ -112,7 +117,7 @@ describe("cron-scheduling", () => {
 
       registerScheduledCrons([job], {
         scheduler,
-        env: { SUMMARY_CRON_TZ: "Europe/Lisbon" }
+        env: env({ SUMMARY_CRON_TZ: "Europe/Lisbon" })
       });
 
       expect(scheduler.calls[0]?.timezone).toBe("Europe/Lisbon");
@@ -134,7 +139,7 @@ describe("cron-scheduling", () => {
       const { runCronCatchupOnStart } = await import(
         "@/modules/cron-scheduling/lib/run-cron-catchup-on-start"
       );
-      await runCronCatchupOnStart({ DISABLE_SUMMARY_CRON: "1" });
+      await runCronCatchupOnStart(env({ DISABLE_SUMMARY_CRON: "1" }));
 
       expect(catchupSpy).not.toHaveBeenCalled();
       catchupSpy.mockRestore();
@@ -155,7 +160,7 @@ describe("cron-scheduling", () => {
       const { runCronCatchupOnStart } = await import(
         "@/modules/cron-scheduling/lib/run-cron-catchup-on-start"
       );
-      await runCronCatchupOnStart({});
+      await runCronCatchupOnStart(env());
 
       expect(catchupSpy).toHaveBeenCalledOnce();
       catchupSpy.mockRestore();

@@ -10,7 +10,7 @@ describe("system-logger", () => {
     delete process.env.DATABASE_URL;
     delete process.env.FORCE_COLOR;
     process.env.NO_COLOR = "1";
-    process.env.NODE_ENV = "test";
+    vi.stubEnv("NODE_ENV", "test");
   });
 
   afterEach(() => {

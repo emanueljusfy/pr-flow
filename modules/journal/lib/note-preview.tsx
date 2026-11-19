@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { linkifyJiraIssueKeysInMarkdown } from "@/modules/jira-issue-key";
-import { JiraIssueLink } from "@/modules/work-context/components/jira-issue-link";
 import { cn } from "@/lib/utils";
 
 type NotePreviewProps = {
@@ -26,23 +26,14 @@ const previewProseClass = cn(
   "prose-th:text-[var(--app-text)] prose-td:text-[var(--app-text-soft)]"
 );
 
-function issueKeyFromJiraHref(href: string | undefined): string | null {
-  if (!href?.startsWith("/jira")) {
-    return null;
-  }
-  try {
-    const url = new URL(href, "http://local");
-    return url.searchParams.get("issue");
-  } catch {
-    return null;
-  }
-}
-
 const markdownComponents: Components = {
   a: ({ href, children, ...props }) => {
-    const issueKey = issueKeyFromJiraHref(href);
-    if (issueKey) {
-      return <JiraIssueLink issueKey={issueKey}>{children}</JiraIssueLink>;
+    if (href?.startsWith("/jira")) {
+      return (
+        <Link href={href} data-jira-issue-link="">
+          {children}
+        </Link>
+      );
     }
 
     return (

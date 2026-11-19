@@ -13,6 +13,10 @@ export interface MonitoredPrRaw {
   url: string;
   repository: string;
   createdAt: string;
+  /** Branch the PR merges into. Used to detect stacked PRs. */
+  baseRefName?: string;
+  /** Branch the PR comes from. */
+  headRefName?: string;
   authorLogin?: string;
   requestedReviewers: string[];
   reviews: PrReview[];
@@ -37,12 +41,17 @@ export interface MonitoredPr {
   url: string;
   repository: string;
   createdAt: string;
+  /** Optional for caches written before stacked-PR grouping existed. */
+  baseRefName?: string;
+  headRefName?: string;
   avaliou: string[];
   naoAvaliou: string[];
   semReviewersSolicitados: boolean;
   aprovou: string[];
   solicitouAlteracoes: string[];
   pendente: string[];
+  /** Subset of `pendente` whose approval / change request was dismissed (e.g. stale after a push). Optional for caches written before this field. */
+  dismissed?: string[];
   requestedReviewersCount: number;
   statusGeral: "approved" | "changes_requested" | "pending_review" | "no_reviewers";
   readyToMerge?: boolean;
@@ -52,27 +61,7 @@ export interface MonitoredPr {
   slackShare?: PrSlackShareInfo | null;
   /** Agendamento ativo de lembrete de revisão na thread Slack. */
   reviewReminderSchedule?: PrReviewReminderScheduleInfo | null;
-  /** Última revisão local desta PR, quando existir. */
-  localReview?: PrLocalReviewInfo | null;
 }
-
-export type PrLocalReviewFinding = {
-  agent: string;
-  path: string;
-  line?: number;
-  message: string;
-  confidence: number;
-};
-
-export type PrLocalReviewInfo = {
-  status: "running" | "ok" | "error";
-  headSha: string;
-  summary: string | null;
-  findings: PrLocalReviewFinding[];
-  startedAt?: string | null;
-  finishedAt: string | null;
-  error: string | null;
-};
 
 export type PrApiSuccess = {
   status: "ok";
@@ -110,8 +99,6 @@ export interface ReviewerQueuePr {
   url: string;
   repository: string;
   myReviewStatus: MyReviewStatus;
-  /** Última revisão local desta PR, quando existir. */
-  localReview?: PrLocalReviewInfo | null;
 }
 
 /** Minimal review snapshot persisted during sync for daily summaries. */
@@ -160,6 +147,46 @@ export interface PrTimelineEventRecord {
 }
 
 export type PrTimelineEventInsert = Omit<PrTimelineEventRecord, "id">;
+
+/** Live GitHub history for the /prs side panel (not the sync-diff summary timeline). */
+export type PrHistoryEventType =
+  | "opened"
+  | "commented"
+  | "review_submitted"
+  | "commit"
+  | "merged"
+  | "closed"
+  | "reopened";
+
+export interface PrHistoryEvent {
+  id: string;
+  type: PrHistoryEventType;
+  occurredAt: string;
+  actorLogin: string;
+  url: string | null;
+  /** Comment body or commit headline (truncated). */
+  detail: string | null;
+  /** Present when type is review_submitted. */
+  reviewState: string | null;
+}
+
+export type PrHistoryApiSuccess = {
+  status: "ok";
+  data: { events: PrHistoryEvent[] };
+  fetchedAt: string;
+};
+
+export type PrHistoryApiUnauthenticated = {
+  status: "unauthenticated";
+  message: string;
+};
+
+export type PrHistoryApiError = {
+  status: "error";
+  message: string;
+};
+
+export type PrHistoryApiResponse = PrHistoryApiSuccess | PrHistoryApiUnauthenticated | PrHistoryApiError;
 
 export type ReviewerQueueApiSuccess = {
   status: "ok";

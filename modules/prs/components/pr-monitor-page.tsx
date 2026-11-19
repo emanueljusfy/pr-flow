@@ -8,14 +8,23 @@ import { isPrMonitorWithData } from "@/modules/app/lib/sync-data-helpers";
 import { usePendingReviewCount } from "@/modules/notifications/hooks/use-pending-review-count";
 import { summarizePrMonitorChanges } from "@/modules/notifications/lib/pr-alert-events";
 import { PrCard } from "@/modules/prs/components/pr-card";
-import { PrLocalReviewRunningBanner } from "@/modules/prs/components/pr-local-review-block";
+import { PrHistoryPanel } from "@/modules/prs/components/pr-history-panel";
 import { PrInsightsPanel } from "@/modules/prs/components/pr-insights-panel";
 import { PrSearchBar } from "@/modules/prs/components/pr-search-bar";
+import { PrStackGroup } from "@/modules/prs/components/pr-stack-group";
+import { PrViewModeToggle } from "@/modules/prs/components/pr-view-mode-toggle";
 import type { MonitoredPr } from "@/modules/prs/lib/domain";
+import { groupPrsIntoStacks } from "@/modules/prs/lib/core/pr-stacks";
 import { filterPrsBySearch } from "@/modules/prs/lib/pr-search";
 import { buildPrInsights } from "@/modules/prs/lib/pr-metrics";
 import { usePrMonitorSync } from "@/modules/prs/hooks/use-pr-monitor-sync";
 import { loadPrMonitorLastSync } from "@/modules/prs/lib/pr-monitor-cache";
+import {
+  DEFAULT_PR_VIEW_MODE,
+  loadPrViewMode,
+  savePrViewMode,
+  type PrViewMode
+} from "@/modules/prs/lib/pr-view-mode-storage";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -23,16 +32,24 @@ interface Props {
 }
 
 export function PrMonitorPage({ slackConfigured = false }: Props) {
-  const { response, loading, isFetching, refresh, reload } = usePrMonitorSync();
+  const { response, loading, isFetching, refresh } = usePrMonitorSync();
   const pendingReviewCount = usePendingReviewCount();
   const [changeAlert, setChangeAlert] = useState<string[] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<PrViewMode>(DEFAULT_PR_VIEW_MODE);
+  const [selectedPr, setSelectedPr] = useState<MonitoredPr | null>(null);
   const lastOkDataRef = useRef<MonitoredPr[] | null>(null);
 
   useEffect(() => {
     const cached = loadPrMonitorLastSync();
     lastOkDataRef.current = cached?.data ?? null;
+    setViewMode(loadPrViewMode());
   }, []);
+
+  const changeViewMode = (mode: PrViewMode) => {
+    setViewMode(mode);
+    savePrViewMode(mode);
+  };
 
   useEffect(() => {
     if (response?.status !== "ok") {
@@ -51,7 +68,26 @@ export function PrMonitorPage({ slackConfigured = false }: Props) {
   const hasData = isPrMonitorWithData(response);
   const okData = hasData ? response.data : [];
   const filteredPrs = filterPrsBySearch(okData, searchQuery);
-  const runningReview = okData.find((pr) => pr.localReview?.status === "running") ?? null;
+  const prEntries = groupPrsIntoStacks(filteredPrs);
+  const cardVariant = viewMode === "compact" ? "compact" : "card";
+  const selectedStillVisible = selectedPr
+    ? okData.some((pr) => pr.id === selectedPr.id)
+    : false;
+  const historyPr = selectedStillVisible
+    ? (okData.find((pr) => pr.id === selectedPr!.id) ?? selectedPr)
+    : null;
+
+  const renderPr = (pr: MonitoredPr) => (
+    <PrCard
+      key={pr.id}
+      allOpenPrs={okData}
+      onSelect={() => setSelectedPr(pr)}
+      pr={pr}
+      selected={selectedPr?.id === pr.id}
+      slackConfigured={slackConfigured}
+      variant={cardVariant}
+    />
+  );
   const insights = buildPrInsights({
     openPrs: okData,
     pendingReviewCount
@@ -142,60 +178,68 @@ export function PrMonitorPage({ slackConfigured = false }: Props) {
         <section className="list-section">
           <PrInsightsPanel insights={insights} />
 
-          <section className="panel status-row flex flex-wrap items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isFetching}
-              onClick={() => void refresh()}
-              aria-label={isFetching ? "Sincronizando monitor de PRs" : "Atualizar monitor de PRs"}
-            >
-              {isFetching ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : (
-                <RefreshCw className="size-4" aria-hidden />
-              )}
-              {isFetching ? "Sincronizando…" : "Atualizar"}
-            </Button>
-            <PrSearchBar onDebouncedChange={setSearchQuery} />
-          </section>
-
-          {runningReview?.localReview ? (
-            <PrLocalReviewRunningBanner
-              repository={runningReview.repository}
-              prNumber={runningReview.number}
-              startedAt={runningReview.localReview.startedAt}
-            />
-          ) : null}
-
-          <section
-            className={cn(
-              "cards-grid transition-opacity duration-200",
-              isFetching && "pointer-events-none opacity-60"
-            )}
-          >
-            {okData.length === 0 ? (
-              <section className="panel pr-card">
-                <p className="small muted">Nenhuma PR aberta encontrada.</p>
+          <div className="pr-monitor-split">
+            <div className="pr-monitor-split__main min-w-0 space-y-4">
+              <section className="panel status-row flex flex-wrap items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isFetching}
+                  onClick={() => void refresh()}
+                  aria-label={isFetching ? "Sincronizando monitor de PRs" : "Atualizar monitor de PRs"}
+                >
+                  {isFetching ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : (
+                    <RefreshCw className="size-4" aria-hidden />
+                  )}
+                  {isFetching ? "Sincronizando…" : "Atualizar"}
+                </Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  <PrViewModeToggle onChange={changeViewMode} value={viewMode} />
+                  <PrSearchBar onDebouncedChange={setSearchQuery} />
+                </div>
               </section>
-            ) : filteredPrs.length === 0 ? (
-              <section className="panel pr-card">
-                <p className="small muted">Nenhuma PR corresponde a busca.</p>
+
+              <section
+                className={cn(
+                  viewMode === "compact" ? "pr-compact-list" : "cards-grid",
+                  "transition-opacity duration-200",
+                  isFetching && "pointer-events-none opacity-60"
+                )}
+              >
+                {okData.length === 0 ? (
+                  <section className="panel pr-card">
+                    <p className="small muted">Nenhuma PR aberta encontrada.</p>
+                  </section>
+                ) : filteredPrs.length === 0 ? (
+                  <section className="panel pr-card">
+                    <p className="small muted">Nenhuma PR corresponde a busca.</p>
+                  </section>
+                ) : (
+                  prEntries.map((entry) =>
+                    entry.kind === "single" ? (
+                      renderPr(entry.pr)
+                    ) : (
+                      <PrStackGroup
+                        key={`stack-${entry.id}`}
+                        baseRefName={entry.baseRefName}
+                        nodes={entry.nodes}
+                        renderPr={renderPr}
+                        repository={entry.repository}
+                        variant={cardVariant}
+                      />
+                    )
+                  )
+                )}
               </section>
-            ) : (
-              filteredPrs.map((pr) => (
-                <PrCard
-                  key={pr.id}
-                  allOpenPrs={okData}
-                  onReviewStarted={() => void reload()}
-                  pr={pr}
-                  reviewInProgress={runningReview !== null}
-                  slackConfigured={slackConfigured}
-                />
-              ))
-            )}
-          </section>
+            </div>
+
+            <div className="pr-monitor-split__history">
+              <PrHistoryPanel onClose={() => setSelectedPr(null)} pr={historyPr} />
+            </div>
+          </div>
         </section>
       ) : null}
     </div>

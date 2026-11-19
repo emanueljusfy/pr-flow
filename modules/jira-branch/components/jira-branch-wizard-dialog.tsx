@@ -156,26 +156,6 @@ export function JiraBranchWizardDialog({
         }
       });
 
-    fetch(`/api/work-context/${encodeURIComponent(issueKey)}`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) {
-          return null;
-        }
-        return response.json() as Promise<{
-          pullRequests?: Array<{ repository: string }>;
-        }>;
-      })
-      .then((context) => {
-        if (!context?.pullRequests?.length) {
-          return;
-        }
-        const fromPrs = [...new Set(context.pullRequests.map((pr) => pr.repository))];
-        if (fromPrs.length > 0) {
-          setSelectedRepos(fromPrs);
-        }
-      })
-      .catch(() => undefined);
-
     return () => controller.abort();
   }, [open, issueKey]);
 

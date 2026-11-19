@@ -1,8 +1,6 @@
 "use client";
 
 import { ChevronRight, ExternalLink, GitPullRequest } from "lucide-react";
-import { PrLocalReviewBlock } from "@/modules/prs/components/pr-local-review-block";
-import { PrLocalReviewTrigger } from "@/modules/prs/components/pr-local-review-trigger";
 import type { ReviewerQueuePr } from "@/modules/prs/lib/domain";
 import { myReviewStatusLabel } from "@/modules/prs/lib/core/my-review-status";
 import {
@@ -13,8 +11,6 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   pr: ReviewerQueuePr;
-  reviewInProgress?: boolean;
-  onStarted?: () => void;
 }
 
 function formatRepository(repository: string): string {
@@ -25,7 +21,7 @@ function formatRepository(repository: string): string {
   return repository.slice(slashIndex + 1);
 }
 
-export function PrReviewerQueueItem({ pr, reviewInProgress = false, onStarted }: Props) {
+export function PrReviewerQueueItem({ pr }: Props) {
   const statusClass = reviewQueueCardClass(pr.myReviewStatus);
 
   return (
@@ -69,15 +65,6 @@ export function PrReviewerQueueItem({ pr, reviewInProgress = false, onStarted }:
             <ExternalLink className="size-4" aria-hidden />
           </a>
         </div>
-        <PrLocalReviewBlock review={pr.localReview} repository={pr.repository} prNumber={pr.number} />
-        <PrLocalReviewTrigger
-          className="review-queue-card__actions"
-          prNumber={pr.number}
-          repository={pr.repository}
-          review={pr.localReview}
-          reviewInProgress={reviewInProgress}
-          onStarted={onStarted}
-        />
       </article>
     </li>
   );

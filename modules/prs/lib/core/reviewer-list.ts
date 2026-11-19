@@ -1,6 +1,6 @@
 import type { MonitoredPr } from "@/modules/prs/lib/domain";
 
-export type ReviewerDisplayStatus = "approved" | "changes_requested" | "commented" | "pending";
+export type ReviewerDisplayStatus = "approved" | "changes_requested" | "dismissed" | "commented" | "pending";
 
 export type ReviewerListEntry = {
   login: string;
@@ -9,12 +9,12 @@ export type ReviewerListEntry = {
 
 type ReviewerListInput = Pick<
   MonitoredPr,
-  "aprovou" | "solicitouAlteracoes" | "pendente" | "naoAvaliou" | "avaliou"
+  "aprovou" | "solicitouAlteracoes" | "pendente" | "naoAvaliou" | "avaliou" | "dismissed"
 >;
 
 /**
  * Single GitHub-style reviewer list: one row per person with their latest decision.
- * Blocking states first (changes requested, then pending), then decisions.
+ * Blocking states first (changes requested, lost approval, then pending), then decisions.
  */
 export function buildReviewerList(pr: ReviewerListInput): ReviewerListEntry[] {
   const entries: ReviewerListEntry[] = [];
@@ -30,6 +30,9 @@ export function buildReviewerList(pr: ReviewerListInput): ReviewerListEntry[] {
 
   for (const login of pr.solicitouAlteracoes ?? []) {
     push(login, "changes_requested");
+  }
+  for (const login of pr.dismissed ?? []) {
+    push(login, "dismissed");
   }
   for (const login of pr.pendente ?? pr.naoAvaliou ?? []) {
     push(login, "pending");

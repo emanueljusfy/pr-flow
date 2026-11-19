@@ -11,18 +11,34 @@ import {
   loadPrReviewerQueueLastSync,
   savePrReviewerQueueLastSync
 } from "@/modules/prs/lib/pr-reviewer-queue-cache";
-import { loadNotificationPreferences } from "@/modules/notifications/lib/notification-preferences";
+import {
+  loadNotificationPreferences,
+  NOTIFICATION_PREFERENCES_UPDATED_EVENT,
+  resolveNotificationPollIntervalMs,
+  shouldSyncPrsFromGithub
+} from "@/modules/notifications/lib/notification-preferences";
 import {
   detectPrMonitorAlerts,
   detectReviewerQueueAlerts,
   type PrAlertEvent
 } from "@/modules/notifications/lib/pr-alert-events";
 
-const POLL_INTERVAL_MS = 2 * 60 * 1000;
-
 async function fetchMonitor(): Promise<PrApiResponse | null> {
   try {
     const result = await fetch("/api/prs", { method: "GET", cache: "no-store" });
+    const body = (await result.json()) as PrApiResponse;
+    if (result.ok && body.status === "ok") {
+      savePrMonitorLastSync(body);
+    }
+    return body;
+  } catch {
+    return null;
+  }
+}
+
+async function syncMonitorFromGithub(): Promise<PrApiResponse | null> {
+  try {
+    const result = await fetch("/api/prs", { method: "POST", cache: "no-store" });
     const body = (await result.json()) as PrApiResponse;
     if (result.ok && body.status === "ok") {
       savePrMonitorLastSync(body);
@@ -76,7 +92,17 @@ export function usePrNotificationSync(deliverAlert: (event: PrAlertEvent) => voi
   }, []);
 
   const syncAll = useCallback(async () => {
-    await Promise.all([fetchMonitor(), fetchReviewerQueue()]);
+    const preferences = loadNotificationPreferences();
+    const now = new Date();
+    const documentVisible =
+      typeof document !== "undefined" && document.visibilityState === "visible";
+
+    if (shouldSyncPrsFromGithub(preferences, now, documentVisible)) {
+      await Promise.all([syncMonitorFromGithub(), fetchReviewerQueue()]);
+    } else {
+      await Promise.all([fetchMonitor(), fetchReviewerQueue()]);
+    }
+
     evaluateAlerts();
   }, [evaluateAlerts]);
 
@@ -86,20 +112,56 @@ export function usePrNotificationSync(deliverAlert: (event: PrAlertEvent) => voi
     monitorRef.current = cachedMonitor?.status === "ok" ? cachedMonitor.data : null;
     queueRef.current = cachedQueue?.status === "ok" ? cachedQueue.data : null;
 
-    void syncAll();
+    let cancelled = false;
+    let timeoutId: number | undefined;
+
+    const clearScheduled = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
+    const scheduleNext = () => {
+      clearScheduled();
+      if (cancelled) {
+        return;
+      }
+
+      const preferences = loadNotificationPreferences();
+      const delayMs = resolveNotificationPollIntervalMs(preferences, new Date());
+      timeoutId = window.setTimeout(() => {
+        void (async () => {
+          await syncAll();
+          if (!cancelled) {
+            scheduleNext();
+          }
+        })();
+      }, delayMs);
+    };
+
+    void syncAll().then(() => {
+      if (!cancelled) {
+        scheduleNext();
+      }
+    });
 
     const onSyncUpdated = () => {
       evaluateAlerts();
     };
 
-    const intervalId = window.setInterval(() => {
-      void syncAll();
-    }, POLL_INTERVAL_MS);
+    const onPreferencesUpdated = () => {
+      scheduleNext();
+    };
 
     window.addEventListener(PR_MONITOR_SYNC_UPDATED_EVENT, onSyncUpdated);
+    window.addEventListener(NOTIFICATION_PREFERENCES_UPDATED_EVENT, onPreferencesUpdated);
+
     return () => {
-      window.clearInterval(intervalId);
+      cancelled = true;
+      clearScheduled();
       window.removeEventListener(PR_MONITOR_SYNC_UPDATED_EVENT, onSyncUpdated);
+      window.removeEventListener(NOTIFICATION_PREFERENCES_UPDATED_EVENT, onPreferencesUpdated);
     };
   }, [evaluateAlerts, syncAll]);
 }

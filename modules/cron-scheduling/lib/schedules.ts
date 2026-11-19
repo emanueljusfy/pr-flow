@@ -9,11 +9,6 @@ export const CRON_JOB_SCHEDULE_SPECS: readonly CronJobScheduleSpec[] = [
     runOnStart: true
   },
   {
-    id: "cron:pr-local-review",
-    expression: "*/15 * * * *",
-    disableEnvVar: "DISABLE_PR_LOCAL_REVIEW_CRON"
-  },
-  {
     id: "cron:pr-review-reminders",
     expression: "*/5 * * * *",
     disableEnvVar: "DISABLE_PR_REVIEW_REMINDER_CRON"

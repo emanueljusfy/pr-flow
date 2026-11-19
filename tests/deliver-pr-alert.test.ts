@@ -22,13 +22,14 @@ describe("deliverPrAlert", () => {
     const notify = vi.fn();
     const toast = vi.fn();
 
-    deliverPrAlert(sampleEvent, {
+    const delivered = deliverPrAlert(sampleEvent, {
       permission: "granted",
       documentVisible: false,
       notify,
       toast
     });
 
+    expect(delivered).toBe(true);
     expect(notify).toHaveBeenCalledWith("PR #1: Aprovada", "Revisão pendente → Aprovada");
     expect(toast).not.toHaveBeenCalled();
   });
@@ -37,12 +38,14 @@ describe("deliverPrAlert", () => {
     const notify = vi.fn();
     const toast = vi.fn();
 
-    deliverPrAlert(sampleEvent, {
-      permission: "denied",
-      documentVisible: false,
-      notify,
-      toast
-    });
+    expect(
+      deliverPrAlert(sampleEvent, {
+        permission: "denied",
+        documentVisible: false,
+        notify,
+        toast
+      })
+    ).toBe(true);
 
     expect(notify).not.toHaveBeenCalled();
     expect(toast).toHaveBeenCalledWith("PR #1: Aprovada", "Revisão pendente → Aprovada");
@@ -72,8 +75,8 @@ describe("deliverPrAlert", () => {
       toast
     };
 
-    deliverPrAlert(sampleEvent, options);
-    deliverPrAlert(sampleEvent, options);
+    expect(deliverPrAlert(sampleEvent, options)).toBe(true);
+    expect(deliverPrAlert(sampleEvent, options)).toBe(false);
 
     expect(toast).toHaveBeenCalledOnce();
   });

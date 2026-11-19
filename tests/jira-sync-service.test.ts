@@ -39,12 +39,12 @@ describe("syncJiraCache", () => {
       cachedAt: null
     });
 
-    vi.spyOn(jiraService, "fetchAssignedJiraIssues").mockImplementation(async ({ sprintFilter }) => ({
+    vi.spyOn(jiraService, "fetchAssignedJiraIssues").mockImplementation(async (options) => ({
       email: "dev@example.com",
       displayName: "Dev",
-      sprintFilter: String(sprintFilter),
+      sprintFilter: String(options?.sprintFilter),
       issues:
-        sprintFilter === "all"
+        options?.sprintFilter === "all"
           ? [
               {
                 key: "JOR-1",

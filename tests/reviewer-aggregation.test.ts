@@ -182,4 +182,35 @@ describe("aggregateReviewerStatus", () => {
     expect(result.readyToMerge).toBe(false);
     expect(result.statusGeral).toBe("approved");
   });
+
+  it("treats a reviewer whose approval was dismissed as pending, even after later comments", () => {
+    const result = aggregateReviewerStatus({
+      ...basePr,
+      requestedReviewers: ["jairo"],
+      reviews: [
+        { login: "ana", state: "APPROVED", submittedAt: "2026-05-28T10:00:00Z" },
+        { login: "felipe", state: "DISMISSED", submittedAt: "2026-05-28T10:05:00Z" },
+        { login: "felipe", state: "COMMENTED", submittedAt: "2026-05-28T12:00:00Z" }
+      ]
+    });
+
+    expect(result.dismissed).toEqual(["felipe"]);
+    expect(result.pendente).toEqual(expect.arrayContaining(["jairo", "felipe"]));
+    expect(result.aprovou).toEqual(["ana"]);
+    expect(result.readyToMerge).toBe(false);
+  });
+
+  it("does not flag a reviewer who approved again after the dismissal", () => {
+    const result = aggregateReviewerStatus({
+      ...basePr,
+      requestedReviewers: [],
+      reviews: [
+        { login: "felipe", state: "DISMISSED", submittedAt: "2026-05-28T10:00:00Z" },
+        { login: "felipe", state: "APPROVED", submittedAt: "2026-05-28T11:00:00Z" }
+      ]
+    });
+
+    expect(result.dismissed).toEqual([]);
+    expect(result.aprovou).toEqual(["felipe"]);
+  });
 });

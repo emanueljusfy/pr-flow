@@ -26,6 +26,13 @@ vi.mock("@/modules/prs/lib/pr-timeline-repository", () => ({
   insertPrTimelineEvents: (...args: unknown[]) => insertPrTimelineEvents(...args)
 }));
 
+const reactToMergedPrs = vi.fn().mockResolvedValue([]);
+
+vi.mock("@/modules/prs/lib/pr-merge-reaction-service", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/modules/prs/lib/pr-merge-reaction-service")>()),
+  reactToMergedPrs: (...args: unknown[]) => reactToMergedPrs(...args)
+}));
+
 vi.mock("@/modules/prs/lib/open-pr/open-pr-branch-base-sync", () => ({
   syncOpenPrBranchBaseRedirects: vi.fn().mockResolvedValue({
     status: "ok",
@@ -79,6 +86,25 @@ describe("syncPrCache", () => {
       githubLogin: "rigon"
     });
     expect(insertPrTimelineEvents).toHaveBeenCalled();
+  });
+
+  it("reacts in Slack for PRs that left the open list", async () => {
+    const gone = { id: "a", number: 1, title: "FT-1 a", statusGeral: "x", url: "https://github.com/acme/a/pull/1", repository: "acme/a" };
+    const kept = { id: "b", number: 2, title: "FT-2 b", statusGeral: "x", url: "https://github.com/acme/a/pull/2", repository: "acme/a" };
+    loadPrMonitorCache.mockResolvedValueOnce({ data: [gone, kept] });
+    vi.mocked(getPrSyncData).mockResolvedValue({
+      status: "ok",
+      githubLogin: "rigon",
+      fetchedAt: "2026-05-28T12:00:00Z",
+      monitor: [kept],
+      reviewerQueue: [],
+      reviewContext: []
+    } as never);
+    vi.mocked(getMonitoredRepositorySlugsForSync).mockResolvedValue(["acme/a"]);
+
+    await syncPrCache();
+
+    expect(reactToMergedPrs).toHaveBeenCalledWith([gone]);
   });
 
   it("registra meta de erro quando gh falha", async () => {

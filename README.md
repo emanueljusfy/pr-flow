@@ -55,7 +55,6 @@ O <code>/dashboard</code> abre o dia já montado.
 - Universo de reviewers = `requested_reviewers`; “avaliou” = qualquer review (`COMMENTED`, `APPROVED`, `CHANGES_REQUESTED`); o último review da pessoa vence
 - PR sem reviewers continua visível, com indicador explícito
 - Sync por cron e refresh manual
-- **Revisão local:** a cada 15 minutos, uma PR com commit novo é revisada no clone local pelo Claude Code (Haiku e subagentes). O resultado aparece no card. A IA não aprova nem rejeita no GitHub
 - **Abrir PR:** descobre branches suas, sugere a base, monta título e corpo (IA opcional) e cria via `gh`
 
 ### Jira, journal e resumos
@@ -68,7 +67,7 @@ O <code>/dashboard</code> abre o dia já montado.
 
 ## Startup rápido
 
-Pré-requisitos: **Node.js 22** e **GitHub CLI** (`gh`). O banco é o SQLite embutido do Node (`NODE_OPTIONS=--experimental-sqlite`, já ligado nos scripts npm). A revisão local também precisa do **Claude Code** no PATH, autenticado pela assinatura (`claude` ou `claude setup-token`). Não defina `ANTHROPIC_API_KEY` nesse processo.
+Pré-requisitos: **Node.js 22** e **GitHub CLI** (`gh`). O banco é o SQLite embutido do Node (`NODE_OPTIONS=--experimental-sqlite`, já ligado nos scripts npm).
 
 ```bash
 npm install
@@ -91,7 +90,7 @@ Produção local: `npm run build` e depois `npm run start`. Esse comando aponta 
 
 ## Docker
 
-O Compose sobe só o app, com o SQLite em `./data`. A revisão local fica desligada no container (`DISABLE_PR_LOCAL_REVIEW_CRON=1`), porque o Claude Code está no host. Ela roda com `npm run dev` ou `npm run start`.
+O Compose sobe só o app, com o SQLite em `./data`.
 
 Pré-requisitos: **Docker** e **Docker Compose**. Token GitHub: [Como obter o GH_TOKEN](#como-obter-o-gh_token).
 
@@ -177,7 +176,6 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | `local-docker` | Portainer / stack Jusfy |
 | `observability` | System logs (stdout) |
 | `slack` | Envio ao canal |
-| `work-context` | Diálogo de contexto de trabalho |
 | `messages` | Copy pt-BR |
 | `db` | Drizzle / SQLite |
 | `notifications` | Toasts |
@@ -200,7 +198,6 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | Job | Frequência | Desligar com |
 |-----|------------|--------------|
 | Sync de PRs | a cada 10 min | `DISABLE_PR_SYNC_CRON=1` |
-| Revisão local de PRs | a cada 15 min, uma PR por vez | `DISABLE_PR_LOCAL_REVIEW_CRON=1` |
 | Sync Jira | a cada 10 min | `DISABLE_JIRA_SYNC_CRON=1` |
 | Briefing do dashboard | horária | `DISABLE_DASHBOARD_BRIEFING_CRON=1` |
 | Resumos diário/semanal | meia-noite | `DISABLE_SUMMARY_CRON=1` |
@@ -214,8 +211,6 @@ Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 | `GH_TOKEN` | Sim (PRs) | Token GitHub — ver [abaixo](#como-obter-o-gh_token) |
 | `MONITORED_REPOSITORIES` | Sim (PRs) | `owner/repo` separados por vírgula (seed inicial) |
 | `DATABASE_URL` | Sim | SQLite. Padrão `file:./data/pr-flow.sqlite` |
-| `CLAUDE_CODE_OAUTH_TOKEN` | Não | Token da assinatura do Claude Code (`claude setup-token`). Sem isso, vale o login já feito no host |
-| `PR_REVIEW_MODEL` | Não | Modelo da revisão local. Padrão `haiku` |
 | `GEMINI_API_KEY` | Sim (IA) | [Google AI Studio](https://aistudio.google.com/apikey) |
 | `GEMINI_MODEL` | Não | Padrão `gemini-2.5-flash` |
 | `GEMINI_MODEL_FALLBACK` | Não | Modelos reserva (vírgula) se 503 |
@@ -223,7 +218,7 @@ Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 | `JIRA_SITE_URL` | Não | Padrão `https://jusfy.atlassian.net` |
 | `PR_REVIEW_REMINDER_MESSAGE` | Não | Texto do lembrete na thread do Slack (sino em `/prs`). Use `{reviewers}` para os pendentes |
 | `SLACK_JUSTRACKER_USERGROUP_ID` | Não | ID do user group `@justracker` se a mensagem custom ainda marcar o time |
-| `SLACK_BOT_OAUTH_TOKEN` | Não | Bot com escopo `chat:write` |
+| `SLACK_BOT_OAUTH_TOKEN` | Não | Bot com escopo `chat:write`; `find_pr_in_slack` também precisa de `channels:read` e `channels:history` (`groups:*` se o canal for privado); a reação :rocket: em PR mergeada precisa de `reactions:write` |
 | `SLACK_PR_CHANNEL` | Não | Padrão `squad-jornada-pr` |
 | `GOOGLE_CALENDAR_ICAL_URL` | Não | Feed iCal secreto (não commitar) |
 | `SUMMARY_CAREER_LEVEL` | Não | `junior` \| `pleno` \| `senior` |
@@ -241,13 +236,14 @@ O app expõe um servidor MCP (Streamable HTTP, stateless) em `/api/mcp`, com as 
 | Ferramenta | O que faz |
 |------------|-----------|
 | `list_my_prs` | Minhas PRs abertas (filtros: repositório, status, só com revisores pendentes) |
-| `get_pr` | Detalhe de uma PR pela URL, com a última revisão local |
+| `get_pr` | Detalhe de uma PR pela URL |
 | `list_review_queue` | PRs em que sou revisor |
 | `sync_prs` | Força a sincronização com o GitHub |
 | `share_pr_to_slack` | Envia a(s) PR(s) ao canal do Slack (título precisa da chave Jira) |
 | `send_pr_review_reminder` | Lembrete na thread do Slack para os revisores pendentes; opcionalmente recorrente |
+| `send_review_reminder_digest` | Uma mensagem só no canal listando várias PRs e os pendentes de cada uma (`dryRun` para pré-visualizar) |
+| `find_pr_in_slack` | Procura o link da PR no histórico do canal, inclusive posts feitos à mão; `recordAsShare` adota a thread para os lembretes |
 | `cancel_pr_review_reminder` | Cancela o lembrete recorrente |
-| `start_local_review` | Inicia a revisão local (Claude Code) de uma PR |
 
 Registrar no Claude Code (com o app rodando):
 

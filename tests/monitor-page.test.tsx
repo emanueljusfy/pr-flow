@@ -1,8 +1,9 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PrMonitorPage } from "@/modules/prs/components/pr-monitor-page";
 import type { PrApiResponse } from "@/modules/prs/lib/domain";
 import { clearPrMonitorLastSync, savePrMonitorLastSync } from "@/modules/prs/lib/pr-monitor-cache";
+import { PR_VIEW_MODE_STORAGE_KEY } from "@/modules/prs/lib/pr-view-mode-storage";
 import { renderWithProviders } from "@/tests/render-with-providers";
 
 vi.mock("@/modules/prs/hooks/use-weather-forecast", () => ({
@@ -46,6 +47,7 @@ describe("PrMonitorPage", () => {
           aprovou: [],
           solicitouAlteracoes: [],
           pendente: ["ana"],
+          requestedReviewersCount: 1,
           statusGeral: "pending_review"
         }
       ]
@@ -97,6 +99,7 @@ describe("PrMonitorPage", () => {
             aprovou: [],
             solicitouAlteracoes: [],
             pendente: ["ana"],
+            requestedReviewersCount: 1,
             statusGeral: "pending_review"
           }
         ]
@@ -130,6 +133,7 @@ describe("PrMonitorPage", () => {
           aprovou: [],
           solicitouAlteracoes: [],
           pendente: ["ana"],
+          requestedReviewersCount: 1,
           statusGeral: "pending_review"
         }
       ]
@@ -174,6 +178,7 @@ describe("PrMonitorPage", () => {
           aprovou: [],
           solicitouAlteracoes: [],
           pendente: ["ana"],
+          requestedReviewersCount: 1,
           statusGeral: "pending_review"
         }
       ]
@@ -197,6 +202,7 @@ describe("PrMonitorPage", () => {
           aprovou: ["ana"],
           solicitouAlteracoes: [],
           pendente: [],
+          requestedReviewersCount: 1,
           statusGeral: "approved"
         }
       ]
@@ -266,5 +272,81 @@ describe("PrMonitorPage", () => {
       },
       { timeout: 1000 }
     );
+  });
+
+  it("alterna para a visao compacta e lembra a escolha", async () => {
+    window.localStorage.removeItem(PR_VIEW_MODE_STORAGE_KEY);
+    mockFetchSequence({
+      status: "ok",
+      fetchedAt: "2026-05-28T12:00:00Z",
+      githubLogin: "rigon",
+      data: [
+        {
+          id: "PR_1",
+          number: 1,
+          title: "feat pagamentos",
+          url: "https://github.com/acme/a/pull/1",
+          repository: "acme/a",
+          createdAt: "2026-05-28T10:00:00Z",
+          avaliou: [],
+          naoAvaliou: ["ana"],
+          semReviewersSolicitados: false,
+          aprovou: [],
+          solicitouAlteracoes: [],
+          pendente: ["ana"],
+          requestedReviewersCount: 1,
+          statusGeral: "pending_review"
+        }
+      ]
+    });
+
+    const { container } = renderWithProviders(<PrMonitorPage />);
+    await screen.findByText("feat pagamentos");
+    expect(container.querySelector(".cards-grid")).toBeInTheDocument();
+
+    const compactButton = screen.getByRole("button", { name: "Exibir PRs em lista compacta" });
+    fireEvent.click(compactButton);
+
+    expect(compactButton).toHaveAttribute("aria-pressed", "true");
+    expect(container.querySelector(".pr-compact-list")).toBeInTheDocument();
+    expect(container.querySelector(".pr-card--compact")).toBeInTheDocument();
+    expect(window.localStorage.getItem(PR_VIEW_MODE_STORAGE_KEY)).toBe("compact");
+    window.localStorage.removeItem(PR_VIEW_MODE_STORAGE_KEY);
+  });
+
+  it("agrupa PRs empilhadas sobre a branch de outra PR", async () => {
+    const base = {
+      url: "https://github.com/acme/a/pull/1",
+      repository: "acme/a",
+      createdAt: "2026-05-28T10:00:00Z",
+      avaliou: [],
+      naoAvaliou: [],
+      semReviewersSolicitados: true,
+      aprovou: [],
+      solicitouAlteracoes: [],
+      pendente: [],
+      requestedReviewersCount: 0,
+      statusGeral: "no_reviewers" as const
+    };
+    mockFetchSequence({
+      status: "ok",
+      fetchedAt: "2026-05-28T12:00:00Z",
+      githubLogin: "rigon",
+      data: [
+        { ...base, id: "PR_2", number: 2, title: "parte 2 checkout", headRefName: "feat-b", baseRefName: "feat-a" },
+        { ...base, id: "PR_3", number: 3, title: "fix isolado", headRefName: "fix", baseRefName: "main" },
+        { ...base, id: "PR_1", number: 1, title: "parte 1 checkout", headRefName: "feat-a", baseRefName: "main" }
+      ]
+    });
+
+    renderWithProviders(<PrMonitorPage />);
+    const stack = await screen.findByRole("region", { name: "Pilha de 2 PRs sobre main" });
+
+    expect(within(stack).getByText("parte 1 checkout")).toBeInTheDocument();
+    expect(within(stack).getByText("parte 2 checkout")).toBeInTheDocument();
+    expect(within(stack).getByText("Base da pilha")).toBeInTheDocument();
+    expect(within(stack).getByText("Sobre #1")).toBeInTheDocument();
+    expect(within(stack).queryByText("fix isolado")).not.toBeInTheDocument();
+    expect(screen.getByText("fix isolado")).toBeInTheDocument();
   });
 });

@@ -151,37 +151,3 @@ export const openPrBranchBases = sqliteTable(
 
 export type OpenPrBranchBaseRow = typeof openPrBranchBases.$inferSelect;
 export type OpenPrBranchBaseInsert = typeof openPrBranchBases.$inferInsert;
-
-/** Revisão local (Claude Code) de uma PR num SHA. Não aprova nem rejeita no GitHub. */
-export const prLocalReviews = sqliteTable(
-  "pr_local_reviews",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    repository: text("repository").notNull(),
-    prNumber: integer("pr_number").notNull(),
-    prId: text("pr_id").notNull(),
-    headSha: text("head_sha").notNull(),
-    baseRef: text("base_ref").notNull(),
-    status: text("status").notNull(),
-    model: text("model").notNull(),
-    summary: text("summary"),
-    report: text("report"),
-    usage: text("usage"),
-    error: text("error"),
-    startedAt: integer("started_at", { mode: "timestamp_ms" }),
-    finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .notNull()
-      .$defaultFn(() => new Date()),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .notNull()
-      .$defaultFn(() => new Date())
-  },
-  (table) => [
-    uniqueIndex("pr_local_reviews_repo_pr_sha_unique").on(table.repository, table.prNumber, table.headSha)
-  ]
-);
-
-export type PrLocalReviewRow = typeof prLocalReviews.$inferSelect;

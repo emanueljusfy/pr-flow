@@ -30,4 +30,21 @@ describe("buildReviewerList", () => {
       })
     ).toEqual([{ login: "ana", status: "changes_requested" }]);
   });
+
+  it("shows dismissed reviewers as lost approval instead of plain pending", () => {
+    expect(
+      buildReviewerList({
+        solicitouAlteracoes: [],
+        pendente: ["jairo", "felipe"],
+        dismissed: ["felipe"],
+        aprovou: ["ana"],
+        avaliou: ["ana"],
+        naoAvaliou: ["jairo", "felipe"]
+      })
+    ).toEqual([
+      { login: "felipe", status: "dismissed" },
+      { login: "jairo", status: "pending" },
+      { login: "ana", status: "approved" }
+    ]);
+  });
 });

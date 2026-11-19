@@ -24,6 +24,7 @@ const sampleOk: PrApiSuccess = {
       aprovou: [],
       solicitouAlteracoes: [],
       pendente: ["ana"],
+      requestedReviewersCount: 1,
       statusGeral: "pending_review"
     }
   ]

@@ -7,7 +7,7 @@ import {
   loadPrReviewerQueueCacheAllowStale
 } from "@/modules/prs/lib/pr-cache-repository";
 import type { PrApiResponse, ReviewerQueueApiResponse } from "@/modules/prs/lib/domain";
-import { attachLocalReviews, enrichPrApiResponse } from "@/modules/prs/lib/pr-slack-share-enrichment";
+import { enrichPrApiResponse } from "@/modules/prs/lib/pr-slack-share-enrichment";
 
 function syncFailureMessage(
   status: "error" | "unauthenticated" | undefined,
@@ -85,7 +85,7 @@ export async function getReviewerQueueFromCache(): Promise<ReviewerQueueApiRespo
 
     return {
       status: "ok",
-      data: await attachLocalReviews(cached.data),
+      data: cached.data,
       fetchedAt: cached.fetchedAt,
       githubLogin: cached.githubLogin
     };
@@ -95,7 +95,7 @@ export async function getReviewerQueueFromCache(): Promise<ReviewerQueueApiRespo
   if (stale) {
     return {
       status: "stale",
-      data: await attachLocalReviews(stale.data),
+      data: stale.data,
       fetchedAt: stale.fetchedAt,
       githubLogin: stale.githubLogin,
       message: syncFailureMessage(

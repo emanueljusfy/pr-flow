@@ -9,6 +9,7 @@ import {
 } from "@/modules/prs/lib/pr-cache-repository";
 import { syncOpenPrBranchBaseRedirects } from "@/modules/prs/lib/open-pr/open-pr-branch-base-sync";
 import { detectPrTimelineEvents } from "@/modules/prs/lib/pr-timeline-detect";
+import { findPrsThatLeftMonitor, reactToMergedPrs } from "@/modules/prs/lib/pr-merge-reaction-service";
 import { insertPrTimelineEvents } from "@/modules/prs/lib/pr-timeline-repository";
 import { getMonitoredRepositorySlugsForSync } from "@/modules/prs/lib/monitored-repositories-service";
 import { getPrSyncData, toMonitorApiResponse } from "@/modules/prs/lib/pr-sync-data-service";
@@ -66,6 +67,20 @@ export async function syncPrCache(): Promise<PrSyncResult> {
       reviewContext: result.reviewContext,
       githubLogin: result.githubLogin
     });
+
+    const leftMonitor = findPrsThatLeftMonitor(previousMonitor?.data ?? null, result.monitor);
+    if (leftMonitor.length > 0) {
+      // Slack + gh calls per PR; keep them off the sync response.
+      void reactToMergedPrs(leftMonitor).catch((error: unknown) => {
+        writeSystemLogFireAndForget({
+          level: "warn",
+          source: PRS_SYNC_LOG_SOURCE,
+          message: "Falha ao reagir às PRs mergeadas no Slack.",
+          details: { error: error instanceof Error ? error.message : String(error) }
+        });
+      });
+    }
+
     const response = toMonitorApiResponse(result);
     return { status: "ok", prCount: result.monitor.length, response };
   }

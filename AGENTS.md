@@ -48,7 +48,7 @@ npm test
 npm run build
 ```
 
-Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN`, `GOOGLE_CALENDAR_ICAL_URL` (feed iCal secreto) e a revisão local (`CLAUDE_CODE_OAUTH_TOKEN`, modelo `haiku`). Repositórios GitHub monitorados: cadastro em **Devtools → Repositórios** (tabela `monitored_repositories`); na primeira execução importa `MONITORED_REPOSITORIES` do `.env` se o banco estiver vazio. Crons: `modules/cron-scheduling/` (`startAllCrons` em `instrumentation.ts`). Jira sync 10 min (`DISABLE_JIRA_SYNC_CRON=1`). Revisão local de PRs a cada 15 min, uma por vez (`DISABLE_PR_LOCAL_REVIEW_CRON=1`). Briefing horário (`DISABLE_DASHBOARD_BRIEFING_CRON=1`). Resumos meia-noite (`DISABLE_SUMMARY_CRON=1`); no boot, `runSummaryCatchup` consulta `summaries` e gera dias/semana pendentes (até 14 dias) se o app estava offline à meia-noite.
+Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN` e `GOOGLE_CALENDAR_ICAL_URL` (feed iCal secreto). Repositórios GitHub monitorados: cadastro em **Devtools → Repositórios** (tabela `monitored_repositories`); na primeira execução importa `MONITORED_REPOSITORIES` do `.env` se o banco estiver vazio. Crons: `modules/cron-scheduling/` (`startAllCrons` em `instrumentation.ts`). Jira sync 10 min (`DISABLE_JIRA_SYNC_CRON=1`). Briefing horário (`DISABLE_DASHBOARD_BRIEFING_CRON=1`). Resumos meia-noite (`DISABLE_SUMMARY_CRON=1`); no boot, `runSummaryCatchup` consulta `summaries` e gera dias/semana pendentes (até 14 dias) se o app estava offline à meia-noite.
 
 ## Convenções de código
 

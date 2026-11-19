@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { deliverPrAlert } from "@/modules/notifications/lib/deliver-pr-alert";
+import { pushNotificationInboxItem } from "@/modules/notifications/lib/notification-inbox";
+import { loadNotificationPreferences } from "@/modules/notifications/lib/notification-preferences";
 import type { PrAlertEvent } from "@/modules/notifications/lib/pr-alert-events";
+import { playNotificationSound } from "@/modules/notifications/lib/play-notification-sound";
 
 function readNotificationPermission(): NotificationPermission {
   if (typeof window === "undefined" || typeof Notification === "undefined") {
@@ -41,7 +44,7 @@ export function useAppNotifications() {
 
   const deliverAlert = useCallback(
     (event: PrAlertEvent) => {
-      deliverPrAlert(event, {
+      const delivered = deliverPrAlert(event, {
         permission,
         documentVisible,
         notify: (title, body) => {
@@ -51,6 +54,20 @@ export function useAppNotifications() {
           toast(title, { description: body });
         }
       });
+
+      if (!delivered) {
+        return;
+      }
+
+      pushNotificationInboxItem({
+        id: event.id,
+        title: event.title,
+        body: event.body
+      });
+
+      if (loadNotificationPreferences().soundEnabled) {
+        playNotificationSound();
+      }
     },
     [documentVisible, permission]
   );

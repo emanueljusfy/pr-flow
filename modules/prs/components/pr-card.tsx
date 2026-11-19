@@ -10,30 +10,31 @@ import { ptBR } from "@/modules/messages/pt-BR";
 import { PrAlertIcons } from "@/modules/prs/components/pr-alert-icons";
 import { PrCardContextMenu } from "@/modules/prs/components/pr-card-context-menu";
 import { PrCardSlackSharedBadge } from "@/modules/prs/components/pr-card-slack-shared-badge";
-import { PrLocalReviewStatusIcon } from "@/modules/prs/components/pr-local-review-icon";
 import { PrOpenDuration } from "@/modules/prs/components/pr-open-duration";
 import { PrReviewReminderIcon } from "@/modules/prs/components/pr-review-reminder-icon";
 import { ReviewerListItem } from "@/modules/prs/components/reviewer-list-item";
+import { ReviewerPinStrip } from "@/modules/prs/components/reviewer-pin-strip";
 import { usePrCardViewModel } from "@/modules/prs/lib/hooks/use-pr-card-view-model";
-import { useWorkContext } from "@/modules/work-context/components/work-context-provider";
 
 interface Props {
   pr: MonitoredPr;
   allOpenPrs?: MonitoredPr[];
   slackConfigured?: boolean;
-  reviewInProgress?: boolean;
-  onReviewStarted?: () => void;
+  /** `compact` renders a single dense row (list view of /prs). */
+  variant?: "card" | "compact";
+  selected?: boolean;
+  onSelect?: () => void;
 }
 
 export function PrCard({
   pr,
   allOpenPrs = [],
   slackConfigured = false,
-  reviewInProgress = false,
-  onReviewStarted
+  variant = "card",
+  selected = false,
+  onSelect
 }: Props) {
   const vm = usePrCardViewModel(pr);
-  const { openWorkContext } = useWorkContext();
   const [slackShare, setSlackShare] = useState<PrSlackShareInfo | null>(pr.slackShare ?? null);
   const [reviewReminderSchedule, setReviewReminderSchedule] =
     useState<PrReviewReminderScheduleInfo | null>(pr.reviewReminderSchedule ?? null);
@@ -46,69 +47,92 @@ export function PrCard({
     setReviewReminderSchedule(pr.reviewReminderSchedule ?? null);
   }, [pr.reviewReminderSchedule]);
 
-  return (
-    <PrCardContextMenu
-      allOpenPrs={allOpenPrs}
-      jiraIssueKey={vm.jiraIssueKey}
-      onReviewStarted={onReviewStarted}
-      onSlackShareChange={setSlackShare}
-      pr={{ ...pr, slackShare }}
-      reviewInProgress={reviewInProgress}
-      slackConfigured={slackConfigured}
-      statusClass={vm.statusClass}
+  const statusIcons = (
+    <>
+      {slackShare ? <PrCardSlackSharedBadge slackShare={slackShare} /> : null}
+      <PrReviewReminderIcon
+        hasSlackShare={Boolean(slackShare)}
+        number={pr.number}
+        onScheduleChange={setReviewReminderSchedule}
+        pendingReviewers={vm.pendente}
+        repository={pr.repository}
+        schedule={reviewReminderSchedule}
+        url={pr.url}
+      />
+      <PrAlertIcons impediments={vm.impediments} />
+      {vm.shouldShowStatusPill && <span className={`status-pill ${vm.statusClass}`}>{vm.statusLabel}</span>}
+    </>
+  );
+
+  const titleLink = (
+    <a
+      aria-label="Abrir titulo da PR no GitHub"
+      className="pr-link"
+      href={vm.githubPrUrl}
+      rel="noreferrer"
+      target="_blank"
     >
+      {pr.title}{" "}
+      <span className="small muted">({pr.repository})</span>
+    </a>
+  );
+
+  const prNumberBadge = (
+    <a
+      aria-label={`Abrir PR #${pr.number} no GitHub`}
+      className="badge badge-link"
+      href={vm.githubPrUrl}
+      rel="noreferrer"
+      target="_blank"
+    >
+      PR #{pr.number}
+    </a>
+  );
+
+  const contextMenuProps = {
+    allOpenPrs,
+    jiraIssueKey: vm.jiraIssueKey,
+    onSelect,
+    onSlackShareChange: setSlackShare,
+    pr: { ...pr, slackShare },
+    selected,
+    slackConfigured,
+    statusClass: vm.statusClass
+  };
+
+  if (variant === "compact") {
+    return (
+      <PrCardContextMenu {...contextMenuProps} className="pr-card--compact">
+        <div className="pr-compact-row">
+          <div className="pr-compact-row__id">
+            {prNumberBadge}
+            <PrOpenDuration createdAt={pr.createdAt} />
+          </div>
+          <div className="pr-compact-row__title">{titleLink}</div>
+          <div className="pr-compact-row__reviewers">
+            {vm.statusGeral === "no_reviewers" ? (
+              <span className="small muted">{ptBR.prViewMode.noReviewers}</span>
+            ) : (
+              <ReviewerPinStrip reviewers={vm.reviewers} />
+            )}
+          </div>
+          <div className="pr-meta-right pr-compact-row__status">{statusIcons}</div>
+        </div>
+      </PrCardContextMenu>
+    );
+  }
+
+  return (
+    <PrCardContextMenu {...contextMenuProps}>
       <header className="pr-header">
         <div className="pr-title-row">
           <div className="pr-meta">
-            <a
-              aria-label={`Abrir PR #${pr.number} no GitHub`}
-              className="badge badge-link"
-              href={vm.githubPrUrl}
-              rel="noreferrer"
-              target="_blank"
-            >
-              PR #{pr.number}
-            </a>
+            {prNumberBadge}
             <PrOpenDuration createdAt={pr.createdAt} />
           </div>
-          <div className="pr-meta-right">
-            {slackShare ? <PrCardSlackSharedBadge slackShare={slackShare} /> : null}
-            <PrReviewReminderIcon
-              hasSlackShare={Boolean(slackShare)}
-              number={pr.number}
-              onScheduleChange={setReviewReminderSchedule}
-              pendingReviewers={vm.pendente}
-              repository={pr.repository}
-              schedule={reviewReminderSchedule}
-              url={pr.url}
-            />
-            <PrLocalReviewStatusIcon prNumber={pr.number} repository={pr.repository} review={pr.localReview} />
-            <PrAlertIcons impediments={vm.impediments} />
-            {vm.shouldShowStatusPill && <span className={`status-pill ${vm.statusClass}`}>{vm.statusLabel}</span>}
-          </div>
+          <div className="pr-meta-right">{statusIcons}</div>
         </div>
-        {vm.jiraIssueKey ? (
-          <button
-            aria-label={`Ver contexto de trabalho de ${vm.jiraIssueKey}`}
-            className="pr-link pr-link-button"
-            onClick={() => openWorkContext(vm.jiraIssueKey!)}
-            type="button"
-          >
-            {pr.title}{" "}
-            <span className="small muted">({pr.repository})</span>
-          </button>
-        ) : (
-          <a
-            aria-label="Abrir titulo da PR no GitHub"
-            className="pr-link"
-            href={vm.githubPrUrl}
-            rel="noreferrer"
-            target="_blank"
-          >
-            {pr.title}{" "}
-            <span className="small muted">({pr.repository})</span>
-          </a>
-        )}
+        {titleLink}
       </header>
 
       {vm.statusGeral === "no_reviewers" ? (
