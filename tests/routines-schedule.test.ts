@@ -3,11 +3,16 @@ import { PRESET_INTERVAL_MINUTES } from "@/modules/routines/lib/domain";
 import { createRoutineFromInput } from "@/modules/routines/lib/routine-service";
 import { withRoutinesTestDb } from "./routines-test-db";
 
+/** Plan allowlist literals — must not be derived from production constants. */
+const PLAN_PRESET_INTERVALS = [5, 15, 30, 60, 360, 1440] as const;
+
 describe("routines schedule", () => {
   it("creates preset routine with future nextRunAt", async () => {
+    expect([...PRESET_INTERVAL_MINUTES]).toEqual([...PLAN_PRESET_INTERVALS]);
+
     await withRoutinesTestDb(async () => {
       const before = Date.now();
-      for (const intervalMinutes of PRESET_INTERVAL_MINUTES) {
+      for (const intervalMinutes of PLAN_PRESET_INTERVALS) {
         const result = await createRoutineFromInput({
           name: `preset-${intervalMinutes}`,
           prompt: "hello",

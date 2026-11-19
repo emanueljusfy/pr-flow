@@ -105,10 +105,9 @@ describe("routines runner", () => {
   });
 
   it("truncates output at 100000 and persists status", async () => {
+    expect(ROUTINE_OUTPUT_TRUNCATE_CHARS).toBe(100_000);
     expect(truncateOutput("a".repeat(10))).toHaveLength(10);
-    expect(truncateOutput("a".repeat(ROUTINE_OUTPUT_TRUNCATE_CHARS + 50))).toHaveLength(
-      ROUTINE_OUTPUT_TRUNCATE_CHARS
-    );
+    expect(truncateOutput("a".repeat(100_000 + 50))).toHaveLength(100_000);
 
     await withRoutinesTestDb(async () => {
       const created = await createRoutineFromInput({
@@ -123,7 +122,7 @@ describe("routines runner", () => {
         return;
       }
 
-      const huge = "x".repeat(ROUTINE_OUTPUT_TRUNCATE_CHARS + 20);
+      const huge = "x".repeat(100_000 + 20);
       await runRoutineToCompletionForTests(created.routine.id, {
         probe: async () => true,
         run: async () => ({ stdout: huge, stderr: huge, code: 0 })
@@ -131,8 +130,8 @@ describe("routines runner", () => {
 
       const runs = await listRuns({ routineId: created.routine.id });
       expect(runs[0]?.status).toBe("succeeded");
-      expect(runs[0]?.stdout).toHaveLength(ROUTINE_OUTPUT_TRUNCATE_CHARS);
-      expect(runs[0]?.stderr).toHaveLength(ROUTINE_OUTPUT_TRUNCATE_CHARS);
+      expect(runs[0]?.stdout).toHaveLength(100_000);
+      expect(runs[0]?.stderr).toHaveLength(100_000);
     });
   });
 });
