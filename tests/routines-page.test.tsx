@@ -265,7 +265,7 @@ describe("RoutinesPage run visibility", () => {
     await waitFor(() => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
-    expect(screen.getByRole("dialog").className).toMatch(/sm:max-w-2xl/);
+    expect(screen.getByRole("dialog").className).toMatch(/data-\[side=right\]:sm:max-w-2xl/);
   });
 
   it("logs sheet empty state", async () => {

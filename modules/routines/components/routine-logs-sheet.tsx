@@ -111,7 +111,7 @@ export function RoutineLogsSheet({ routine, open, onOpenChange }: RoutineLogsShe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col sm:max-w-2xl">
+      <SheetContent side="right" className="flex w-full flex-col data-[side=right]:sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle>{routine ? copy.logsSheetTitle(routine.name) : copy.recentRuns}</SheetTitle>
           <SheetDescription>{copy.logsSheetDescription}</SheetDescription>
