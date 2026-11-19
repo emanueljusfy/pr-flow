@@ -60,10 +60,25 @@ export function loadNotificationInbox(): NotificationInboxItem[] {
   }
 }
 
+export function clearNotificationInbox(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.removeItem(STORAGE_KEY);
+  dispatchUpdated();
+}
+
+export function countUnreadNotificationInbox(
+  items: NotificationInboxItem[] = loadNotificationInbox()
+): number {
+  return items.filter((item) => !item.read).length;
+}
+
 export function pushNotificationInboxItem(input: {
   id: string;
   title: string;
   body: string;
+  createdAt?: number;
 }): void {
   if (typeof window === "undefined") {
     return;
@@ -74,10 +89,16 @@ export function pushNotificationInboxItem(input: {
       id: input.id,
       title: input.title,
       body: input.body,
-      createdAt: Date.now(),
+      createdAt: input.createdAt ?? Date.now(),
       read: false
     },
     ...existing
   ].slice(0, MAX_NOTIFICATION_INBOX_ITEMS);
   persist(next);
+}
+
+export function markAllNotificationInboxRead(): NotificationInboxItem[] {
+  const items = loadNotificationInbox().map((item) => ({ ...item, read: true }));
+  persist(items);
+  return items;
 }

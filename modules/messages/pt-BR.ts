@@ -297,14 +297,61 @@ export const ptBR = {
       approved: "Aprovou",
       changes_requested: "Pediu alterações",
       commented: "Comentou",
-      pending: "Pendente"
+      pending: "Pendente",
+      dismissed: "Dismissed"
     },
     statusAriaLabel: {
       approved: (login: string) => `${login}: aprovou`,
       changes_requested: (login: string) => `${login}: pediu alterações`,
       commented: (login: string) => `${login}: comentou`,
-      pending: (login: string) => `${login}: revisão pendente`
+      pending: (login: string) => `${login}: revisão pendente`,
+      dismissed: (login: string) => `${login}: aprovação invalidada`
     }
+  },
+  prViewMode: {
+    groupAriaLabel: "Modo de exibição das PRs",
+    cards: "Cards",
+    compact: "Compacta",
+    cardsAriaLabel: "Exibir PRs em cards",
+    compactAriaLabel: "Exibir PRs em lista compacta",
+    reviewersAriaLabel: "Revisores da PR",
+    noReviewers: "Sem revisores"
+  },
+  prStacks: {
+    title: "Stack",
+    count: (n: number) => (n === 1 ? "1 PR" : `${n} PRs`),
+    mergesInto: "merge em",
+    stackBottom: "Base da stack",
+    stackedOn: (parentNumber: number) => `empilha em #${parentNumber}`,
+    groupAriaLabel: (count: number, baseRefName: string) =>
+      baseRefName
+        ? `Stack de ${count} PRs (merge em ${baseRefName})`
+        : `Stack de ${count} PRs`
+  },
+  prHistory: {
+    panelTitle: "Histórico da PR",
+    emptySelection: "Selecione uma PR para ver o histórico.",
+    loading: "Carregando histórico…",
+    loadFailed: "Não foi possível carregar o histórico da PR.",
+    retry: "Tentar novamente",
+    closeAriaLabel: "Fechar histórico da PR",
+    openOnGithub: "Abrir no GitHub",
+    eventLinkAriaLabel: "Abrir evento no GitHub",
+    timelineAriaLabel: "Linha do tempo da PR",
+    refreshAriaLabel: "Atualizar histórico da PR",
+    refreshingAriaLabel: "Atualizando histórico da PR",
+    expandDetail: "Ver mais",
+    collapseDetail: "Ver menos",
+    opened: (actor: string) => `${actor} abriu a PR`,
+    commented: (actor: string) => `${actor} comentou`,
+    reviewApproved: (actor: string) => `${actor} aprovou`,
+    reviewChanges: (actor: string) => `${actor} pediu alterações`,
+    reviewCommented: (actor: string) => `${actor} comentou na revisão`,
+    reviewSubmitted: (actor: string) => `${actor} enviou uma revisão`,
+    commit: (actor: string) => `${actor} enviou um commit`,
+    merged: (actor: string) => `${actor} fez merge`,
+    closed: (actor: string) => `${actor} fechou a PR`,
+    reopened: (actor: string) => `${actor} reabriu a PR`
   },
   reviewReminder: {
     ariaLabel: "Lembrar revisão na thread do Slack",
@@ -356,6 +403,35 @@ export const ptBR = {
     loading: "Carregando acompanhamento…",
     loadFailed: "Não foi possível carregar o acompanhamento deste dia.",
     saveFailed: "Não foi possível atualizar o acompanhamento."
+  },
+  notifications: {
+    prefsTriggerLabel: "Alertas",
+    prefsTriggerAriaLabel: "Configurar alertas",
+    prefsTitle: "Alertas configuráveis",
+    prefsPermissionGranted: "Notificações do navegador ativas.",
+    prefsPermissionDenied: "Permissão negada — alertas aparecem como toast.",
+    prefsPermissionDefault: "Permita notificações para alertas com o app em segundo plano.",
+    allowBrowserNotifications: "Permitir notificações",
+    savePreferences: "Salvar preferências",
+    alertsSection: "Tipos de alerta",
+    monitoringSection: "Monitoramento",
+    pollEnabled: "Sync rápido no expediente",
+    pollIntervalSeconds: "Intervalo (segundos)",
+    workdayStartHour: "Início do expediente",
+    workdayEndHour: "Fim do expediente",
+    soundEnabled: "Alerta sonoro",
+    staleDaysLabel: "Dias sem movimento",
+    alertPrStatusChanged: "Status da minha PR mudou",
+    alertReviewerQueueNew: "Nova PR na fila de revisão",
+    alertPrApproved: "PR aprovada",
+    alertPrChangesRequested: "Alterações solicitadas",
+    alertPrStale: "PR parada há muitos dias",
+    bellAriaLabel: (count: number) =>
+      count === 1 ? "1 alerta não lido" : `${count} alertas não lidos`,
+    inboxTitle: "Alertas recentes",
+    inboxDescription: "Lista dos alertas recentes de PRs.",
+    inboxEmpty: "Nenhum alerta recente.",
+    markAllRead: "Marcar todas como lidas"
   },
   routines: {
     pageTitle: "Rotinas",
