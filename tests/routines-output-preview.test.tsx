@@ -34,8 +34,10 @@ describe("RoutineStdoutPreview", () => {
 
     expect(screen.getByText("Title")).toBeInTheDocument();
     expect(document.querySelector("script")).toBeNull();
-    const evil = screen.getByRole("link", { name: "evil" });
+    const evil = screen.getByText("evil");
+    expect(evil.tagName).toBe("A");
     expect(evil.getAttribute("href")).toBeNull();
   });
 });
+
 
