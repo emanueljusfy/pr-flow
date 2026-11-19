@@ -98,41 +98,53 @@ describe("useRoutineRunNotifications", () => {
   });
 
   it("toasts end and acks", async () => {
-    const finished = runDto({
-      id: "run-done",
-      status: "failed",
-      reason: "timeout",
-      finishedAt: "2026-11-19T14:05:00.000Z"
-    });
-    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      const method = (init?.method ?? "GET").toUpperCase();
-      if (method === "POST" && url.includes("/ack")) {
-        return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true }) });
-      }
-      if (url.includes("unread=1")) {
-        return Promise.resolve({ ok: true, status: 200, json: async () => [finished] });
-      }
-      return Promise.resolve({ ok: true, status: 200, json: async () => [finished] });
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    renderHook(() => useRoutineRunNotifications());
-
-    await waitFor(() => {
-      expect(toast).toHaveBeenCalledWith(copy.alertFailed("Nightly"), {
-        description: "timeout"
+    async function expectEndToast(status: "succeeded" | "failed") {
+      resetRoutineRunStartNotificationsForTests();
+      vi.mocked(toast).mockClear();
+      const finished = runDto({
+        id: `run-${status}`,
+        status,
+        reason: status === "failed" ? "timeout" : null,
+        finishedAt: "2026-11-19T14:05:00.000Z"
       });
-    });
+      const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (method === "POST" && url.includes("/ack")) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => ({ ok: true }) });
+        }
+        if (url.includes("unread=1")) {
+          return Promise.resolve({ ok: true, status: 200, json: async () => [finished] });
+        }
+        return Promise.resolve({ ok: true, status: 200, json: async () => [finished] });
+      });
+      vi.stubGlobal("fetch", fetchMock);
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/api/routines/runs/ack",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ runIds: ["run-done"] })
-        })
-      );
-    });
+      const { unmount } = renderHook(() => useRoutineRunNotifications());
+
+      const title =
+        status === "succeeded" ? copy.alertSucceeded("Nightly") : copy.alertFailed("Nightly");
+      const description = status === "succeeded" ? "Concluída." : "timeout";
+
+      await waitFor(() => {
+        expect(toast).toHaveBeenCalledWith(title, { description });
+      });
+
+      await waitFor(() => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          "/api/routines/runs/ack",
+          expect.objectContaining({
+            method: "POST",
+            body: JSON.stringify({ runIds: [`run-${status}`] })
+          })
+        );
+      });
+
+      unmount();
+      vi.unstubAllGlobals();
+    }
+
+    await expectEndToast("failed");
+    await expectEndToast("succeeded");
   });
 });

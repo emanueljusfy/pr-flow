@@ -157,9 +157,11 @@ describe("RoutinesPage run visibility", () => {
   });
 
   it("opens logs sheet with run list", async () => {
+    const run = succeededRun();
+    const startedLabel = new Date(run.startedAt).toLocaleString("pt-BR");
     stubPageFetch({
-      runs: [succeededRun()],
-      routineRuns: [succeededRun()]
+      runs: [run],
+      routineRuns: [run]
     });
     renderWithProviders(<RoutinesPage />);
 
@@ -172,7 +174,12 @@ describe("RoutinesPage run visibility", () => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
     });
     expect(screen.getByText(copy.logsSheetTitle(sampleRoutine.name))).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: new RegExp(copy.statusSucceeded) })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", {
+        name: (accessibleName) =>
+          accessibleName.includes(copy.statusSucceeded) && accessibleName.includes(startedLabel)
+      })
+    ).toBeInTheDocument();
   });
 
   it("shows selected run stdout and stderr", async () => {
@@ -262,61 +269,72 @@ describe("RoutinesPage run visibility", () => {
   });
 
   it("updates sheet when run finishes", async () => {
-    let routineRuns: RoutineRunDto[] = [runningRun()];
-    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      const method = (init?.method ?? "GET").toUpperCase();
-      if (url === "/api/routines" && method === "GET") {
-        return Promise.resolve({ ok: true, status: 200, json: async () => [sampleRoutine] });
-      }
-      if (url === "/api/routines/agents") {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => [{ id: "claude", label: "Claude", binary: "claude", installed: true }]
-        });
-      }
-      if (url.startsWith("/api/routines/runs") && method === "GET") {
-        if (url.includes("routineId=")) {
+    async function openAndFinish(finalStatus: "succeeded" | "failed") {
+      let routineRuns: RoutineRunDto[] = [runningRun()];
+      const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const method = (init?.method ?? "GET").toUpperCase();
+        if (url === "/api/routines" && method === "GET") {
+          return Promise.resolve({ ok: true, status: 200, json: async () => [sampleRoutine] });
+        }
+        if (url === "/api/routines/agents") {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => [{ id: "claude", label: "Claude", binary: "claude", installed: true }]
+          });
+        }
+        if (url.startsWith("/api/routines/runs") && method === "GET") {
+          if (url.includes("routineId=")) {
+            return Promise.resolve({ ok: true, status: 200, json: async () => routineRuns });
+          }
           return Promise.resolve({ ok: true, status: 200, json: async () => routineRuns });
         }
-        return Promise.resolve({ ok: true, status: 200, json: async () => routineRuns });
-      }
-      return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
-    });
-    vi.stubGlobal("fetch", fetchMock);
-    vi.useFakeTimers({ shouldAdvanceTime: true });
+        return Promise.resolve({ ok: true, status: 200, json: async () => ({}) });
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      vi.useFakeTimers({ shouldAdvanceTime: true });
 
-    renderWithProviders(<RoutinesPage />);
+      const view = renderWithProviders(<RoutinesPage />);
 
-    await waitFor(() => {
-      expect(screen.getByLabelText(copy.logsAria(sampleRoutine.name))).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByLabelText(copy.logsAria(sampleRoutine.name)));
+      await waitFor(() => {
+        expect(screen.getByLabelText(copy.logsAria(sampleRoutine.name))).toBeInTheDocument();
+      });
+      fireEvent.click(screen.getByLabelText(copy.logsAria(sampleRoutine.name)));
 
-    await waitFor(() => {
-      expect(screen.getByRole("option", { name: new RegExp(copy.statusRunning) })).toBeInTheDocument();
-    });
+      await waitFor(() => {
+        expect(screen.getByRole("option", { name: new RegExp(copy.statusRunning) })).toBeInTheDocument();
+      });
 
-    routineRuns = [
-      succeededRun({
-        id: "run-running",
-        stdout: "done-out",
-        stderr: "done-err"
-      })
-    ];
+      const label = finalStatus === "succeeded" ? copy.statusSucceeded : copy.statusFailed;
+      routineRuns = [
+        {
+          ...runningRun(),
+          status: finalStatus,
+          stdout: `out-${finalStatus}`,
+          stderr: `err-${finalStatus}`,
+          finishedAt: "2026-11-19T14:01:00.000Z",
+          reason: finalStatus === "failed" ? "boom" : null
+        }
+      ];
 
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(3_000);
-    });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3_000);
+      });
 
-    await waitFor(() => {
-      expect(screen.getByText("done-out")).toBeInTheDocument();
-    });
-    expect(screen.getByText("done-err")).toBeInTheDocument();
-    expect(
-      within(screen.getByRole("dialog")).getAllByText(copy.statusSucceeded).length
-    ).toBeGreaterThanOrEqual(1);
+      await waitFor(() => {
+        expect(screen.getByText(`out-${finalStatus}`)).toBeInTheDocument();
+      });
+      expect(screen.getByText(`err-${finalStatus}`)).toBeInTheDocument();
+      expect(within(screen.getByRole("dialog")).getAllByText(label).length).toBeGreaterThanOrEqual(1);
+
+      view.unmount();
+      vi.useRealTimers();
+      vi.unstubAllGlobals();
+    }
+
+    await openAndFinish("succeeded");
+    await openAndFinish("failed");
   });
 
   it("run now toasts start on 202", async () => {
