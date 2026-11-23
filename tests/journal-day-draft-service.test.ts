@@ -24,10 +24,17 @@ vi.mock("@/modules/llm-generation", () => ({
 const dayWithDelivery = {
   day: "2026-05-28",
   noteBody: null,
-  pendingTasks: [],
-  completedTodayTasks: [{ title: "Entregar API", description: null, dueDate: null }],
   jira: null,
-  prs: null
+  prs: null,
+  gitActivity: [
+    {
+      sha: "abc1234567890",
+      message: "Entregar API",
+      repository: "acme/app",
+      jiraIssueKey: null,
+      pullRequestNumber: null
+    }
+  ]
 };
 
 describe("generateJournalDayDraft", () => {
@@ -59,7 +66,7 @@ describe("generateJournalDayDraft", () => {
   it("does not call the model when the day has no work to draft from", async () => {
     buildNotebookDayContext.mockResolvedValue({
       ...dayWithDelivery,
-      completedTodayTasks: []
+      gitActivity: []
     });
 
     const { generateJournalDayDraft } = await import(

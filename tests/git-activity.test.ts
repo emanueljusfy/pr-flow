@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildDailySummaryPrompt, contextHasSummaryInput, selectAuthoredCommits } from "@/modules/notebook-day";
+import {
+  contextHasSummaryInput,
+  formatDailySummaryContextData,
+  selectAuthoredCommits
+} from "@/modules/notebook-day";
 
 describe("selectAuthoredCommits", () => {
   it("keeps the person's commit in a monitored repo and drops diff, other authors, and other repos", () => {
@@ -47,8 +51,6 @@ describe("git activity as summary input", () => {
     const withCommit = contextHasSummaryInput({
       day: "2026-08-07",
       noteBody: null,
-      pendingTasks: [],
-      completedTodayTasks: [],
       jira: null,
       prs: null,
       gitActivity: [
@@ -64,8 +66,6 @@ describe("git activity as summary input", () => {
     const withoutCommit = contextHasSummaryInput({
       day: "2026-08-07",
       noteBody: null,
-      pendingTasks: [],
-      completedTodayTasks: [],
       jira: null,
       prs: null,
       gitActivity: []
@@ -75,12 +75,10 @@ describe("git activity as summary input", () => {
     expect(withoutCommit).toBe(false);
   });
 
-  it("puts the commit message in the daily summary prompt and omits diffs", () => {
-    const prompt = buildDailySummaryPrompt({
+  it("puts the commit message in the notebook day context and omits diffs", () => {
+    const prompt = formatDailySummaryContextData({
       day: "2026-08-07",
       noteBody: null,
-      pendingTasks: [],
-      completedTodayTasks: [],
       jira: null,
       prs: null,
       gitActivity: [

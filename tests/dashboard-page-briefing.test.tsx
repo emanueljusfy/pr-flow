@@ -11,10 +11,6 @@ vi.mock("@/modules/dashboard/components/dashboard-hub", () => ({
   DashboardHub: () => null
 }));
 
-vi.mock("@/modules/dashboard/components/dashboard-tasks-widget", () => ({
-  DashboardTasksWidget: () => null
-}));
-
 describe("DashboardPage briefing", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());

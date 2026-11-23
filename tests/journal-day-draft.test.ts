@@ -6,8 +6,6 @@ import type { DailySummaryContext } from "@/modules/notebook-day/lib/types";
 const context: DailySummaryContext = {
   day: "2026-05-28",
   noteBody: "Já anotei o standup.",
-  pendingTasks: [],
-  completedTodayTasks: [{ title: "Fechar revisão do journal", description: null, dueDate: null }],
   jira: null,
   prs: null
 };
@@ -19,7 +17,6 @@ describe("journal day draft", () => {
     expect(prompt).toContain("## Feito");
     expect(prompt).toContain("## Entregue");
     expect(prompt).toContain("## Perguntas");
-    expect(prompt).toContain("Fechar revisão do journal");
     expect(prompt).toContain("Já anotei o standup.");
     expect(prompt).toContain("> ");
   });

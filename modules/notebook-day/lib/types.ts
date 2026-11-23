@@ -1,10 +1,3 @@
-export type DailySummaryTaskItem = {
-  title: string;
-  description: string | null;
-  dueDate: string | null;
-  isOverdue?: boolean;
-};
-
 export type DailySummaryJiraItem = {
   key: string;
   summary: string;
@@ -108,26 +101,13 @@ export type AuthoredCommit = {
   pullRequestNumber: number | null;
 };
 
-export type StandupBeat = "yesterday" | "today" | "blocker";
-
-export type GapFact = {
-  beat: StandupBeat;
-  answer: string;
-};
-
 export type DailySummaryContext = {
   day: string;
   noteBody: string | null;
-  pendingTasks: DailySummaryTaskItem[];
-  completedTodayTasks: DailySummaryTaskItem[];
   jira: DailySummaryJiraContext | null;
   prs: DailySummaryPrContext | null;
   /** Commits authored by the person on this civil day. Absent on older fixtures. */
   gitActivity?: AuthoredCommit[];
-  /** Gap answers are facts. Mentoring readings stay out of this list. */
-  gapFacts?: GapFact[];
-  /** Person's reading of a career signal. Not a work fact. */
-  mentoringReadings?: string[];
 };
 
 export type DailySummarySuccess = {

@@ -1,6 +1,5 @@
 import cron from "node-cron";
 import { buildScheduledCronJobs } from "@/modules/cron-scheduling/lib/build-runtime-jobs";
-import { runCronCatchupOnStart } from "@/modules/cron-scheduling/lib/run-cron-catchup-on-start";
 import { registerScheduledCrons } from "@/modules/cron-scheduling/lib/register-scheduled-crons";
 import type { CronScheduler } from "@/modules/cron-scheduling/lib/types";
 import { writeSystemLogFireAndForget } from "@/modules/observability/lib/system-logger";
@@ -30,10 +29,6 @@ export function startAllCrons(): void {
         message: `Cron desabilitado (${job.disableEnvVar}=1).`
       });
     }
-  });
-
-  void runCronCatchupOnStart().catch(() => {
-    // erros inesperados não derrubam o processo; detalhes nos runners de resumo
   });
 }
 

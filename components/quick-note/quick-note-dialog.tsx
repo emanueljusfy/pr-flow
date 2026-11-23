@@ -12,7 +12,6 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { isQuickNoteOpenShortcut } from "@/modules/journal/lib/quick-note";
 import { ptBR } from "@/modules/messages/pt-BR";
-import { dispatchTasksUpdated } from "@/modules/tasks/lib/task-events";
 
 type FieldErrors = Record<string, string>;
 
@@ -57,19 +56,7 @@ export function QuickNoteDialog() {
         throw new Error("Falha ao salvar quick note.");
       }
 
-      const payload = (await response.json()) as {
-        routedBy: "ai" | "fallback";
-        tasks: unknown[];
-      };
-
-      if (payload.tasks.length > 0) {
-        toast.success(ptBR.quickNote.savedWithTasks(payload.tasks.length));
-        dispatchTasksUpdated();
-      } else if (payload.routedBy === "fallback") {
-        toast.success(ptBR.quickNote.savedJournalFallback);
-      } else {
-        toast.success(ptBR.quickNote.savedJournal);
-      }
+      toast.success(ptBR.quickNote.savedJournal);
 
       setText("");
       setIsOpen(false);

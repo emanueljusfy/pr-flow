@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEFAULT_OPEN_PR_BASE_BRANCH } from "@/modules/prs/lib/open-pr/constants";
+import { DEFAULT_MONITORED_REPOSITORY_BRANCH } from "@/modules/prs/lib/monitored-repository-defaults";
 
 export const monitoredRepositorySlugSchema = z
   .string()
@@ -14,7 +14,7 @@ export const monitoredRepositoryBranchSchema = z
 
 export const monitoredRepositoryCreateSchema = z.object({
   repository: monitoredRepositorySlugSchema,
-  defaultBranch: monitoredRepositoryBranchSchema.default(DEFAULT_OPEN_PR_BASE_BRANCH),
+  defaultBranch: monitoredRepositoryBranchSchema.default(DEFAULT_MONITORED_REPOSITORY_BRANCH),
   sortOrder: z.coerce.number().int().min(0).max(10_000).optional()
 });
 

@@ -14,7 +14,7 @@ export function redactDiffLikeMessage(message: string): string {
     return truncateForLog(message);
   }
 
-  return "Conteúdo de diff omitido do log — verifique open-pr:generate-body";
+  return "Conteúdo de diff omitido do log.";
 }
 
 export function sanitizeErrorForLog(error: unknown): Record<string, unknown> {

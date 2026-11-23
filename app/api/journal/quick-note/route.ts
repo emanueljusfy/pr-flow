@@ -19,13 +19,5 @@ export async function POST(request: Request) {
     );
   }
 
-  const status = result.tasks.length > 0 ? 201 : 200;
-  return NextResponse.json(
-    {
-      routedBy: result.routedBy,
-      note: result.note,
-      tasks: result.tasks
-    },
-    { status }
-  );
+  return NextResponse.json({ note: result.note });
 }

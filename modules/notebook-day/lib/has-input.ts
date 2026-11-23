@@ -3,16 +3,11 @@ import { buildDailySummaryJiraContext, jiraContextHasActivityOnDay } from "@/mod
 import { buildDailySummaryPrContext, prContextHasSummaryInput } from "@/modules/notebook-day/lib/pr-context";
 import type { DailySummaryContext } from "@/modules/notebook-day/lib/types";
 import { getActiveNoteByNotebookDay } from "@/modules/journal/lib/note-repository";
-import { DAILY_SUMMARY_NO_INPUT_MESSAGE } from "@/modules/messages";
-import { hasTasksCompletedOnNotebookDay } from "@/modules/tasks/lib/task-repository";
 
-export { DAILY_SUMMARY_NO_INPUT_MESSAGE };
-
-/** Day input: journal note, task completed that civil day, Jira ticket updated, or PR review activity. Open tasks alone do not count. */
+/** Day input: journal note, Jira ticket updated, PR review activity or authored commits. */
 export function contextHasSummaryInput(context: DailySummaryContext): boolean {
   return (
     Boolean(context.noteBody?.trim()) ||
-    context.completedTodayTasks.length > 0 ||
     jiraContextHasActivityOnDay(context.jira) ||
     prContextHasSummaryInput(context.prs) ||
     (context.gitActivity?.length ?? 0) > 0
@@ -35,12 +30,11 @@ export async function dayHasPrActivityOnDay(day: string): Promise<boolean> {
 }
 
 export async function dayHasSummaryInput(day: string): Promise<boolean> {
-  const [hasNote, hasCompleted, hasJira, hasPr, gitActivity] = await Promise.all([
+  const [hasNote, hasJira, hasPr, gitActivity] = await Promise.all([
     hasNotebookContentOnDay(day),
-    hasTasksCompletedOnNotebookDay(day),
     dayHasJiraActivityOnDay(day),
     dayHasPrActivityOnDay(day),
     buildGitActivityForDay(day)
   ]);
-  return hasNote || hasCompleted || hasJira || hasPr || gitActivity.length > 0;
+  return hasNote || hasJira || hasPr || gitActivity.length > 0;
 }

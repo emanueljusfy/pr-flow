@@ -126,28 +126,3 @@ export const prReviewReminderSchedules = sqliteTable(
 );
 
 export type PrReviewReminderScheduleRow = typeof prReviewReminderSchedules.$inferSelect;
-
-/** Branch destino (base) escolhida no wizard de abrir PR, por branch de feature. */
-export const openPrBranchBases = sqliteTable(
-  "open_pr_branch_bases",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    repository: text("repository").notNull(),
-    branchName: text("branch_name").notNull(),
-    baseBranch: text("base_branch").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .notNull()
-      .$defaultFn(() => new Date()),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
-      .notNull()
-      .$defaultFn(() => new Date())
-  },
-  (table) => [
-    uniqueIndex("open_pr_branch_bases_repository_branch_unique").on(table.repository, table.branchName)
-  ]
-);
-
-export type OpenPrBranchBaseRow = typeof openPrBranchBases.$inferSelect;
-export type OpenPrBranchBaseInsert = typeof openPrBranchBases.$inferInsert;

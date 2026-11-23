@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { tasks } from "@/modules/tasks/lib/schema";
+import { notes } from "@/modules/journal/lib/schema";
 
 describe("sqlite", () => {
   const previous = process.env.DATABASE_URL;
@@ -17,13 +17,13 @@ describe("sqlite", () => {
     }
   });
 
-  it("aplica as migrations e grava uma tarefa", async () => {
+  it("aplica as migrations e grava uma nota", async () => {
     process.env.DATABASE_URL = `file:${file}`;
     const { getDb } = await import("@/modules/db/lib/db");
     const db = getDb();
-    await db.insert(tasks).values({ title: "comprar café" });
-    const rows = await db.select().from(tasks);
-    expect(rows.map((row) => row.title)).toContain("comprar café");
+    await db.insert(notes).values({ notebookDay: "2026-05-28", body: "comprar café" });
+    const rows = await db.select().from(notes);
+    expect(rows.map((row) => row.body)).toContain("comprar café");
     expect(rows[0]?.createdAt).toBeInstanceOf(Date);
   });
 });

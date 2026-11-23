@@ -48,3 +48,7 @@ export function formatZodError(error: z.ZodError): Record<string, string> {
   }
   return errors;
 }
+
+export const jiraBranchBaseBranchesQuerySchema = z.object({
+  repository: repositorySchema
+});

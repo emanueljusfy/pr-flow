@@ -17,8 +17,6 @@ function baseContext(overrides: Partial<DashboardBriefingContext> = {}): Dashboa
   const emptyDay = {
     day: "2026-05-29",
     noteBody: null,
-    pendingTasks: [],
-    completedTodayTasks: [],
     jira: null,
     prs: emptyPrs
   };
@@ -29,7 +27,6 @@ function baseContext(overrides: Partial<DashboardBriefingContext> = {}): Dashboa
     lastWorkdayContext: {
       ...emptyDay,
       day: "2026-05-29",
-      completedTodayTasks: [{ title: "Entrega API", description: null, dueDate: null }],
       jira: {
         sprintLabel: "Sprint 10",
         issues: [
@@ -52,10 +49,8 @@ function baseContext(overrides: Partial<DashboardBriefingContext> = {}): Dashboa
     },
     todayContext: {
       ...emptyDay,
-      day: "2026-06-01",
-      pendingTasks: [{ title: "Revisar PR", description: null, dueDate: null }]
+      day: "2026-06-01"
     },
-    persistedDailySummaryForLastWorkday: null,
     ...overrides
   };
 }

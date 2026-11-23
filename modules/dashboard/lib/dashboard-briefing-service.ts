@@ -13,10 +13,16 @@ import {
   generateLlmText,
   hasLlmApiKey
 } from "@/modules/llm-generation";
-import { isValidNotebookDay, todayLocalDateString } from "@/modules/journal/lib/notebook-day";
+import {
+  isValidNotebookDay,
+  previousBusinessDay,
+  todayLocalDateString
+} from "@/modules/journal/lib/notebook-day";
 import { ptBR } from "@/modules/messages";
-import { previousBusinessDay } from "@/modules/summaries/lib/summary-period";
-import { getSummaryByTypeAndPeriod, saveSummary } from "@/modules/summaries/lib/summary-repository";
+import {
+  getStoredDashboardBriefing,
+  saveDashboardBriefing
+} from "@/modules/dashboard/lib/dashboard-briefing-repository";
 
 function resolveToday(day: string | undefined): string | null {
   const value = day?.trim() || todayLocalDateString();
@@ -49,7 +55,7 @@ export async function getDashboardBriefing(dayInput?: string): Promise<Dashboard
     };
   }
 
-  const existing = await getSummaryByTypeAndPeriod("dashboard", today);
+  const existing = await getStoredDashboardBriefing(today);
   if (existing) {
     return {
       status: "ok",
@@ -97,7 +103,7 @@ export async function generateAndPersistDashboardBriefing(
   try {
     const prompt = buildDashboardBriefingPrompt(context);
     const content = await generateLlmText(prompt);
-    const summary = await saveSummary({ type: "dashboard", periodKey: today, content });
+    const summary = await saveDashboardBriefing(today, content);
     return {
       status: "ok",
       day: today,

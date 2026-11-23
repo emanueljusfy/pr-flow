@@ -12,7 +12,7 @@ describe("POST /api/journal/quick-note", () => {
     submitQuickNote.mockReset();
   });
 
-  it("returns 200 with note and empty tasks for journal-only capture", async () => {
+  it("returns 200 with the updated note", async () => {
     const note = {
       id: "note-1",
       notebookDay: "2026-05-29",
@@ -20,12 +20,7 @@ describe("POST /api/journal/quick-note", () => {
       createdAt: "2026-05-29T12:00:00.000Z",
       updatedAt: "2026-05-29T14:30:00.000Z"
     };
-    submitQuickNote.mockResolvedValue({
-      ok: true,
-      routedBy: "ai",
-      note,
-      tasks: []
-    });
+    submitQuickNote.mockResolvedValue({ ok: true, note });
 
     const response = await POST(
       new Request("http://localhost/api/journal/quick-note", {
@@ -36,52 +31,8 @@ describe("POST /api/journal/quick-note", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      routedBy: "ai",
-      note,
-      tasks: []
-    });
+    expect(await response.json()).toEqual({ note });
     expect(submitQuickNote).toHaveBeenCalledWith({ text: "Ideia" });
-  });
-
-  it("returns 201 with note and tasks when tasks were created", async () => {
-    const note = {
-      id: "note-1",
-      notebookDay: "2026-05-29",
-      body: "### quick-note:\nrevisar pr",
-      createdAt: "2026-05-29T12:00:00.000Z",
-      updatedAt: "2026-05-29T12:00:00.000Z"
-    };
-    const task = {
-      id: "task-1",
-      title: "Revisar PR",
-      description: null,
-      dueDate: null,
-      completedAt: null,
-      createdAt: "2026-05-29T12:00:00.000Z",
-      updatedAt: "2026-05-29T12:00:00.000Z"
-    };
-    submitQuickNote.mockResolvedValue({
-      ok: true,
-      routedBy: "ai",
-      note,
-      tasks: [task]
-    });
-
-    const response = await POST(
-      new Request("http://localhost/api/journal/quick-note", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: "revisar pr" })
-      })
-    );
-
-    expect(response.status).toBe(201);
-    expect(await response.json()).toEqual({
-      routedBy: "ai",
-      note,
-      tasks: [task]
-    });
   });
 
   it("returns 400 with field errors for invalid body", async () => {

@@ -1,13 +1,12 @@
 /**
  * Contexto do notebook day: montagem, tipos, regra de insumo e formatação para prompt.
- * Consumers: dashboard (briefing), summaries (daily/weekly).
+ * Consumers: dashboard (briefing), journal (day draft).
  */
 
 export type {
   AuthoredCommit,
   DailySummaryAlreadyExists,
   DailySummaryContext,
-  GapFact,
   DailySummaryError,
   DailySummaryJiraContext,
   DailySummaryJiraItem,
@@ -23,9 +22,7 @@ export type {
   DailySummaryResponse,
   DailySummaryReviewEvent,
   DailySummaryReviewItem,
-  DailySummarySuccess,
-  DailySummaryTaskItem,
-  StandupBeat
+  DailySummarySuccess
 } from "@/modules/notebook-day/lib/types";
 
 export { buildGitActivityForDay, selectAuthoredCommits } from "@/modules/notebook-day/lib/git-activity";
@@ -45,16 +42,12 @@ export {
   prContextHasSummaryInput
 } from "@/modules/notebook-day/lib/pr-context";
 
-export {
-  buildDailySummaryPrompt,
-  formatDailySummaryContextData
-} from "@/modules/notebook-day/lib/prompt";
+export { formatDailySummaryContextData } from "@/modules/notebook-day/lib/prompt";
 
 export {
   contextHasSummaryInput,
   dayHasSummaryInput,
   dayHasJiraActivityOnDay,
   dayHasPrActivityOnDay,
-  hasNotebookContentOnDay,
-  DAILY_SUMMARY_NO_INPUT_MESSAGE
+  hasNotebookContentOnDay
 } from "@/modules/notebook-day/lib/has-input";

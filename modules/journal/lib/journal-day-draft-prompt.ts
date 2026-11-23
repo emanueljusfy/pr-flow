@@ -7,10 +7,10 @@ export function buildJournalDayDraftPrompt(context: DailySummaryContext): string
 A nota não é um resumo gerencial nem um briefing. É um rascunho editável, só com estes três blocos e estes títulos:
 
 ## Feito
-O que foi trabalhado neste dia: reviews, movimentação de tickets, tarefas em andamento, decisões. Bullets curtos. Apenas fatos presentes nos dados.
+O que foi trabalhado neste dia: reviews, movimentação de tickets, commits, decisões. Bullets curtos. Apenas fatos presentes nos dados.
 
 ## Entregue
-O que saiu de fato: tarefas concluídas, PRs mergeadas ou fechadas, tickets em status concluído. Se nada foi entregue, escreva exatamente: (nada entregue nos dados)
+O que saiu de fato: PRs mergeadas ou fechadas, tickets em status concluído. Se nada foi entregue, escreva exatamente: (nada entregue nos dados)
 
 ## Perguntas
 De 3 a 5 perguntas que só a pessoa pode responder — bloqueio, decisão, o que ficou de fora dos sistemas, próximo passo, o que vale lembrar. Cada pergunta é um item de lista, seguido de uma linha em branco que começa com "> " para a resposta.

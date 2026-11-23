@@ -4,7 +4,7 @@ Vocabulário compartilhado para humanos e agentes. Comportamento real está no c
 
 ## Notebook day
 
-Dia de trabalho local (`YYYY-MM-DD`), alinhado ao fuso do usuário. Agrupa anotação (journal), tarefas concluídas naquele dia, atividade Jira e PR. Usado para montar contexto de IA — módulo **`modules/notebook-day/`** (`buildNotebookDayContext`, `contextHasSummaryInput`, `buildDailySummaryPrompt`). Re-exports legados em `modules/dashboard/lib/daily-summary-*.ts` (não confundir com briefing).
+Dia de trabalho local (`YYYY-MM-DD`), alinhado ao fuso do usuário. Agrupa anotação (journal), atividade Jira, PR e commits de autoria. Usado para montar contexto de IA — módulo **`modules/notebook-day/`** (`buildNotebookDayContext`, `contextHasSummaryInput`, `formatDailySummaryContextData`). Re-exports legados em `modules/dashboard/lib/daily-summary-*.ts` (não confundir com briefing).
 
 ## Nota (journal)
 
@@ -31,27 +31,20 @@ _Avoid_: strike; streak de notebook day genérico (só conta nota, não task/Jir
 Indicador visual no seletor de notebook day (`NotebookDayPicker`) nos dias com nota, para achar e saltar entre dias já escritos. Não é um pin/favorito persistido — só deriva da existência da nota.
 _Avoid_: pin favorito; bookmark; pin de mapa
 
-## Três artefatos de texto com IA
+## Briefing do dashboard
 
-| Artefato (UI pt-BR) | Rota | Tipo Postgres | Cron (código EN) |
-|----------|----------|------------------|------------|
-| **Resumo diário** | `/summaries` | `daily` | `cron:summaries-daily` (meia-noite) |
-| **Resumo semanal** | `/summaries` | `weekly` | `cron:summaries-weekly` |
-| **Briefing do dashboard** | `/dashboard` (widget) | `dashboard` | `cron:dashboard-briefing` (horária) |
-
-- **Resumo diário / semanal:** persistidos em `summaries`, gerados a partir do notebook day; fluxo em `modules/summaries/`. Rota legada `/resumos` redireciona para `/summaries`. Formatos de saída: diário **Feedback 3x3** (impacto, ação, evolução); semanal **Bússola de Tendência** (balanço de força com deltas, marcos, padrões, carry-over).
-- **Briefing:** mapa de batalha imediato do hub (fechamento do último dia útil, desbloqueios urgentes, foco de ataque — sem coaching). Leitura: `GET /api/dashboard/briefing` (rota legada `/api/dashboard/daily-summary` delega ao mesmo handler). UI: `DashboardBriefingWidget`, hook `useDashboardBriefing`. Serviço: `dashboard-briefing-service.ts`.
+Único artefato de texto com IA persistido. Rota `/dashboard` (widget), cron `cron:dashboard-briefing` (horária). Mapa de batalha imediato do hub (fechamento do último dia útil, desbloqueios urgentes, foco de ataque — sem coaching). Leitura: `GET /api/dashboard/briefing` (rota legada `/api/dashboard/daily-summary` delega ao mesmo handler). UI: `DashboardBriefingWidget`, hook `useDashboardBriefing`. Serviço: `dashboard-briefing-service.ts`; persistência em `dashboard-briefing-repository.ts` (tabela legada `summaries`, linhas `type = dashboard`).
 
 Arquivos `daily-summary-*` no dashboard são re-exports finos para compatibilidade; a implementação vive em `notebook-day`.
 
 ## Geração por LLM
 
-Seam compartilhado em **`modules/llm-generation/`**: interface `LlmTextGenerator` (prompt → texto), adapter Gemini (`createGeminiLlmGenerator`), adapter em memória para testes. Consumidores: `summary-generation-service`, `dashboard-briefing-service`. Entrada: `generateLlmText` / `hasLlmApiKey` (gerador padrão substituível com `setDefaultLlmGenerator`).
+Seam compartilhado em **`modules/llm-generation/`**: interface `LlmTextGenerator` (prompt → texto), adapter Gemini (`createGeminiLlmGenerator`), adapter em memória para testes. Consumidores: `dashboard-briefing-service`, rascunho do journal, nome de branch Jira. Entrada: `generateLlmText` / `hasLlmApiKey` (gerador padrão substituível com `setDefaultLlmGenerator`).
 
 ## Ticket Jira
 
-Issue atribuída ao usuário no Jira; UI em **`/jira`** (módulo `modules/jira/`). No código: `JiraIssueDto`, cards e diálogo de detalhe. Não confundir com tarefa local (`modules/tasks/`).
-_Avoid_: "ticket" para task do notebook; "issue" só em código EN quando já é o termo da API Jira
+Issue atribuída ao usuário no Jira; UI em **`/jira`** (módulo `modules/jira/`). No código: `JiraIssueDto`, cards e diálogo de detalhe. 
+_Avoid_: "issue" só em código EN quando já é o termo da API Jira
 
 ## Chave de issue Jira (JOR-xxx)
 
@@ -59,16 +52,12 @@ Módulo **`modules/jira-issue-key/`** (helpers puros, seguro em Client Component
 
 ## Criação de branch com IA
 
-Fluxo no ticket Jira: context menu (card ou diálogo) → wizard modal → escolher um ou mais repositórios monitorados → nome sugerido por IA (slug editável; prefixo `feat/` ou `fix/` automático) → base por repositório (default da repo) → criar refs remotas no GitHub. Mesmo nome em todos os repos; falha em um repo não cancela os outros; aviso se nome já existe antes do passo final. Sem chave LLM: slug manual. Sucesso: links para abrir PR por repo.
+Fluxo no ticket Jira: context menu (card ou diálogo) → wizard modal → escolher um ou mais repositórios monitorados → nome sugerido por IA (slug editável; prefixo `feat/` ou `fix/` automático) → base por repositório (default da repo) → criar refs remotas no GitHub. Mesmo nome em todos os repos; falha em um repo não cancela os outros; aviso se nome já existe antes do passo final. Sem chave LLM: slug manual. Sucesso: link por repo para abrir a PR no GitHub (página compare).
 _Avoid_: criar branch local; um nome diferente por repo; path completo editável pelo usuário
 
 ## PR monitor cache
 
 Cache Postgres das PRs monitoradas; atualizado por cron e `POST /api/prs`. Leitura via `GET /api/prs`. Domínio: `modules/prs/`. Keys Jira nos títulos alimentam o sync Jira via `jira-issue-key`.
-
-## Descoberta de branches (abrir PR)
-
-Módulo **`modules/prs/lib/open-pr/open-pr-branch-discovery.ts`**: interface `discoverOpenPrBranches(repository)` — lista branches do autor autenticado via GitHub GraphQL (`gh-open-pr-client.ts`) e enriquece títulos com key Jira extraída do nome da branch. Cache em memória 5 min (`open-pr-branch-cache.ts`). UI pré-carrega branches ao selecionar repositório; branch manual se a lista falhar.
 
 ## Agendamento de crons
 
@@ -80,19 +69,17 @@ Módulo **`modules/cron-scheduling/`**: specs (`CRON_JOB_SCHEDULE_SPECS`), `star
 |----------|----------------|
 | `DISABLE_PR_SYNC_CRON=1` | `cron:prs-sync` |
 | `DISABLE_JIRA_SYNC_CRON=1` | `cron:jira-sync` |
-| `DISABLE_SUMMARY_CRON=1` | `cron:summaries-daily`, `cron:summaries-weekly` |
 | `DISABLE_DASHBOARD_BRIEFING_CRON=1` | `cron:dashboard-briefing` |
 
-`SUMMARY_CRON_TZ` — fuso dos jobs de resumo e briefing (padrão `America/Sao_Paulo`).
+`SUMMARY_CRON_TZ` — fuso do job de briefing (padrão `America/Sao_Paulo`).
 
 ## Nomes no código (EN) vs domínio (pt-BR)
 
 | Domínio (docs/UI) | Código |
 |-------------------|--------|
-| Resumo diário / semanal | `modules/summaries/`, `/summaries`, `SummaryType` |
 | Briefing do dashboard | `dashboard-briefing-*`, `cron:dashboard-briefing` |
 | Notebook day | `modules/notebook-day/` |
-| Tarefa / nota (journal) | `modules/tasks/`, `modules/journal/` |
+| Nota (journal) | `modules/journal/` |
 | Quick note (captura rápida) | `modules/journal/lib/quick-note*.ts`, Ctrl+Space |
 | Streak do journal | `modules/journal/lib/journal-streak.ts`, widget no dashboard |
 
@@ -106,7 +93,7 @@ Campo **`source`** em duas camadas:
 | Camada | Padrão | Exemplos | Quem emite |
 |--------|--------|----------|------------|
 | Orquestração | `cron:*`, `api:*` | `cron:jira-sync`, `api:prs-sync` | runners de cron, rotas HTTP |
-| Domínio | `<módulo>:<ação>` | `jira:sync`, `prs:sync`, `open-pr:create` | serviços de domínio |
+| Domínio | `<módulo>:<ação>` | `jira:sync`, `prs:sync`, `jira-branch:create` | serviços de domínio |
 
 Serviços logam detalhes internos sem saber o gatilho (manual, cron ou API). Orquestradores logam início/fim do fluxo que dispararam.
 
@@ -132,13 +119,8 @@ _Avoid_: OAuth Google; confiar URL fora de `calendar.google.com`; commitar a URL
 
 ## Quick note (captura rápida)
 
-Entrada curta via atalho (Ctrl+Space) que **sempre** vira registro na nota do notebook day de hoje e pode extrair **uma ou mais tarefas** relacionadas quando o texto contém ações concretas — inclusive **tarefas implícitas** embutidas em narrativa/log (“amanhã ainda preciso falar…”) no meio ou no fim do parágrafo. Não é escolha exclusiva entre caderno e tarefa.
-_Avoid_: quick chat; destination XOR journal/task; “só tarefa” sem registro no caderno; ignorar compromisso futuro porque o resto do texto é contexto
-
-## Prazo da tarefa (due date)
-
-Data-calendário `YYYY-MM-DD` opcional da tarefa. Frases relativas (“hoje”, “amanhã”, “até o final dessa semana”) resolvem a partir do notebook day corrente: **final dessa semana** = sexta do período útil (seg–sex) que contém o dia.
-_Avoid_: datetime com hora; inventar data absoluta sem âncora do dia corrente
+Entrada curta via atalho (Ctrl+Space) que vira registro na nota do notebook day de hoje.
+_Avoid_: quick chat
 
 ## Deck de atalhos
 

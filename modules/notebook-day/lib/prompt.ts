@@ -10,34 +10,6 @@ import type {
   DailySummaryReviewEvent,
   DailySummaryReviewItem
 } from "@/modules/notebook-day/lib/types";
-import {
-  buildDailySummaryOutputRules,
-  buildSummaryCareerPersona,
-  buildSummaryCareerRules,
-  buildSummaryCareerSections
-} from "@/modules/summaries/lib/summary-career-coaching";
-
-function formatTaskList(tasks: DailySummaryContext["pendingTasks"], includeOverdue: boolean): string {
-  if (tasks.length === 0) {
-    return "(nenhuma)";
-  }
-
-  return tasks
-    .map((task, index) => {
-      const parts = [`${index + 1}. ${task.title}`];
-      if (task.description) {
-        parts.push(`   Descrição: ${task.description}`);
-      }
-      if (task.dueDate) {
-        parts.push(`   Prazo: ${task.dueDate}`);
-      }
-      if (includeOverdue && task.isOverdue) {
-        parts.push("   Status: atrasada");
-      }
-      return parts.join("\n");
-    })
-    .join("\n");
-}
 
 function formatJiraIssue(issue: DailySummaryJiraItem): string {
   const parts = [
@@ -208,24 +180,6 @@ function formatGitSection(commits: AuthoredCommit[] | undefined): string {
     .join("\n");
 }
 
-function formatGapFacts(context: DailySummaryContext): string {
-  const facts = context.gapFacts ?? [];
-  if (facts.length === 0) {
-    return "(nenhuma lacuna respondida)";
-  }
-
-  return facts.map((fact) => `- ${fact.beat}: ${fact.answer}`).join("\n");
-}
-
-function formatMentoringReadings(context: DailySummaryContext): string {
-  const readings = context.mentoringReadings ?? [];
-  if (readings.length === 0) {
-    return "(nenhuma leitura de mentoria)";
-  }
-
-  return readings.map((reading) => `- ${reading}`).join("\n");
-}
-
 function formatPrSection(prs: DailySummaryPrContext | null): string {
   if (!prs) {
     return "(integração GitHub não configurada ou cache de PRs ainda não sincronizado)";
@@ -307,12 +261,6 @@ export function formatDailySummaryContextData(context: DailySummaryContext): str
 ## Anotações do dia
 ${noteSection}
 
-## Tarefas pendentes (locais)
-${formatTaskList(context.pendingTasks, true)}
-
-## Tarefas concluídas hoje (locais)
-${formatTaskList(context.completedTodayTasks, false)}
-
 ## Tickets Jira atribuídos
 ${formatJiraSection(context.jira)}
 
@@ -320,40 +268,5 @@ ${formatJiraSection(context.jira)}
 ${formatPrSection(context.prs)}
 
 ## Atividade Git (commits de autoria, sem diff)
-${formatGitSection(context.gitActivity)}
-
-## Fatos de lacuna (subsídio)
-${formatGapFacts(context)}
-
-## Leituras de mentoria (não são fatos de trabalho)
-${formatMentoringReadings(context)}`;
-}
-
-export function buildDailySummaryPrompt(context: DailySummaryContext): string {
-  return `Você é um assistente que produz resumos diários em português do Brasil no formato **Feedback 3x3**: impacto, ação e evolução profissional — não um relatório cronológico de eventos.
-
-${buildSummaryCareerPersona()}
-
-Com base exclusivamente nos dados abaixo, escreva um resumo do dia **correlacionando** anotações do caderno, tarefas locais, tickets Jira (status e horas), pull requests (suas PRs, reviews e fila pendente) e commits de autoria. A correlação alimenta a síntese nas três seções — não reproduza cada fonte em bloco separado. Fatos de lacuna entram como evidência de trabalho. Leituras de mentoria entram só na seção de evolução, como leitura da pessoa, nunca como entrega.
-
-## Regras gerais
-- Tom objetivo, construtivo e profissional.
-- Não invente fatos ausentes nos dados.
-- Se os dados forem escassos, diga isso de forma clara.
-
-${buildDailySummaryOutputRules()}
-
-${buildSummaryCareerRules("daily")}
-
-## Correlação entre fontes (use internamente; sintetize na saída)
-- Identifique quando tarefa local, anotação ou PR referem-se a um ticket Jira (código no texto, título semelhante ou mesmo tema).
-- Agrupe entregas relacionadas (ex.: tarefa concluída + ticket em "Concluído" + PR mergeada + menção nas anotações) em um único insight de impacto.
-- Detecte inconsistências úteis para "Próximos Passos" ou "Mentalidade Sênior" (ex.: merge com comentários pendentes, anotação menciona bloqueio mas ticket segue em progresso, front mergeado sem back).
-- Use horas e status do Jira para quantificar esforço quando disponível; não extrapole worklog diário — os tempos são acumulados do ticket.
-- Cruze reviews recebidos/dados, status de PR e fila pendente para identificar gargalos e comportamentos de processo.
-
-${buildSummaryCareerSections("daily")}
-
-${formatDailySummaryContextData(context)}
-`;
+${formatGitSection(context.gitActivity)}`;
 }

@@ -1,12 +1,9 @@
 import type { JiraIssuesResponse, JiraSprintsResponse } from "@/modules/jira/lib/domain";
 import { resolveDefaultSprintFilter } from "@/modules/jira/lib/jira-sprint-filter";
 import type { ReviewerQueueApiResponse } from "@/modules/prs/lib/domain";
-import type { TaskListResponse } from "@/modules/tasks/lib/domain";
 
 export type DashboardHubStats = {
   openPrs: number | null;
-  openTasks: number | null;
-  overdueTasks: number | null;
   pendingReviews: number | null;
   jiraSprintTickets: number | null;
   jiraSprintLabel: string | null;
@@ -14,8 +11,6 @@ export type DashboardHubStats = {
 
 export const emptyDashboardHubStats: DashboardHubStats = {
   openPrs: null,
-  openTasks: null,
-  overdueTasks: null,
   pendingReviews: null,
   jiraSprintTickets: null,
   jiraSprintLabel: null
@@ -57,9 +52,8 @@ async function fetchJiraSprintStats(
 export async function fetchDashboardHubStats(
   signal?: AbortSignal
 ): Promise<DashboardHubStats> {
-  const [prsRes, tasksRes, reviewerQueueRes, jiraStats] = await Promise.all([
+  const [prsRes, reviewerQueueRes, jiraStats] = await Promise.all([
     fetch("/api/prs", { signal, cache: "no-store" }),
-    fetch("/api/tasks", { signal, cache: "no-store" }),
     fetch("/api/prs/reviewer-queue", { signal, cache: "no-store" }),
     fetchJiraSprintStats(signal)
   ]);
@@ -70,12 +64,6 @@ export async function fetchDashboardHubStats(
     const prsBody = (await prsRes.json()) as { status: string; data?: unknown[] };
     next.openPrs =
       prsBody.status === "ok" && Array.isArray(prsBody.data) ? prsBody.data.length : 0;
-  }
-
-  if (tasksRes.ok) {
-    const tasksBody = (await tasksRes.json()) as TaskListResponse;
-    next.openTasks = tasksBody.open.length;
-    next.overdueTasks = tasksBody.open.filter((task) => task.isOverdue).length;
   }
 
   if (reviewerQueueRes.ok) {

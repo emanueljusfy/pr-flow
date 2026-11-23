@@ -1,0 +1,1 @@
+export const DEFAULT_MONITORED_REPOSITORY_BRANCH = "master";

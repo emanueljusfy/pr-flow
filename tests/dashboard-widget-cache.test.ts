@@ -19,8 +19,6 @@ describe("dashboard-widget-cache", () => {
   it("salva e carrega stats do hub", () => {
     saveDashboardHubStatsCache({
       openPrs: 2,
-      openTasks: 1,
-      overdueTasks: 0,
       pendingReviews: 3,
       jiraSprintTickets: 4,
       jiraSprintLabel: "Sprint 12"
@@ -28,8 +26,6 @@ describe("dashboard-widget-cache", () => {
 
     expect(loadDashboardHubStatsCache()).toEqual({
       openPrs: 2,
-      openTasks: 1,
-      overdueTasks: 0,
       pendingReviews: 3,
       jiraSprintTickets: 4,
       jiraSprintLabel: "Sprint 12"
@@ -42,8 +38,6 @@ describe("dashboard-widget-cache", () => {
       JSON.stringify({
         value: {
           openPrs: 2,
-          openTasks: 1,
-          overdueTasks: 0,
           jiraSprintTickets: 4,
           jiraSprintLabel: "Sprint 12"
         },
@@ -57,8 +51,6 @@ describe("dashboard-widget-cache", () => {
   it("expira cache após o TTL", () => {
     saveDashboardHubStatsCache({
       openPrs: 1,
-      openTasks: 1,
-      overdueTasks: 0,
       pendingReviews: 0,
       jiraSprintTickets: 1,
       jiraSprintLabel: null

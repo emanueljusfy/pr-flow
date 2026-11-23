@@ -20,7 +20,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Surface } from "@/components/ui/surface";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { DayFollowUpPanel } from "@/modules/day-follow-up/components/day-follow-up-panel";
 import { NotebookDayPicker } from "@/modules/journal/components/notebook-day-picker";
 import { mergeJournalDayDraft } from "@/modules/journal/lib/journal-day-draft";
 import { NotePreview } from "@/modules/journal/lib/note-preview";
@@ -438,7 +437,6 @@ export function JournalPage() {
         </nav>
       </Surface>
 
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.9fr)]">
       <div className="space-y-5">
       {isLoading ? <JournalLoadingSkeleton /> : null}
 
@@ -570,8 +568,6 @@ export function JournalPage() {
           )}
         </Surface>
       ) : null}
-      </div>
-      <DayFollowUpPanel notebookDay={notebookDay} />
       </div>
     </div>
   );

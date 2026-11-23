@@ -52,14 +52,14 @@ describe("system-logger", () => {
 
     await writeSystemLog({
       level: "error",
-      source: "open-pr:generate-body",
+      source: "pr-ai-review:run",
       message: "diff --git a/foo b/foo\n-deleted"
     });
 
     const line = String(stdoutWrite.mock.calls[0]?.[0]);
     const parsed = JSON.parse(line) as { message: string };
     expect(parsed.message).toBe(
-      "Conteúdo de diff omitido do log — verifique open-pr:generate-body"
+      "Conteúdo de diff omitido do log."
     );
   });
 

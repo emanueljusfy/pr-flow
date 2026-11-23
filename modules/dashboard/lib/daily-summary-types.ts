@@ -17,6 +17,5 @@ export type {
   DailySummaryResponse,
   DailySummaryReviewEvent,
   DailySummaryReviewItem,
-  DailySummarySuccess,
-  DailySummaryTaskItem
+  DailySummarySuccess
 } from "@/modules/notebook-day/lib/types";

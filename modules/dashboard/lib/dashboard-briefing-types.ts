@@ -7,8 +7,6 @@ export type DashboardBriefingContext = {
   lastWorkdayContext: DailySummaryContext;
   /** Contexto de hoje para projeção e prioridades. */
   todayContext: DailySummaryContext;
-  /** Resumo diário persistido do último dia útil, se existir. */
-  persistedDailySummaryForLastWorkday: string | null;
 };
 
 export type DashboardBriefingSuccess = {

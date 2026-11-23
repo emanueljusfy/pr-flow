@@ -70,7 +70,9 @@ describe("createJiraBranches", () => {
       undefined
     );
     expect(result.results[0]?.status).toBe("created");
-    expect(result.results[0]?.openPrUrl).toContain("/prs/open?");
+    expect(result.results[0]?.openPrUrl).toBe(
+      "https://github.com/acme/api/compare/main...feat%2Fjor-9%2Fadd-login?expand=1"
+    );
   });
 
   it("skips when branch already exists", async () => {

@@ -15,7 +15,7 @@ O projeto já declara `zod` em `package.json` (^4.x). Não adicione outra biblio
 | Situação | Exemplos no repo |
 |----------|------------------|
 | Query / route params | `?type=daily`, `?limit=50`, `?sprint=active` |
-| Body JSON em `app/api/**` | criar tarefa, salvar nota, preferências |
+| Body JSON em `app/api/**` | salvar nota, criar branch, preferências |
 | Respostas de APIs externas | GitHub (`gh`), Jira, Gemini |
 | Leitura de `sessionStorage` / cache cliente | `dashboard-widget-cache.ts` |
 | Variáveis de ambiente críticas | tokens, URLs, listas (`MONITORED_REPOSITORIES`) |
@@ -35,8 +35,8 @@ Evite misturar com schemas **Drizzle** (tabelas SQLite):
 
 | Finalidade | Nome usual | Exemplo |
 |----------|------------|---------|
-| Tabelas Drizzle | `schema.ts` | `modules/tasks/lib/schema.ts` |
-| Schemas Zod (runtime) | `validation.ts` ou `<recurso>-validation.ts` | `modules/summaries/lib/summaries-query-validation.ts` |
+| Tabelas Drizzle | `schema.ts` | `modules/journal/lib/schema.ts` |
+| Schemas Zod (runtime) | `validation.ts` ou `<recurso>-validation.ts` | `modules/jira-branch/lib/jira-branch-validation.ts` |
 
 Coloque schemas Zod no **módulo de domínio** (`modules/<nome>/lib/`), não espalhados em rotas `app/api/`. A rota importa o schema e trata o resultado.
 

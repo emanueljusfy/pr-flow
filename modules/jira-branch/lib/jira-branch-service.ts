@@ -63,12 +63,9 @@ async function resolveBranchNaming(
   };
 }
 
-function buildOpenPrWizardUrl(repository: string, branchName: string): string {
-  const params = new URLSearchParams({
-    repository,
-    branch: branchName
-  });
-  return `/prs/open?${params.toString()}`;
+function buildGithubCompareUrl(repository: string, baseBranch: string, branchName: string): string {
+  const compare = `${encodeURIComponent(baseBranch)}...${encodeURIComponent(branchName)}`;
+  return `https://github.com/${repository}/compare/${compare}?expand=1`;
 }
 
 export async function checkJiraBranches(
@@ -152,7 +149,7 @@ export async function createJiraBranches(
           status: "skipped",
           branchName: naming.branchName,
           message: "Branch já existe neste repositório.",
-          openPrUrl: buildOpenPrWizardUrl(target.repository, naming.branchName)
+          openPrUrl: buildGithubCompareUrl(target.repository, target.baseBranch, naming.branchName)
         });
         continue;
       }
@@ -174,7 +171,7 @@ export async function createJiraBranches(
         repository: target.repository,
         status: "created",
         branchName: naming.branchName,
-        openPrUrl: buildOpenPrWizardUrl(target.repository, naming.branchName)
+        openPrUrl: buildGithubCompareUrl(target.repository, target.baseBranch, naming.branchName)
       });
     }
 

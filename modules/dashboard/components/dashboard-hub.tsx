@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowRight, CheckSquare, FileText, GitPullRequest, Ticket } from "lucide-react";
+import { ArrowRight, GitPullRequest, Ticket } from "lucide-react";
 import { Surface } from "@/components/ui/surface";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -23,22 +23,10 @@ const hubLinks = [
     statId: "prs"
   },
   {
-    href: "/tasks",
-    title: "Tarefas",
-    icon: CheckSquare,
-    statId: "tasks"
-  },
-  {
     href: "/jira",
     title: "Jira",
     icon: Ticket,
     statId: "jira"
-  },
-  {
-    href: "/summaries",
-    title: "Resumos",
-    icon: FileText,
-    statId: "summaries"
   }
 ] as const;
 
@@ -54,14 +42,9 @@ type HubStatContent =
       ariaLabel: string;
       detail?: ReactNode;
     }
-  | { kind: "text"; text: string; ariaLabel: string }
   | { kind: "unavailable" };
 
 function buildHubStat(item: (typeof hubLinks)[number], stats: DashboardHubStats): HubStatContent {
-  if (item.statId === "summaries") {
-    return { kind: "text", text: "Ver histórico", ariaLabel: "Ver histórico de resumos" };
-  }
-
   if (item.statId === "prs") {
     if (stats.openPrs === null) {
       return { kind: "unavailable" };
@@ -87,31 +70,6 @@ function buildHubStat(item: (typeof hubLinks)[number], stats: DashboardHubStats)
           >
             {pending} para revisar
           </Link>
-        ) : undefined
-    };
-  }
-
-  if (item.statId === "tasks") {
-    if (stats.openTasks === null) {
-      return { kind: "unavailable" };
-    }
-
-    const overdue = stats.overdueTasks ?? 0;
-    const ariaLabel =
-      overdue > 0
-        ? `${stats.openTasks} em aberto, ${overdue} ${pluralize(overdue, "atrasada", "atrasadas")}`
-        : `${stats.openTasks} em aberto`;
-
-    return {
-      kind: "count",
-      value: stats.openTasks,
-      unit: "em aberto",
-      ariaLabel,
-      detail:
-        overdue > 0 ? (
-          <span className="text-sm text-[var(--app-accent)]">
-            {overdue} {pluralize(overdue, "atrasada", "atrasadas")}
-          </span>
         ) : undefined
     };
   }
@@ -207,18 +165,6 @@ function HubCardStat({
     );
   }
 
-  if (stat.kind === "text") {
-    return (
-      <p
-        className="text-base font-medium text-[var(--app-accent)]"
-        data-testid={`hub-stat-${item.statId}`}
-        aria-label={stat.ariaLabel}
-      >
-        {stat.text}
-      </p>
-    );
-  }
-
   return (
     <div
       className="space-y-1"
@@ -272,7 +218,7 @@ export function DashboardHub() {
   }, []);
 
   return (
-    <section aria-label="Atalhos dos módulos" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section aria-label="Atalhos dos módulos" className="grid gap-3 sm:grid-cols-2">
       {hubLinks.map((item) => {
         const pendingReviews = stats.pendingReviews ?? 0;
         const showReviewLink = item.statId === "prs" && !isLoading && pendingReviews > 0;

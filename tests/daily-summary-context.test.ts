@@ -1,16 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getActiveNoteByNotebookDay = vi.fn();
-const listTaskLists = vi.fn();
 const buildDailySummaryJiraContext = vi.fn();
 const buildDailySummaryPrContext = vi.fn();
 
 vi.mock("@/modules/journal/lib/note-repository", () => ({
   getActiveNoteByNotebookDay: (...args: unknown[]) => getActiveNoteByNotebookDay(...args)
-}));
-
-vi.mock("@/modules/tasks/lib/task-repository", () => ({
-  listTaskLists: (...args: unknown[]) => listTaskLists(...args)
 }));
 
 vi.mock("@/modules/notebook-day/lib/jira-context", () => ({
@@ -28,7 +23,7 @@ describe("buildDailySummaryContext", () => {
     vi.clearAllMocks();
   });
 
-  it("aggregates note, open tasks, jira and tasks completed on the day", async () => {
+  it("aggregates note, jira and PR context for the day", async () => {
     buildDailySummaryJiraContext.mockResolvedValue({
       sprintLabel: "Sprint 42",
       issues: [
@@ -82,42 +77,11 @@ describe("buildDailySummaryContext", () => {
       updatedAt: "2026-05-28T08:00:00.000Z"
     });
 
-    listTaskLists.mockResolvedValue({
-      open: [
-        {
-          id: "open-1",
-          title: "Revisar PR",
-          description: null,
-          dueDate: "2026-05-29",
-          completedAt: null,
-          createdAt: "2026-05-27T10:00:00.000Z",
-          updatedAt: "2026-05-27T10:00:00.000Z",
-          isOverdue: false
-        }
-      ],
-      completed: [
-        {
-          id: "done-today",
-          title: "Deploy staging",
-          description: null,
-          dueDate: null,
-          completedAt: "2026-05-28T18:30:00.000Z",
-          createdAt: "2026-05-27T10:00:00.000Z",
-          updatedAt: "2026-05-28T18:30:00.000Z"
-        }
-      ]
-    });
-
     const { buildDailySummaryContext } = await import("@/modules/dashboard/lib/daily-summary-context");
     const context = await buildDailySummaryContext("2026-05-28");
 
     expect(getActiveNoteByNotebookDay).toHaveBeenCalledWith("2026-05-28");
-    expect(listTaskLists).toHaveBeenCalledWith("2026-05-28");
     expect(context.noteBody).toBe("Foco em release");
-    expect(context.pendingTasks).toHaveLength(1);
-    expect(context.pendingTasks[0]?.title).toBe("Revisar PR");
-    expect(context.completedTodayTasks).toHaveLength(1);
-    expect(context.completedTodayTasks[0]?.title).toBe("Deploy staging");
     expect(context.jira?.sprintLabel).toBe("Sprint 42");
     expect(context.jira?.issues[0]?.key).toBe("PROJ-1");
     expect(context.prs?.myOpenPrs[0]?.number).toBe(42);

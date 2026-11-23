@@ -1,11 +1,11 @@
 # PR Flow — Design System
 
-Especificação visual para manter consistência entre módulos (PRs, Tasks, Journal, Dashboard, Resumos).
+Especificação visual para manter consistência entre módulos (PRs, Journal, Dashboard, Jira).
 **Implementação canônica dos tokens:** `app/globals.css` (bloco `.dark`). Este documento descreve intenção e uso; em caso de divergência, confiar no CSS e atualizar este arquivo.
 
 ## Direção
 
-- **Produto:** cockpit local para dev — monitor de PRs + produtividade pessoal (tasks, journal, resumos IA).
+- **Produto:** cockpit local para dev — monitor de PRs + produtividade pessoal (journal, briefing IA).
 - **Tom:** escuro flat estilo Herdr / IDE — near-black, hairline borders, profundidade por tipografia e panes inset, **sem** glow, glass ou gradientes de marca no chrome.
 - **Tema:** apenas **dark** (`<html class="dark">` em `app/layout.tsx`).
 - **Idioma da UI:** **pt-BR** (labels, aria-labels, mensagens). Evitar misturar EN (“Open Tasks”, “Create”, etc.).
@@ -57,7 +57,7 @@ Cor de marca: **laranja ember** — quente, usada com parcimônia (ação/marca)
 - Títulos de página: `PageHeader` (`text-xl font-semibold`) — descrição opcional via `HelpHint` (ícone + tooltip), não parágrafo sob o título.
 - Texto explicativo de widget/seção: `HelpHint`; empty states, contagens e erros permanecem visíveis.
 - Widgets compactos do dashboard (férias, streak): `p-3`, badge `size-8`, métrica em `--brand-bright`, ação sempre visível na linha do título (`Button` `outline` `sm`) — sem CTA extra abaixo e sem revelar só no hover.
-- Widgets em painel (calendário, deck, briefing, tarefas): um `Surface` com `p-4`, badge `size-9`, título `text-sm font-semibold` + `HelpHint`, ação de header em `outline` `sm`.
+- Widgets em painel (calendário, deck, briefing): um `Surface` com `p-4`, badge `size-9`, título `text-sm font-semibold` + `HelpHint`, ação de header em `outline` `sm`.
 - Hub: título + métrica, sem parágrafo descritivo; seta de navegação sempre visível (só muda cor no hover).
 - Seções em cards PR: sentence case (`Quem já revisou`), **sem** ALL CAPS agressivo.
 
@@ -69,13 +69,13 @@ Wrapper padrão para blocos de conteúdo:
 
 | Variant | Classe | Quando usar |
 |---------|--------|-------------|
-| `default` | `.panel` | Cards, colunas Tasks, editor Journal, resumo IA |
+| `default` | `.panel` | Cards, editor Journal, briefing IA |
 | `inset` | `.panel-inset` | Itens internos, textarea, listas |
 | `dashed` | `.panel-dashed` | Empty states |
 
 `.panel`: fill sólido (`--app-surface-raised`), borda hairline, **sem** blur/glass e **sem** barra de marca à esquerda. Status de domínio (PR/Jira) usa filamento de 2px na borda esquerda.
 
-**Tasks / Journal / Dashboard / Resumos:** usar `Surface` + shadcn (`Button`, `Input`, `Dialog`).
+**Journal / Dashboard / Jira:** usar `Surface` + shadcn (`Button`, `Input`, `Dialog`).
 
 **Módulo PRs:** mantém classes legadas `.panel`, `.pr-card`, `.button` em `globals.css` (já alinhadas aos tokens de marca).
 
@@ -128,7 +128,7 @@ Não reutilizar para marca global:
 | `components/layout/page-header.tsx` | Título + descrição de rota |
 | `components/layout/app-sidebar.tsx` | Nav + clima + avatar |
 | `modules/prs/**` | UI densa de PR (custom CSS) |
-| `modules/{tasks,journal,dashboard,resumos}/**` | shadcn + Surface |
+| `modules/{journal,dashboard,jira}/**` | shadcn + Surface |
 
 ---
 

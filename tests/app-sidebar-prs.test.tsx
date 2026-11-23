@@ -41,7 +41,7 @@ describe("AppSidebar Pull Requests", () => {
 
     expect(screen.getByRole("link", { name: /^minhas prs$/i })).toHaveAttribute("href", "/prs");
     expect(screen.getByRole("link", { name: /^para revisar$/i })).toHaveAttribute("href", "/prs/reviews");
-    expect(screen.getByRole("link", { name: /^abrir pr$/i })).toHaveAttribute("href", "/prs/open");
+    expect(screen.queryByRole("link", { name: /^abrir pr$/i })).not.toBeInTheDocument();
   });
 
   it("shows pending review badge when queue has pending items", () => {

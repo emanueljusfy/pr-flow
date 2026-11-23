@@ -1,4 +1,4 @@
-import { DEFAULT_OPEN_PR_BASE_BRANCH } from "@/modules/prs/lib/open-pr/constants";
+import { DEFAULT_MONITORED_REPOSITORY_BRANCH } from "@/modules/prs/lib/monitored-repository-defaults";
 import {
   countMonitoredRepositories,
   insertMonitoredRepositoriesBatch,
@@ -26,7 +26,7 @@ export async function seedMonitoredRepositoriesFromEnvIfEmpty(): Promise<void> {
   await insertMonitoredRepositoriesBatch(
     fromEnv.map((repository, index) => ({
       repository,
-      defaultBranch: DEFAULT_OPEN_PR_BASE_BRANCH,
+      defaultBranch: DEFAULT_MONITORED_REPOSITORY_BRANCH,
       sortOrder: index
     }))
   );

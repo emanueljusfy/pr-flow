@@ -2,7 +2,6 @@
 
 import { DashboardBriefingWidget } from "@/modules/dashboard/components/dashboard-briefing-widget";
 import { DashboardHub } from "@/modules/dashboard/components/dashboard-hub";
-import { DashboardTasksWidget } from "@/modules/dashboard/components/dashboard-tasks-widget";
 import { DashboardDayCalendarWidget } from "@/modules/day-calendar/components/dashboard-day-calendar-widget";
 import { DashboardJournalStreakWidget } from "@/modules/journal/components/dashboard-journal-streak-widget";
 import { DashboardShortcutDeck } from "@/modules/shortcut-deck/components/dashboard-shortcut-deck";
@@ -26,13 +25,7 @@ export function DashboardPage() {
         <DashboardShortcutDeck />
       </div>
       <DashboardHub />
-      <div
-        className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,22rem)]"
-        data-testid="dashboard-briefing-tasks-row"
-      >
-        <DashboardBriefingWidget />
-        <DashboardTasksWidget />
-      </div>
+      <DashboardBriefingWidget />
     </div>
   );
 }

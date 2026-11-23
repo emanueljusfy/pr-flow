@@ -6,7 +6,7 @@ describe("fetchDashboardHubStats", () => {
     vi.unstubAllGlobals();
   });
 
-  it("agrega PRs, tasks e tickets da sprint ativa no Jira", async () => {
+  it("agrega PRs e tickets da sprint ativa no Jira", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((input: RequestInfo) => {
@@ -15,15 +15,6 @@ describe("fetchDashboardHubStats", () => {
           return Promise.resolve({
             ok: true,
             json: async () => ({ status: "ok", data: [{ id: "1" }] })
-          });
-        }
-        if (url.includes("/api/tasks")) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({
-              open: [{ id: "t1", title: "A", isOverdue: false }],
-              completed: []
-            })
           });
         }
         if (url.includes("/api/jira/sprints")) {
@@ -51,7 +42,6 @@ describe("fetchDashboardHubStats", () => {
     const stats = await fetchDashboardHubStats();
 
     expect(stats.openPrs).toBe(1);
-    expect(stats.openTasks).toBe(1);
     expect(stats.jiraSprintTickets).toBe(3);
     expect(stats.jiraSprintLabel).toBe("Sprint 12");
     expect(String(vi.mocked(fetch).mock.calls.find(([url]) => String(url).includes("/api/jira/issues"))?.[0])).toContain(
@@ -83,12 +73,6 @@ describe("fetchDashboardHubStats", () => {
           return Promise.resolve({
             ok: true,
             json: async () => ({ status: "ok", data: [] })
-          });
-        }
-        if (url.includes("/api/tasks")) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({ open: [], completed: [] })
           });
         }
         if (url.includes("/api/jira/sprints")) {

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Surface } from "@/components/ui/surface";
-import { DEFAULT_OPEN_PR_BASE_BRANCH } from "@/modules/prs/lib/open-pr/constants";
+import { DEFAULT_MONITORED_REPOSITORY_BRANCH } from "@/modules/prs/lib/monitored-repository-defaults";
 
 type RepositoryRecord = {
   id: string;
@@ -27,7 +27,7 @@ type FormMode = "create" | "edit";
 
 const EMPTY_FORM = {
   repository: "",
-  defaultBranch: DEFAULT_OPEN_PR_BASE_BRANCH,
+  defaultBranch: DEFAULT_MONITORED_REPOSITORY_BRANCH,
   sortOrder: "0"
 };
 
@@ -256,7 +256,7 @@ export function RepositoriesPage() {
                 onChange={(event) =>
                   setForm((current) => ({ ...current, defaultBranch: event.target.value }))
                 }
-                placeholder={DEFAULT_OPEN_PR_BASE_BRANCH}
+                placeholder={DEFAULT_MONITORED_REPOSITORY_BRANCH}
                 autoComplete="off"
               />
             </label>

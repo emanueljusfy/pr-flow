@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
   Check,
   ChevronLeft,
@@ -132,7 +131,7 @@ export function JiraBranchWizardDialog({
     setRepositoriesLoading(true);
     setRepositoriesError(null);
 
-    fetch("/api/prs/open/repositories", { signal: controller.signal })
+    fetch("/api/jira/branches/repositories", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) {
           const payload = (await response.json()) as { error?: string };
@@ -232,7 +231,7 @@ export function JiraBranchWizardDialog({
 
     try {
       const response = await fetch(
-        `/api/prs/open/base-branches?repository=${encodeURIComponent(repository)}`,
+        `/api/jira/branches/base-branches?repository=${encodeURIComponent(repository)}`,
         { signal }
       );
       const payload = (await response.json()) as {
@@ -465,12 +464,14 @@ export function JiraBranchWizardDialog({
                       </p>
                     </div>
                     {result.openPrUrl ? (
-                      <Link
+                      <a
                         href={result.openPrUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className={buttonVariants({ variant: "outline", size: "sm" })}
                       >
-                        Abrir PR
-                      </Link>
+                        Abrir PR no GitHub
+                      </a>
                     ) : null}
                   </Surface>
                 </li>

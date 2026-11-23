@@ -30,8 +30,6 @@ function isHubStats(value: unknown): value is DashboardHubStats {
   const stats = value as DashboardHubStats;
   return (
     (stats.openPrs === null || typeof stats.openPrs === "number") &&
-    (stats.openTasks === null || typeof stats.openTasks === "number") &&
-    (stats.overdueTasks === null || typeof stats.overdueTasks === "number") &&
     (stats.pendingReviews === null || typeof stats.pendingReviews === "number") &&
     (stats.jiraSprintTickets === null || typeof stats.jiraSprintTickets === "number") &&
     (stats.jiraSprintLabel === null || typeof stats.jiraSprintLabel === "string")

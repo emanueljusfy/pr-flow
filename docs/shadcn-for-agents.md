@@ -16,7 +16,7 @@ Só fuja do shadcn quando:
 
 - Tokens (`--primary`, `--border`, etc.) já mapeiam para a marca laranja em `app/globals.css`.
 - Acessibilidade (focus, `aria`, Radix) vem pronta.
-- Menos CSS ad hoc e menos divergência entre Tasks, Journal, Dashboard, Jira e Resumos.
+- Menos CSS ad hoc e menos divergência entre Journal, Dashboard e Jira.
 
 ## Configuração do projeto
 
@@ -42,12 +42,12 @@ Use estes antes de criar equivalentes custom:
 | Componente | Caminho | Uso típico no PR Flow |
 |------------|---------|------------------------|
 | `Button` | `components/ui/button.tsx` | CTAs, ícones (`size="icon"`), `variant="outline"` / `ghost` / `secondary` |
-| `Input` | `components/ui/input.tsx` | Formulários Tasks, buscas |
-| `Dialog` | `components/ui/dialog.tsx` | Edição/criação (Tasks) |
+| `Input` | `components/ui/input.tsx` | Formulários, buscas |
+| `Dialog` | `components/ui/dialog.tsx` | Edição/criação |
 | `AlertDialog` | `components/ui/alert-dialog.tsx` | Confirmação destrutiva |
 | `Select` | `components/ui/select.tsx` | Filtros (Jira) |
 | `Popover` + `Calendar` | `popover.tsx`, `calendar.tsx` | Seletor de dia (Journal) |
-| `DatePicker` | `components/ui/date-picker.tsx` | Data com locale pt-BR (Tasks) |
+| `DatePicker` | `components/ui/date-picker.tsx` | Data com locale pt-BR |
 | `Tooltip` | `components/ui/tooltip.tsx` | Ícones no card de PR, ações compactas |
 | `HelpHint` | `components/ui/help-hint.tsx` | Texto explicativo sob título → ícone `CircleHelp` + tooltip (hover/foco); empty/status ficam visíveis |
 | `Skeleton` | `components/ui/skeleton.tsx` | Loading de listas |
@@ -86,11 +86,9 @@ export function MinhaPage() {
 
 | Módulo | Arquivo de referência |
 |--------|----------------------|
-| Tasks | `modules/tasks/components/tasks-page.tsx` |
 | Journal | `modules/journal/components/journal-page.tsx` |
 | Dashboard | `modules/dashboard/components/dashboard-briefing-widget.tsx` |
 | Jira | `modules/jira/components/jira-page.tsx` |
-| Resumos | `modules/summaries/components/summaries-page.tsx` |
 | Shell | `components/layout/app-sidebar.tsx` |
 
 ## Mapeamento rápido (intenção → shadcn)
@@ -130,7 +128,7 @@ Estender aparência: `className={cn("...", className)}` com `cn` de `@/lib/utils
 
 | Evitar | Fazer |
 |--------|--------|
-| `<button className="button">` em Tasks/Journal/Dashboard/Jira/Resumos | `Button` shadcn |
+| `<button className="button">` em Journal/Dashboard/Jira | `Button` shadcn |
 | Modal com `position: fixed` + div custom | `Dialog` / `AlertDialog` |
 | `<select>` nativo estilizado à mão | `Select` |
 | Novo arquivo `components/foo-button.tsx` duplicando shadcn | `Button` + `className` |

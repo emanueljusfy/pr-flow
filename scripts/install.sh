@@ -460,12 +460,6 @@ collect_slack() {
 
 collect_preferences() {
   section "Preferências ${DIM}(opcional)${RESET}"
-  tip "Nível de carreira orienta o tom dos resumos (padrão: junior)."
-  if prompt_yn "Definir SUMMARY_CAREER_LEVEL?" "n"; then
-    prompt_choice SUMMARY_CAREER_LEVEL "Nível" optional junior pleno senior
-  fi
-
-  echo
   tip "Porta HTTP do app no host (padrão 3847). Compose já mapeia \${PORT}:3847."
   if prompt_yn "Alterar PORT?" "n"; then
     prompt_value PORT "PORT" required
@@ -500,9 +494,6 @@ print_config_summary() {
   echo -e "  ${status_cal}  Google Calendar ${DIM}$([[ -n "${ENV_VALUES[GOOGLE_CALENDAR_ICAL_URL]:-}" ]] && echo configurado || echo não configurado)${RESET}"
   echo -e "  ${status_slack}  Slack           ${DIM}$([[ -n "${ENV_VALUES[SLACK_BOT_OAUTH_TOKEN]:-}" ]] && echo configurado || echo não configurado)${RESET}"
   echo -e "  ${icon_dot}  PORT            ${ENV_VALUES[PORT]:-3847}"
-  if [[ -n "${ENV_VALUES[SUMMARY_CAREER_LEVEL]:-}" ]]; then
-    echo -e "  ${icon_dot}  Career level    ${ENV_VALUES[SUMMARY_CAREER_LEVEL]}"
-  fi
   echo
   tip "O banco é um arquivo SQLite (data/pr-flow.sqlite). O Compose monta ./data no container."
   echo
@@ -556,7 +547,6 @@ write_env_file() {
   local key
   for key in \
     GEMINI_MODEL_FALLBACK \
-    SUMMARY_CAREER_LEVEL \
     JIRA_SPRINT_BOARD_ID \
     GOOGLE_CALENDAR_ICAL_URL \
     PORT

@@ -49,3 +49,18 @@ export function isValidNotebookDay(value: string): boolean {
   const parsed = new Date(`${value}T00:00:00.000Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
+
+/**
+ * Último dia útil (seg–sex) estritamente anterior ao dia de referência.
+ * Segunda → sexta anterior; sábado/domingo → sexta anterior.
+ */
+export function previousBusinessDay(referenceDay: string = todayLocalDateString()): string {
+  const weekday = notebookDayToDate(referenceDay).getDay();
+  if (weekday === 1) {
+    return shiftNotebookDay(referenceDay, -3);
+  }
+  if (weekday === 0) {
+    return shiftNotebookDay(referenceDay, -2);
+  }
+  return shiftNotebookDay(referenceDay, -1);
+}

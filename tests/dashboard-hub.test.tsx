@@ -35,15 +35,6 @@ describe("DashboardHub", () => {
             json: async () => ({ status: "ok", data: [{ id: "1" }, { id: "2" }] })
           });
         }
-        if (url.includes("/api/tasks")) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({
-              open: [{ id: "t1", title: "A", isOverdue: true }],
-              completed: []
-            })
-          });
-        }
         if (url.includes("/api/jira/sprints")) {
           return Promise.resolve({
             ok: true,
@@ -69,14 +60,12 @@ describe("DashboardHub", () => {
     render(<DashboardHub />);
 
     expect(screen.getByRole("link", { name: /pull requests/i })).toHaveAttribute("href", "/prs");
-    expect(screen.getByRole("link", { name: /tarefas/i })).toHaveAttribute("href", "/tasks");
     expect(screen.getByRole("link", { name: /jira/i })).toHaveAttribute("href", "/jira");
 
     await waitFor(() =>
       expect(screen.getByRole("status", { name: /2 abertas, 2 para revisar/i })).toBeInTheDocument()
     );
     expect(screen.getByRole("link", { name: /2 para revisar/i })).toHaveAttribute("href", "/prs/reviews");
-    expect(screen.getByRole("status", { name: /1 em aberto, 1 atrasada/i })).toBeInTheDocument();
     expect(
       screen.getByRole("status", { name: /2 tickets na sprint, sprint atual/i })
     ).toBeInTheDocument();
@@ -104,12 +93,6 @@ describe("DashboardHub", () => {
             json: async () => ({ status: "ok", data: [{ id: "1" }] })
           });
         }
-        if (url.includes("/api/tasks")) {
-          return Promise.resolve({
-            ok: true,
-            json: async () => ({ open: [], completed: [] })
-          });
-        }
         if (url.includes("/api/jira/sprints")) {
           return Promise.resolve({ ok: false });
         }
@@ -131,8 +114,6 @@ describe("DashboardHub", () => {
     );
     saveDashboardHubStatsCache({
       openPrs: 9,
-      openTasks: 3,
-      overdueTasks: 0,
       pendingReviews: 0,
       jiraSprintTickets: 5,
       jiraSprintLabel: "Sprint cache"
@@ -148,7 +129,6 @@ describe("DashboardHub", () => {
     await waitFor(() =>
       expect(screen.getByRole("status", { name: /9 abertas/i })).toBeInTheDocument()
     );
-    expect(screen.getByRole("status", { name: /3 em aberto/i })).toBeInTheDocument();
     expect(
       screen.getByRole("status", { name: /5 tickets na sprint, sprint cache/i })
     ).toBeInTheDocument();

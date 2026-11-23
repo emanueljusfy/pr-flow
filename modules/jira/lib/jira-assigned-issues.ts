@@ -5,8 +5,6 @@ import { fetchAssignedJiraIssues, fetchJiraIssueIdsByKeys } from "@/modules/jira
 import type { JiraSprintFilter } from "@/modules/jira/lib/jira-jql";
 
 const OPEN_PR_SPRINT_FILTERS: JiraSprintFilter[] = ["open", "all"];
-const OPEN_PR_BRANCH_SPRINT_FILTERS: JiraSprintFilter[] = ["open"];
-const OPEN_PR_MAX_BRANCH_ISSUES = 25;
 
 export type JiraAssignedIssueRef = {
   id: string;
@@ -86,17 +84,4 @@ export async function listAssignedJiraIssuesForDevStatus(): Promise<JiraAssigned
     ? await loadIssuesFromCache(OPEN_PR_SPRINT_FILTERS)
     : await loadIssuesLive(OPEN_PR_SPRINT_FILTERS);
   return resolveIssueIds(issues);
-}
-
-/** Tickets da sprint aberta, limitados — usado na descoberta de branches (abrir PR). */
-export async function listAssignedJiraIssuesForOpenPr(): Promise<JiraAssignedIssueRef[]> {
-  if (!isJiraConfigured()) {
-    return [];
-  }
-
-  const issues = (await hasJiraCache())
-    ? await loadIssuesFromCache(OPEN_PR_BRANCH_SPRINT_FILTERS)
-    : await loadIssuesLive(OPEN_PR_BRANCH_SPRINT_FILTERS);
-  const resolved = await resolveIssueIds(issues);
-  return resolved.slice(0, OPEN_PR_MAX_BRANCH_ISSUES);
 }

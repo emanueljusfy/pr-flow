@@ -4,7 +4,7 @@ import { redactDiffLikeMessage, sanitizeErrorForLog } from "@/modules/observabil
 describe("log-sanitize", () => {
   it("redige mensagens com diff git", () => {
     expect(redactDiffLikeMessage("diff --git a/foo b/foo\n-deleted")).toBe(
-      "Conteúdo de diff omitido do log — verifique open-pr:generate-body"
+      "Conteúdo de diff omitido do log."
     );
   });
 
@@ -17,7 +17,7 @@ describe("log-sanitize", () => {
     const error = new Error(`diff --git a/foo b/foo\n${"y".repeat(10_000)}`);
     expect(sanitizeErrorForLog(error)).toEqual({
       name: "Error",
-      message: "Conteúdo de diff omitido do log — verifique open-pr:generate-body"
+      message: "Conteúdo de diff omitido do log."
     });
   });
 });
