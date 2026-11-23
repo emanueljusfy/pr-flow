@@ -118,7 +118,7 @@ export function DashboardBriefingWidget({ day }: DashboardBriefingWidgetProps) {
 
       {hasSummary && summary ? (
         <article
-          className="prose prose-sm dark:prose-invert max-w-none text-[var(--app-text)] prose-headings:text-[var(--app-text)] prose-p:text-[var(--app-text)]/90 prose-strong:text-[var(--app-text)] prose-code:text-[var(--app-text)] prose-a:text-[var(--app-link)] prose-a:underline-offset-2 hover:prose-a:text-[var(--brand-bright)] prose-blockquote:border-[var(--app-border)] prose-blockquote:text-[var(--app-text-muted)] prose-hr:border-[var(--app-border)] prose-li:text-[var(--app-text)]/90"
+          className="prose prose-sm dark:prose-invert max-w-[75ch] text-[var(--app-text)] prose-headings:text-[var(--app-text)] prose-p:text-[var(--app-text)]/90 prose-strong:text-[var(--app-text)] prose-code:text-[var(--app-text)] prose-a:text-[var(--app-link)] prose-a:underline-offset-2 hover:prose-a:text-[var(--brand-bright)] prose-blockquote:border-[var(--app-border)] prose-blockquote:text-[var(--app-text-muted)] prose-hr:border-[var(--app-border)] prose-li:text-[var(--app-text)]/90"
           data-testid="dashboard-briefing"
         >
           <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{summary}</ReactMarkdown>

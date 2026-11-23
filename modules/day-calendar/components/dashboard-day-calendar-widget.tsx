@@ -5,8 +5,14 @@ import { Button } from "@/components/ui/button";
 import { HelpHint } from "@/components/ui/help-hint";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Surface } from "@/components/ui/surface";
+import { useNow } from "@/hooks/use-now";
+import { cn } from "@/lib/utils";
 import { useDayCalendar } from "@/modules/day-calendar/hooks/use-day-calendar";
 import { formatDayCalendarTimeRange } from "@/modules/day-calendar/lib/day-calendar-labels";
+import {
+  buildDayCalendarTimeline,
+  formatDayCalendarStartTime
+} from "@/modules/day-calendar/lib/day-calendar-timeline";
 import { ptBR } from "@/modules/messages/pt-BR";
 
 export function DashboardDayCalendarWidget() {
@@ -15,9 +21,11 @@ export function DashboardDayCalendarWidget() {
   const events = data?.status === "ok" ? data.events : [];
   const timeZone = data?.status === "ok" ? data.timeZone : "America/Sao_Paulo";
   const missingConfig = data?.status === "missing_config";
+  const now = useNow();
+  const timeline = buildDayCalendarTimeline(events, now);
 
   return (
-    <Surface className="flex h-full min-w-0 flex-col space-y-4 p-4" data-testid="dashboard-day-calendar-widget">
+    <Surface className="flex min-w-0 flex-col space-y-4 p-4" data-testid="dashboard-day-calendar-widget">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--brand-border)] bg-[var(--brand-dim)] text-[var(--brand-bright)]">
@@ -64,26 +72,74 @@ export function DashboardDayCalendarWidget() {
       ) : null}
 
       {!isLoading && !error && events.length > 0 ? (
-        <ul className="min-h-0 space-y-2 overflow-y-auto" aria-label={ptBR.dayCalendar.listAriaLabel}>
-          {events.map((event) => (
-            <li key={event.uid} className="panel-inset px-3 py-2.5">
-              <p className="text-sm font-medium leading-snug text-[var(--app-text)]">
-                {event.title}
-              </p>
-              <p className="mt-1 text-xs text-[var(--app-text-muted)]">
-                {formatDayCalendarTimeRange(
-                  event.startsAt,
-                  event.endsAt,
-                  event.allDay,
-                  timeZone
+        <ol className="relative min-h-0 space-y-1" aria-label={ptBR.dayCalendar.listAriaLabel}>
+          <span
+            className="absolute top-2 bottom-2 left-[calc(3rem+0.375rem+0.5rem)] w-px bg-[var(--app-border)]"
+            aria-hidden
+          />
+          {timeline.map(({ event, phase }) => {
+            const isNow = phase === "now";
+            const isNext = phase === "next";
+
+            return (
+              <li
+                key={event.uid}
+                data-phase={phase}
+                className={cn(
+                  "relative grid grid-cols-[3rem_1rem_minmax(0,1fr)] items-start gap-x-1.5 rounded-lg py-2 pr-2",
+                  isNow && "bg-[var(--brand-dim)]",
+                  phase === "past" && "opacity-50"
                 )}
-                {event.location ? (
-                  <span> · {event.location}</span>
-                ) : null}
-              </p>
-            </li>
-          ))}
-        </ul>
+              >
+                <span className="pt-px text-right text-xs font-medium tabular-nums text-[var(--app-text-muted)]">
+                  {event.allDay
+                    ? ptBR.dayCalendar.allDayShort
+                    : formatDayCalendarStartTime(event.startsAt, timeZone)}
+                </span>
+                <span className="flex justify-center pt-1" aria-hidden>
+                  <span
+                    className={cn(
+                      "relative size-2 rounded-full border",
+                      isNow
+                        ? "border-[var(--brand-bright)] bg-[var(--brand-bright)]"
+                        : isNext
+                          ? "border-[var(--app-text)] bg-[var(--app-surface-raised)]"
+                          : "border-[var(--app-border-strong)] bg-[var(--app-surface-raised)]"
+                    )}
+                  />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium leading-snug text-[var(--app-text)]">
+                      {event.title}
+                    </p>
+                    {isNow || isNext ? (
+                      <span
+                        className={cn(
+                          "shrink-0 rounded-full border px-1.5 py-px text-[10px] font-medium uppercase tracking-wide",
+                          isNow
+                            ? "border-[var(--brand-border)] text-[var(--brand-bright)]"
+                            : "border-[var(--app-border-strong)] text-[var(--app-text-muted)]"
+                        )}
+                      >
+                        {isNow ? ptBR.dayCalendar.nowBadge : ptBR.dayCalendar.nextBadge}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 text-xs text-[var(--app-text-muted)]">
+                    {formatDayCalendarTimeRange(
+                      event.startsAt,
+                      event.endsAt,
+                      event.allDay,
+                      timeZone
+                    )}
+                    {event.location ? <span> · {event.location}</span> : null}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       ) : null}
     </Surface>
   );

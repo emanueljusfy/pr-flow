@@ -26,6 +26,13 @@ export const ptBR = {
     invalidDate: "Data inválida. Use o formato YYYY-MM-DD.",
     generationFailed: "Falha ao gerar briefing do dash."
   },
+  dashboard: {
+    greetingMorning: "Bom dia",
+    greetingAfternoon: "Boa tarde",
+    greetingEvening: "Boa noite",
+    mainColumnAriaLabel: "Trabalho do dia",
+    sideRailAriaLabel: "Seu dia"
+  },
   quickNote: {
     title: "Nota rápida",
     description:
@@ -80,6 +87,9 @@ export const ptBR = {
     noEvents: "Agenda livre por agora.",
     loading: "Carregando agenda…",
     listAriaLabel: "Eventos de hoje",
+    nowBadge: "Agora",
+    nextBadge: "A seguir",
+    allDayShort: "Dia todo",
     retry: "Tentar novamente",
     missingConfig:
       "Configure GOOGLE_CALENDAR_ICAL_URL no .env com o endereço secreto do iCal do Google Calendar.",

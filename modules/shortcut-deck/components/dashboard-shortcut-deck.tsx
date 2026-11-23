@@ -15,7 +15,7 @@ export function DashboardShortcutDeck() {
   const [manageOpen, setManageOpen] = useState(false);
 
   return (
-    <Surface className="flex h-full min-w-0 flex-col space-y-4 p-4" data-testid="dashboard-shortcut-deck">
+    <Surface className="flex min-w-0 flex-col space-y-4 p-4" data-testid="dashboard-shortcut-deck">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--brand-border)] bg-[var(--brand-dim)] text-[var(--brand-bright)]">
@@ -44,7 +44,7 @@ export function DashboardShortcutDeck() {
         <p className="text-sm text-[var(--app-text-muted)]">{ptBR.shortcutDeck.widgetEmpty}</p>
       ) : (
         <div
-          className="grid grid-cols-3 gap-2 sm:grid-cols-4"
+          className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-4"
           role="list"
           aria-label={ptBR.shortcutDeck.deckAriaLabel}
         >

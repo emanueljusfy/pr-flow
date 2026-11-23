@@ -90,7 +90,8 @@ Wrapper padrão para blocos de conteúdo:
 ### Layout
 
 - Conteúdo de rota: `app-shell` + `PageHeader` (`app/(shell)/*/page.tsx`).
-- Hub inicial: `/dashboard` (`DashboardHub` + `DashboardBriefingWidget`).
+- Hub inicial: `/dashboard` — saudação + data no topo; coluna principal (`DashboardHub` + `DashboardBriefingWidget`) e trilho lateral `aside` (agenda em timeline, streak, férias, deck). Em < xl o trilho desce abaixo da coluna principal.
+- Agenda do dia: evento em andamento usa `--brand-dim` + badge "Agora" (destaque de tempo, não status de PR); próximo evento leva badge neutro "A seguir"; eventos passados ficam com opacidade reduzida.
 - Shell: sidebar inset + main arredondado; header fino com “PR **Flow**” (`Flow` em `text-[var(--brand)]`).
 
 ## Cores semânticas (somente PRs)
