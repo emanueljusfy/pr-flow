@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, GitPullRequest, LayoutDashboard, Settings, Ticket } from "lucide-react";
+import { BookOpen, GitPullRequest, LayoutDashboard, PenTool, Settings, Ticket } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +39,11 @@ const navItems = [
     title: "Journal",
     href: "/journal",
     icon: BookOpen
+  },
+  {
+    title: ptBR.whiteboard.navTitle,
+    href: "/whiteboard",
+    icon: PenTool
   }
 ] as const;
 

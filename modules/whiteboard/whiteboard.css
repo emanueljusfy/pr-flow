@@ -1,0 +1,35 @@
+/*
+ * PR Flow preset for tldraw UI chrome (menus, toolbar, canvas background).
+ * Shape colors are in lib/whiteboard-theme.ts. Tokens come from app/globals.css.
+ */
+.pr-flow-whiteboard .tl-theme__dark {
+  --tl-font-sans: var(--font-sans), system-ui, sans-serif;
+
+  --tl-color-background: var(--app-surface);
+  --tl-color-grid: #3a3a3a;
+  --tl-color-low: var(--app-surface-inset);
+  --tl-color-low-border: var(--app-border);
+  --tl-color-divider: var(--app-border);
+  --tl-color-panel: var(--app-surface-raised);
+  --tl-color-panel-contrast: var(--app-border);
+  --tl-color-panel-overlay: rgba(26, 26, 26, 0.88);
+  --tl-color-panel-transparent: rgba(26, 26, 26, 0);
+  --tl-color-overlay: rgba(0, 0, 0, 0.6);
+
+  --tl-color-muted-1: rgba(255, 255, 255, 0.08);
+  --tl-color-muted-2: rgba(255, 255, 255, 0.04);
+  --tl-color-hint: rgba(255, 255, 255, 0.06);
+
+  --tl-color-text: var(--app-text);
+  --tl-color-text-0: var(--app-text);
+  --tl-color-text-1: var(--app-text-soft);
+  --tl-color-text-3: var(--app-text-muted);
+  --tl-color-text-shadow: var(--app-surface);
+
+  --tl-color-primary: var(--brand);
+  --tl-color-selected: var(--brand);
+  --tl-color-selected-contrast: var(--brand-foreground);
+  --tl-color-focus: var(--brand-bright);
+  --tl-color-selection-fill: var(--brand-dim);
+  --tl-color-selection-stroke: var(--brand);
+}

@@ -470,6 +470,14 @@ export const ptBR = {
     alertStartedBody: "Revisão em andamento.",
     alertFinished: (label: string, outcome: string) => `IA terminou ${label}: ${outcome}`,
     alertFailed: (label: string) => `IA falhou em ${label}`
+  },
+  whiteboard: {
+    navTitle: "Quadro",
+    pageTitle: "Quadro",
+    pageHelp:
+      "Quadro branco livre (tldraw) para rascunhar fluxos e ideias. O desenho fica salvo neste navegador.",
+    canvasAriaLabel: "Quadro de desenho",
+    loading: "Carregando quadro…"
   }
 } as const;
 

@@ -94,6 +94,10 @@ Wrapper padrão para blocos de conteúdo:
 - Agenda do dia: evento em andamento usa `--brand-dim` + badge "Agora" (destaque de tempo, não status de PR); próximo evento leva badge neutro "A seguir"; eventos passados ficam com opacidade reduzida.
 - Shell: sidebar inset + main arredondado; header fino com “PR **Flow**” (`Flow` em `text-[var(--brand)]`).
 
+### Quadro (tldraw)
+
+`/whiteboard` usa um preset próprio do tldraw, sempre em dark: cores das formas em `modules/whiteboard/lib/whiteboard-theme.ts` (`black` = `--app-text`, `grey` = `--app-text-muted`, `orange` = `--brand`) e chrome do editor (painéis, canvas, seleção em ember) em `modules/whiteboard/whiteboard.css`. Ao mudar tokens em `globals.css`, revisar os dois.
+
 ## Cores semânticas (somente PRs)
 
 Não reutilizar para marca global:

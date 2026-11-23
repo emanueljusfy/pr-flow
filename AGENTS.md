@@ -34,6 +34,7 @@ Implementação dos tokens: `app/globals.css` (`.dark`).
 | `/prs/reviews` | PRs em que sou revisor + Revisor IA (agente local revisa a fila filtrada e reage ✅/💬 no anúncio do canal) |
 | `/journal` | Notas markdown por dia |
 | `/jira` | Tickets Jira atribuídos ao usuário |
+| `/whiteboard` | Quadro (tldraw), salvo no IndexedDB do navegador; preset de cores em `modules/whiteboard/` |
 | `/settings/*` | Configurações em abas: `alerts`, `crons` (forçar execução com confirmação manual), `repositories`, `local-docker` |
 | `/api/mcp` | Servidor MCP (PRs + Slack) — ferramentas em `modules/mcp/lib/tools/` |
 
