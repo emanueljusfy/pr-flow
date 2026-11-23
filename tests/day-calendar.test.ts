@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { listDayEventsFromIcs } from "@/modules/day-calendar/lib/day-calendar-parse";
 import {
   clearDayCalendarIcsCache,
@@ -135,6 +135,26 @@ describe("day-calendar service", () => {
     await getDayCalendar("2026-07-30", { env, fetchIcs });
     await getDayCalendar("2026-07-30", { env, fetchIcs });
     expect(fetches).toBe(1);
+  });
+
+  it("serves the cached feed after the TTL while the refresh fails", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const env = {
+      GOOGLE_CALENDAR_ICAL_URL:
+        "https://calendar.google.com/calendar/ical/user%40example.com/private-abc/basic.ics"
+    };
+
+    await getDayCalendar("2026-07-30", { env, fetchIcs: async () => FIXTURE });
+    vi.setSystemTime(Date.now() + 6 * 60 * 1000);
+
+    const result = await getDayCalendar("2026-07-30", {
+      env,
+      fetchIcs: async () => {
+        throw new Error("ETIMEDOUT");
+      }
+    });
+
+    expect(result.status).toBe("ok");
   });
 
   it("downloads ICS over IPv4 https and follows a redirect", async () => {

@@ -6,6 +6,7 @@ import {
   remoteBranchExists
 } from "@/modules/jira-branch/lib/gh-branch-client";
 import { loadJiraBranchNamingContext } from "@/modules/jira-branch/lib/jira-branch-context";
+import { invalidateJiraBranchBaseBranches } from "@/modules/jira-branch/lib/jira-branch-repositories-service";
 import { suggestJiraBranchSlug } from "@/modules/jira-branch/lib/jira-branch-name-service";
 import {
   buildTicketBranchName,
@@ -166,6 +167,7 @@ export async function createJiraBranches(
       }
 
       await createRemoteBranch(target.repository, naming.branchName, baseSha, run);
+      invalidateJiraBranchBaseBranches(target.repository);
 
       results.push({
         repository: target.repository,

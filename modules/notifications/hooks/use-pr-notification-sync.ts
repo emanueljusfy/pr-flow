@@ -38,7 +38,7 @@ async function fetchMonitor(): Promise<PrApiResponse | null> {
 
 async function syncMonitorFromGithub(): Promise<PrApiResponse | null> {
   try {
-    const result = await fetch("/api/prs", { method: "POST", cache: "no-store" });
+    const result = await fetch("/api/prs?mode=background", { method: "POST", cache: "no-store" });
     const body = (await result.json()) as PrApiResponse;
     if (result.ok && body.status === "ok") {
       savePrMonitorLastSync(body);

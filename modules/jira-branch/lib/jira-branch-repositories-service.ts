@@ -5,7 +5,35 @@ import {
   noMonitoredRepositoriesMessage
 } from "@/modules/prs/lib/monitored-repositories-service";
 import { getMonitoredRepositoryBySlug } from "@/modules/prs/lib/monitored-repository-repository";
-import { getGhAuthenticatedLogin, listAuthorBranches } from "@/modules/jira-branch/lib/gh-branch-client";
+import {
+  getGhAuthenticatedLogin,
+  listAuthorBranches,
+  type AuthorBranch
+} from "@/modules/jira-branch/lib/gh-branch-client";
+import { createServerCache } from "@/modules/server-cache/lib/server-cache";
+
+// The login rarely changes; the branch list is paginated GraphQL (up to 8 calls).
+const ghLoginCache = createServerCache<string>({
+  name: "jira-branch:gh-login",
+  ttlMs: 30 * 60_000,
+  staleTtlMs: 24 * 60 * 60_000
+});
+
+const authorBranchesCache = createServerCache<AuthorBranch[]>({
+  name: "jira-branch:author-branches",
+  ttlMs: 2 * 60_000,
+  staleTtlMs: 60 * 60_000
+});
+
+/** Call after creating or deleting a remote branch in `repository`. */
+export function invalidateJiraBranchBaseBranches(repository: string): void {
+  authorBranchesCache.invalidate(repository);
+}
+
+export function clearJiraBranchBaseBranchesCache(): void {
+  ghLoginCache.clear();
+  authorBranchesCache.clear();
+}
 
 export type JiraBranchRepositoryItem = {
   repository: string;
@@ -46,8 +74,10 @@ export async function listJiraBranchBaseBranches(
   }
 
   try {
-    const githubLogin = await getGhAuthenticatedLogin(run);
-    const authorBranches = await listAuthorBranches(repository, githubLogin, run);
+    const githubLogin = await ghLoginCache.get("default", () => getGhAuthenticatedLogin(run));
+    const authorBranches = await authorBranchesCache.get(repository, () =>
+      listAuthorBranches(repository, githubLogin, run)
+    );
 
     const baseBranches = [
       ...new Set([monitored.defaultBranch, ...authorBranches.map((branch) => branch.name)])

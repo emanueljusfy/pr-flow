@@ -229,9 +229,8 @@ export async function collectOpenPrsFromRepos(
   }
 
   const githubLogin = await getAuthenticatedLogin(run);
-  const rows: MonitoredPrRaw[] = [];
 
-  for (const repo of repos) {
+  const fetchRepoPrs = async (repo: string): Promise<MonitoredPrRaw[]> => {
     const { owner, name } = parseRepo(repo);
     const output = await run(["api", "graphql", "-f", `query=${query}`, "-F", `owner=${owner}`, "-F", `name=${name}`]);
 
@@ -286,12 +285,34 @@ export async function collectOpenPrsFromRepos(
     } | undefined;
 
     const prs = data?.repository?.pullRequests?.nodes ?? [];
-    for (const pr of prs) {
-      rows.push(mapGraphqlPrNode(pr, repo));
-    }
-  }
+    return prs.map((pr) => mapGraphqlPrNode(pr, repo));
+  };
 
-  return { prs: rows, githubLogin };
+  // One gh process per repo, a few at a time instead of strictly in series.
+  const perRepo = await mapWithConcurrency(repos, REPO_FETCH_CONCURRENCY, fetchRepoPrs);
+  return { prs: perRepo.flat(), githubLogin };
+}
+
+const REPO_FETCH_CONCURRENCY = 4;
+
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      results[index] = await fn(items[index]);
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
 }
 
 export async function collectOpenAuthorPrs(

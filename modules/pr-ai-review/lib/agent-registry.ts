@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import type { AiReviewAgentInfo } from "@/modules/pr-ai-review/lib/domain";
+import { createServerCache } from "@/modules/server-cache/lib/server-cache";
 
 const execFileAsync = promisify(execFile);
 
@@ -93,4 +94,15 @@ export async function listAiReviewAgents(
     });
   }
   return agents;
+}
+
+// Installed CLIs change rarely; skip the `which` probes on every panel mount.
+const agentsCache = createServerCache<AiReviewAgentInfo[]>({
+  name: "pr-ai-review:agents",
+  ttlMs: 5 * 60_000,
+  staleTtlMs: 60 * 60_000
+});
+
+export function listCachedAiReviewAgents(): Promise<AiReviewAgentInfo[]> {
+  return agentsCache.get("default", () => listAiReviewAgents());
 }

@@ -31,6 +31,8 @@ async function fetchWeatherFromApi(coords: Coordinates): Promise<WeatherReading>
 
 const CACHE_KEY = "pr-flow:weather-v3";
 const CACHE_TTL_MS = 30 * 60 * 1000;
+/** A cached forecast younger than this is shown without calling the API. */
+const CACHE_REVALIDATE_AFTER_MS = 10 * 60 * 1000;
 
 interface CachedWeather {
   coords: Coordinates;
@@ -140,6 +142,9 @@ export function useWeatherForecast() {
       if (cached) {
         setForecast(cached.forecast);
         setStatus("ready");
+        if (Date.now() - cached.cachedAt < CACHE_REVALIDATE_AFTER_MS) {
+          return;
+        }
       }
 
       try {

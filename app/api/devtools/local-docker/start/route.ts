@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { LocalDockerConfigError } from "@/modules/local-docker/lib/local-docker-config";
 import { startPortainer } from "@/modules/local-docker/lib/local-docker-portainer-service";
+import { invalidatePortainerStatus } from "@/modules/local-docker/lib/local-docker-status-cache";
 import { sanitizeErrorForLog } from "@/modules/observability/lib/log-sanitize";
 import { writeSystemLogFireAndForget } from "@/modules/observability/lib/system-logger";
 
@@ -15,6 +16,7 @@ export async function POST() {
 
   try {
     const result = await startPortainer();
+    invalidatePortainerStatus();
 
     writeSystemLogFireAndForget({
       level: result.status === "error" ? "error" : "info",

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { writeSystemLogFireAndForget } from "@/modules/observability/lib/system-logger";
 import { getMonitorFromCache } from "@/modules/prs/lib/pr-read-service";
 import { enrichPrApiResponse } from "@/modules/prs/lib/pr-slack-share-enrichment";
 import { prErrorResponse } from "@/modules/prs/lib/pr-route-errors";
-import { syncPrCache } from "@/modules/prs/lib/pr-sync-service";
+import { syncPrCache, syncPrCacheUnlessFresh } from "@/modules/prs/lib/pr-sync-service";
 
 const API_PRS_SYNC_LOG_SOURCE = "api:prs-sync";
+
+/** Background polls reuse a sync newer than this instead of calling GitHub again. */
+const BACKGROUND_SYNC_MIN_INTERVAL_MS = 30_000;
+
+const syncModeSchema = z.enum(["manual", "background"]).catch("manual");
 
 export async function GET() {
   try {
@@ -16,15 +22,27 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
+  const mode = syncModeSchema.parse(new URL(request.url).searchParams.get("mode") ?? "manual");
+
+  if (mode === "background") {
+    const sync = await syncPrCacheUnlessFresh(BACKGROUND_SYNC_MIN_INTERVAL_MS);
+    if (sync.throttled && sync.response) {
+      return NextResponse.json(await enrichPrApiResponse(sync.response));
+    }
+    return respondToSync(sync);
+  }
+
   writeSystemLogFireAndForget({
     level: "info",
     source: API_PRS_SYNC_LOG_SOURCE,
     message: "Sincronização manual de PRs solicitada via API."
   });
 
-  const sync = await syncPrCache();
+  return respondToSync(await syncPrCache());
+}
 
+async function respondToSync(sync: Awaited<ReturnType<typeof syncPrCache>>) {
   if (sync.status === "ok") {
     writeSystemLogFireAndForget({
       level: "info",

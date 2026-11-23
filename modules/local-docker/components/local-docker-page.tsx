@@ -65,6 +65,9 @@ export function LocalDockerPage() {
   useEffect(() => {
     void refreshStatus();
     const interval = window.setInterval(() => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
       void refreshStatus();
     }, 8000);
     return () => window.clearInterval(interval);

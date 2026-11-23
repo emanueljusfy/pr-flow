@@ -11,17 +11,20 @@ import {
 import type { DayCalendarResponse } from "@/modules/day-calendar/lib/day-calendar-validation";
 import { parseOptionalDayKey } from "@/modules/day-calendar/lib/day-calendar-validation";
 import { ptBR } from "@/modules/messages/pt-BR";
+import { createServerCache } from "@/modules/server-cache/lib/server-cache";
 
 const ICS_FETCH_TIMEOUT_MS = 20_000;
 const ICS_CACHE_TTL_MS = 5 * 60 * 1000;
+/** Past the TTL the feed is served from cache while it refreshes in the background. */
+const ICS_STALE_TTL_MS = 24 * 60 * 60 * 1000;
 const ICS_MAX_REDIRECTS = 3;
 
-type IcsCacheEntry = {
-  text: string;
-  fetchedAt: number;
-};
-
-let icsCache: IcsCacheEntry | null = null;
+const icsCache = createServerCache<string>({
+  name: "day-calendar:ics",
+  ttlMs: ICS_CACHE_TTL_MS,
+  staleTtlMs: ICS_STALE_TTL_MS,
+  maxEntries: 4
+});
 
 export type DayCalendarFetchIcs = (url: string) => Promise<string>;
 
@@ -103,23 +106,16 @@ export async function fetchIcsOverHttps(url: string): Promise<string> {
 }
 
 export function clearDayCalendarIcsCache(): void {
-  icsCache = null;
+  icsCache.clear();
 }
 
-async function loadIcsText(
-  url: string,
-  fetchIcs: DayCalendarFetchIcs
-): Promise<string> {
-  const now = Date.now();
-  if (icsCache && now - icsCache.fetchedAt < ICS_CACHE_TTL_MS) {
-    return icsCache.text;
-  }
-
-  const text = await fetchIcs(url);
-  // Cheap sanity check before caching.
-  ical.sync.parseICS(text);
-  icsCache = { text, fetchedAt: now };
-  return text;
+function loadIcsText(url: string, fetchIcs: DayCalendarFetchIcs): Promise<string> {
+  return icsCache.get(url, async () => {
+    const text = await fetchIcs(url);
+    // Cheap sanity check before caching: a bad payload keeps the previous feed.
+    ical.sync.parseICS(text);
+    return text;
+  });
 }
 
 export async function getDayCalendar(

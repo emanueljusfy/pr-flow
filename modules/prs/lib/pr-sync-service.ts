@@ -12,6 +12,7 @@ import { findPrsThatLeftMonitor, reactToMergedPrs } from "@/modules/prs/lib/pr-m
 import { insertPrTimelineEvents } from "@/modules/prs/lib/pr-timeline-repository";
 import { getMonitoredRepositorySlugsForSync } from "@/modules/prs/lib/monitored-repositories-service";
 import { getPrSyncData, toMonitorApiResponse } from "@/modules/prs/lib/pr-sync-data-service";
+import { createSingleFlight } from "@/modules/server-cache/lib/server-cache";
 
 const PRS_SYNC_LOG_SOURCE = "prs:sync";
 
@@ -22,7 +23,7 @@ export type PrSyncResult = {
   error?: string;
 };
 
-export async function syncPrCache(): Promise<PrSyncResult> {
+async function runPrSync(): Promise<PrSyncResult> {
   const repos = await getMonitoredRepositorySlugsForSync();
   if (repos.length === 0) {
     return { status: "skipped", prCount: 0, error: "Nenhum repositório cadastrado." };
@@ -108,3 +109,44 @@ export async function syncPrCache(): Promise<PrSyncResult> {
   };
 }
 
+
+/**
+ * Cron, MCP and the API share one in-flight sync: concurrent callers wait for
+ * the running gh calls instead of starting another round.
+ */
+export const syncPrCache: () => Promise<PrSyncResult> = createSingleFlight("prs-sync", runPrSync);
+
+/**
+ * Background polling: skips GitHub when the last successful sync is newer than
+ * `minIntervalMs` and serves the SQLite snapshot instead.
+ */
+export async function syncPrCacheUnlessFresh(
+  minIntervalMs: number,
+  now: () => number = Date.now
+): Promise<PrSyncResult & { throttled?: boolean }> {
+  const meta = await getPrSyncMeta();
+  const lastSyncedAt = meta?.lastSyncedAt?.getTime();
+
+  if (
+    meta?.lastSyncStatus === "ok" &&
+    lastSyncedAt !== undefined &&
+    now() - lastSyncedAt < minIntervalMs
+  ) {
+    const cached = await loadPrMonitorCache();
+    if (cached) {
+      return {
+        status: "ok",
+        prCount: cached.data.length,
+        throttled: true,
+        response: {
+          status: "ok",
+          data: cached.data,
+          fetchedAt: cached.fetchedAt,
+          githubLogin: cached.githubLogin
+        }
+      };
+    }
+  }
+
+  return syncPrCache();
+}

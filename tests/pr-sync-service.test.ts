@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { syncPrCache } from "@/modules/prs/lib/pr-sync-service";
+import { syncPrCache, syncPrCacheUnlessFresh } from "@/modules/prs/lib/pr-sync-service";
 
 const writeSystemLogFireAndForget = vi.fn();
 
@@ -135,5 +135,94 @@ describe("syncPrCache", () => {
         message: "gh quebrou"
       })
     );
+  });
+});
+
+describe("syncPrCache concurrency", () => {
+  it("shares one GitHub round between concurrent callers", async () => {
+    getPrSyncMeta.mockResolvedValue(null);
+    vi.mocked(getMonitoredRepositorySlugsForSync).mockResolvedValue(["acme/a"]);
+    vi.mocked(getPrSyncData).mockClear();
+    vi.mocked(getPrSyncData).mockResolvedValue({
+      status: "ok",
+      githubLogin: "rigon",
+      fetchedAt: "2026-05-28T12:00:00Z",
+      monitor: [],
+      reviewerQueue: [],
+      reviewContext: []
+    });
+
+    const [a, b] = await Promise.all([syncPrCache(), syncPrCache()]);
+
+    expect(a).toBe(b);
+    expect(getPrSyncData).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("syncPrCacheUnlessFresh", () => {
+  const syncedAt = new Date("2026-05-28T12:00:00Z");
+  const cachedMonitor = {
+    data: [],
+    fetchedAt: syncedAt.toISOString(),
+    githubLogin: "rigon"
+  };
+
+  it("serves the SQLite snapshot when the last ok sync is recent", async () => {
+    getPrSyncMeta.mockResolvedValue({
+      id: "default",
+      githubLogin: "rigon",
+      lastSyncedAt: syncedAt,
+      lastSyncStatus: "ok",
+      lastSyncError: null
+    });
+    loadPrMonitorCache.mockResolvedValueOnce(cachedMonitor);
+    vi.mocked(getPrSyncData).mockClear();
+
+    const result = await syncPrCacheUnlessFresh(30_000, () => syncedAt.getTime() + 10_000);
+
+    expect(result.throttled).toBe(true);
+    expect(result.response).toEqual({ status: "ok", ...cachedMonitor });
+    expect(getPrSyncData).not.toHaveBeenCalled();
+  });
+
+  it("syncs with GitHub when the last sync is older than the interval", async () => {
+    getPrSyncMeta.mockResolvedValue({
+      id: "default",
+      githubLogin: "rigon",
+      lastSyncedAt: syncedAt,
+      lastSyncStatus: "ok",
+      lastSyncError: null
+    });
+    vi.mocked(getMonitoredRepositorySlugsForSync).mockResolvedValue(["acme/a"]);
+    vi.mocked(getPrSyncData).mockClear();
+    vi.mocked(getPrSyncData).mockResolvedValue({
+      status: "ok",
+      githubLogin: "rigon",
+      fetchedAt: "2026-05-28T12:01:00Z",
+      monitor: [],
+      reviewerQueue: [],
+      reviewContext: []
+    });
+
+    const result = await syncPrCacheUnlessFresh(30_000, () => syncedAt.getTime() + 31_000);
+
+    expect(result.throttled).toBeUndefined();
+    expect(getPrSyncData).toHaveBeenCalledTimes(1);
+  });
+
+  it("syncs with GitHub when the last sync failed", async () => {
+    getPrSyncMeta.mockResolvedValue({
+      id: "default",
+      githubLogin: "rigon",
+      lastSyncedAt: syncedAt,
+      lastSyncStatus: "error",
+      lastSyncError: "x"
+    });
+    vi.mocked(getMonitoredRepositorySlugsForSync).mockResolvedValue(["acme/a"]);
+    vi.mocked(getPrSyncData).mockClear();
+
+    await syncPrCacheUnlessFresh(30_000, () => syncedAt.getTime() + 1_000);
+
+    expect(getPrSyncData).toHaveBeenCalledTimes(1);
   });
 });
