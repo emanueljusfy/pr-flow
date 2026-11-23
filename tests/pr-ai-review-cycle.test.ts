@@ -344,4 +344,43 @@ describe("AI review cycle", () => {
       });
     });
   });
+
+  it("cron skips heads with a verdict and retries failed or moved heads", async () => {
+    await withAiReviewTestDb(async () => {
+      let queue = [queuePr(1, { headSha: "sha-1" }), queuePr(2, { headSha: "sha-2" })];
+      const h = harness([], { readQueue: async () => okQueue(queue)() });
+      h.deps.listReviews = async ({ number }) =>
+        number === 1 ? [approvedAt(new Date(h.clock.now.getTime() - 30_000))] : [];
+      h.run.mockImplementation(async (_binary: string, args: string[]) => {
+        h.clock.now = new Date(h.clock.now.getTime() + 60_000);
+        // PR 2's agent fails on the first tick only.
+        if (args[1].includes("/pull/2") && h.run.mock.calls.length <= 2) {
+          return { stdout: "", stderr: "boom", code: 1 };
+        }
+        return { stdout: "ok", stderr: "", code: 0 };
+      });
+      await enable();
+      await updateAiReviewConfig({ promptTemplate: "rev {{pr_url}}" });
+
+      // Tick 1: PR 1 gets APPROVE on sha-1, PR 2 fails on sha-2.
+      await runAiReviewCronTick(h.deps);
+      const reviewedOn = async () => (await listAiReviewRuns({})).map((run) => `${run.prNumber}@${run.headSha}:${run.status}`);
+      expect((await reviewedOn()).sort()).toEqual(["1@sha-1:succeeded", "2@sha-2:failed"]);
+
+      // Tick 2, same heads: only the failed PR 2 is retried.
+      await updateAiReviewConfig({ nextRunAt: h.clock.now });
+      await runAiReviewCronTick(h.deps);
+      const tick2 = await listAiReviewRuns({ limit: 1 });
+      expect(await listAiReviewRuns({ prUrl: queuePr(1).url })).toHaveLength(1);
+      expect(tick2[0]).toMatchObject({ prNumber: 2, headSha: "sha-2" });
+
+      // Tick 3: PR 1 moved to sha-3 and is reviewed again; PR 2 (no verdict on sha-2) is retried again.
+      queue = [queuePr(1, { headSha: "sha-3" }), queuePr(2, { headSha: "sha-2" })];
+      await updateAiReviewConfig({ nextRunAt: h.clock.now });
+      await runAiReviewCronTick(h.deps);
+      const pr1 = await listAiReviewRuns({ prUrl: queuePr(1).url });
+      expect(pr1.map((run) => run.headSha)).toEqual(["sha-3", "sha-1"]);
+    });
+  });
 });
+
