@@ -1,28 +1,38 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
-import { AiReviewCardActions } from "@/modules/pr-ai-review/components/ai-review-card-actions";
+import { PrReviewerQueueItem } from "@/modules/prs/components/pr-reviewer-queue-item";
 import type { PrAiReviewRunDto } from "@/modules/pr-ai-review/lib/domain";
-import { aiRun, PR_URL, stubFetch } from "./pr-ai-review-fixtures";
+import { aiRun, PR_URL, queuePr, stubFetch } from "./pr-ai-review-fixtures";
 
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() })
 }));
 
-function renderCard(runs: PrAiReviewRunDto[], headSha = "head-1", onRunStarted = vi.fn(), busy = false) {
+function renderCard(
+  runs: PrAiReviewRunDto[],
+  headSha = "head-1",
+  onAiRunStarted = vi.fn(),
+  aiBusy = false,
+  variant: "card" | "compact" = "card"
+) {
   return render(
-    <AiReviewCardActions
-      prUrl={PR_URL}
-      label="justracker-thanos#699"
-      headSha={headSha}
-      runs={runs}
-      busy={busy}
-      onRunStarted={onRunStarted}
-    />
+    <ul>
+      <PrReviewerQueueItem
+        pr={{ ...queuePr, headSha }}
+        aiRuns={runs}
+        aiBusy={aiBusy}
+        onAiRunStarted={onAiRunStarted}
+        variant={variant}
+      />
+    </ul>
   );
 }
 
-const reviewButton = () => screen.getByRole("button", { name: "Revisar justracker-thanos#699 com IA" });
+async function openMenu() {
+  fireEvent.contextMenu(document.querySelector(".review-queue-card")!);
+  return screen.findByRole("menuitem", { name: "Revisar justracker-thanos#699 com IA" });
+}
 
 beforeEach(() => {
   vi.mocked(toast).mockClear();
@@ -33,14 +43,31 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("AiReviewCardActions", () => {
-  it("running badge disables action", () => {
-    renderCard([aiRun({ id: "old", verdict: "APPROVE" }), aiRun({ id: "now", status: "running", verdict: null, startedAt: "2026-11-23T11:00:00.000Z" })]);
-    expect(screen.getByTestId("ai-review-badge")).toHaveTextContent("IA revisando…");
-    expect(reviewButton()).toBeDisabled();
+describe("PrReviewerQueueItem AI actions", () => {
+  it("card has no inline actions; review and github live in the context menu", async () => {
+    renderCard([]);
+    expect(screen.queryByText("Abrir no GitHub")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Revisar .* com IA/ })).not.toBeInTheDocument();
+
+    const reviewItem = await openMenu();
+    expect(reviewItem).not.toHaveAttribute("aria-disabled", "true");
+
+    const open = vi.fn();
+    vi.stubGlobal("open", open);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Abrir no GitHub" }));
+    expect(open).toHaveBeenCalledWith(PR_URL, "_blank", "noopener,noreferrer");
   });
 
-  it("verdict badges", () => {
+  it("running badge disables review action", async () => {
+    renderCard([
+      aiRun({ id: "old", verdict: "APPROVE" }),
+      aiRun({ id: "now", status: "running", verdict: null, startedAt: "2026-11-23T11:00:00.000Z" })
+    ]);
+    expect(screen.getByTestId("ai-review-badge")).toHaveTextContent("IA revisando…");
+    expect(await openMenu()).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("verdict badges are buttons", () => {
     const cases = [
       ["APPROVE", "IA: Aprovado"],
       ["COMMENT", "IA: Comentou"],
@@ -51,8 +78,9 @@ describe("AiReviewCardActions", () => {
         aiRun({ id: "old", verdict: "APPROVE", startedAt: "2026-11-22T10:00:00.000Z" }),
         aiRun({ id: "new", verdict })
       ]);
-      expect(screen.getByTestId("ai-review-badge")).toHaveTextContent(label);
-      expect(reviewButton()).toBeEnabled();
+      const badge = screen.getByTestId("ai-review-badge");
+      expect(badge).toHaveTextContent(label);
+      expect(badge.tagName).toBe("BUTTON");
       unmount();
     }
   });
@@ -80,7 +108,7 @@ describe("AiReviewCardActions", () => {
     vi.stubGlobal("fetch", vi.fn(stub.fetchMock));
     const onRunStarted = vi.fn();
     renderCard([], "head-1", onRunStarted);
-    fireEvent.click(reviewButton());
+    fireEvent.click(await openMenu());
     await waitFor(() =>
       expect(toast).toHaveBeenCalledWith("IA revisando justracker-thanos#699", { description: "Revisão em andamento." })
     );
@@ -95,13 +123,21 @@ describe("AiReviewCardActions", () => {
     vi.stubGlobal("fetch", vi.fn(stub.fetchMock));
     const onRunStarted = vi.fn();
     renderCard([], "head-1", onRunStarted);
-    fireEvent.click(reviewButton());
+    fireEvent.click(await openMenu());
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Já existe uma revisão da IA em andamento."));
     expect(onRunStarted).not.toHaveBeenCalled();
   });
 
-  it("disables action while another pr is being reviewed", () => {
+  it("disables action while another pr is being reviewed", async () => {
     renderCard([], "head-1", vi.fn(), true);
-    expect(reviewButton()).toBeDisabled();
+    expect(await openMenu()).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("compact variant renders one row with badge and context menu", async () => {
+    renderCard([aiRun({ verdict: "APPROVE" })], "head-1", vi.fn(), false, "compact");
+    expect(document.querySelector(".review-queue-card--compact .review-queue-row")).not.toBeNull();
+    expect(screen.getByRole("link", { name: "Abrir PR #699: fix: S3" })).toHaveAttribute("href", PR_URL);
+    expect(screen.getByTestId("ai-review-badge")).toHaveTextContent("IA: Aprovado");
+    expect(await openMenu()).toBeInTheDocument();
   });
 });

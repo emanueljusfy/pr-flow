@@ -432,6 +432,8 @@ export const ptBR = {
     reviewWithAi: "Revisar com IA",
     reviewWithAiAria: (label: string) => `Revisar ${label} com IA`,
     logsAria: (label: string) => `Ver revisões da IA de ${label}`,
+    badgeLogsAria: (badge: string, label: string) => `${badge} — ver revisões da IA de ${label}`,
+    openOnGitHub: "Abrir no GitHub",
     badgeRunning: "IA revisando…",
     badgeFailed: "IA: Falhou",
     badgeStale: "IA: desatualizada",

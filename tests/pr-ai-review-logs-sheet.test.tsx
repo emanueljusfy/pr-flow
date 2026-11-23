@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { AiReviewCardActions } from "@/modules/pr-ai-review/components/ai-review-card-actions";
 import { AiReviewLogsSheet } from "@/modules/pr-ai-review/components/ai-review-logs-sheet";
 import { aiReviewRunBadgeKind, formatAiReviewDuration } from "@/modules/pr-ai-review/lib/ai-review-ui";
-import { aiRun, PR_URL, stubFetch } from "./pr-ai-review-fixtures";
+import { PrReviewerQueueItem } from "@/modules/prs/components/pr-reviewer-queue-item";
+import { aiRun, PR_URL, queuePr, stubFetch } from "./pr-ai-review-fixtures";
 
 vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() })
@@ -31,11 +31,15 @@ describe("AiReviewLogsSheet", () => {
     const stub = stubFetch({ "GET /api/prs/ai-review/runs": { body: runs } });
     vi.stubGlobal("fetch", vi.fn(stub.fetchMock));
 
-    // Opened from the card's logs icon.
+    // Opened from the card's AI badge.
     render(
-      <AiReviewCardActions prUrl={PR_URL} label="justracker-thanos#699" headSha="head-1" runs={[]} busy={false} onRunStarted={vi.fn()} />
+      <ul>
+        <PrReviewerQueueItem pr={queuePr} aiRuns={[aiRun({ verdict: "COMMENT" })]} />
+      </ul>
     );
-    fireEvent.click(screen.getByRole("button", { name: "Ver revisões da IA de justracker-thanos#699" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "IA: Comentou — ver revisões da IA de justracker-thanos#699" })
+    );
 
     const options = await screen.findAllByRole("option");
     expect(stub.calls[0].url).toBe(`/api/prs/ai-review/runs?prUrl=${encodeURIComponent(PR_URL)}&limit=20`);

@@ -1,6 +1,17 @@
 import type { PrAiReviewConfigDto, PrAiReviewRunDto } from "@/modules/pr-ai-review/lib/domain";
+import type { ReviewerQueuePr } from "@/modules/prs/lib/domain";
 
 export const PR_URL = "https://github.com/jusfy/justracker-thanos/pull/699";
+
+export const queuePr: ReviewerQueuePr = {
+  id: "pr-699",
+  number: 699,
+  title: "fix: S3",
+  url: PR_URL,
+  repository: "jusfy/justracker-thanos",
+  myReviewStatus: "pending",
+  headSha: "head-1"
+};
 
 export function aiRun(overrides: Partial<PrAiReviewRunDto> = {}): PrAiReviewRunDto {
   return {

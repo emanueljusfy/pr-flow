@@ -2563,13 +2563,6 @@ button.pr-review-reminder-icon:hover {
   transform: translateY(-2px);
 }
 
-.review-queue-card__row {
-  display: flex;
-  align-items: stretch;
-  min-width: 0;
-  width: 100%;
-}
-
 .review-queue-card__main {
   flex: 1 1 auto;
   min-width: 0;
@@ -2652,35 +2645,6 @@ button.pr-review-reminder-icon:hover {
   border-color: #b48a30;
 }
 
-.review-queue-card__cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--brand-bright);
-}
-
-.review-queue-card__external {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  flex-shrink: 0;
-  border-left: 1px solid var(--app-border);
-  color: var(--app-text-muted);
-  text-decoration: none;
-  transition:
-    color 0.18s ease,
-    background 0.18s ease;
-}
-
-.review-queue-card__external:hover {
-  color: var(--brand-bright);
-  background: var(--brand-dim);
-}
-
 .review-queue-card__ai {
   display: flex;
   flex-wrap: wrap;
@@ -2691,6 +2655,12 @@ button.pr-review-reminder-icon:hover {
 }
 
 .review-queue-card__ai-badge {
+  cursor: pointer;
+  font-family: inherit;
+  background: transparent;
+  transition:
+    background 0.18s ease,
+    filter 0.18s ease;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2730,6 +2700,81 @@ button.pr-review-reminder-icon:hover {
 .review-queue-card__ai--stale {
   color: #f1cf7b;
   border-color: #b48a30;
+}
+
+.review-queue-card__ai-badge:hover {
+  background: var(--brand-dim);
+  filter: brightness(1.15);
+}
+
+.review-queue-card__ai-badge:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Compact list view of /prs/reviews — one dense row per PR */
+.review-queue-page__grid--compact {
+  gap: 6px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 900px) {
+  .review-queue-page__grid--compact {
+    grid-template-columns: 1fr;
+  }
+}
+
+.review-queue-card--compact {
+  border-radius: 10px;
+}
+
+.review-queue-card--compact:not(.review-queue-card--skeleton):hover {
+  transform: none;
+}
+
+.review-queue-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 14px;
+  min-width: 0;
+}
+
+.review-queue-row__link {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.review-queue-row__link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.review-queue-row__link .review-queue-card__repo {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.review-queue-row__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.review-queue-row .review-queue-card__ai-badge,
+.review-queue-row .review-queue-card__status {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .review-queue-card--skeleton {

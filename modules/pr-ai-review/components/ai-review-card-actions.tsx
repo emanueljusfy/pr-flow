@@ -1,18 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Loader2, ScrollText } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { ptBR } from "@/modules/messages/pt-BR";
-import { AiReviewLogsSheet } from "@/modules/pr-ai-review/components/ai-review-logs-sheet";
-import { AI_REVIEW_BADGE_CLASS, aiReviewBadgeFor } from "@/modules/pr-ai-review/lib/ai-review-ui";
+import {
+  AI_REVIEW_BADGE_CLASS,
+  aiReviewBadgeFor,
+  type AiReviewBadge
+} from "@/modules/pr-ai-review/lib/ai-review-ui";
 import type { PrAiReviewRunDto } from "@/modules/pr-ai-review/lib/domain";
 import { cn } from "@/lib/utils";
 
 const copy = ptBR.aiReview;
 
-type AiReviewCardActionsProps = {
+type UseAiReviewActionsArgs = {
   prUrl: string;
   label: string;
   headSha: string | undefined;
@@ -22,13 +24,15 @@ type AiReviewCardActionsProps = {
   onRunStarted: () => void;
 };
 
-export function AiReviewCardActions({ prUrl, label, headSha, runs, busy, onRunStarted }: AiReviewCardActionsProps) {
-  const [logsOpen, setLogsOpen] = useState(false);
+export function useAiReviewActions({ prUrl, label, headSha, runs, busy, onRunStarted }: UseAiReviewActionsArgs) {
   const [starting, setStarting] = useState(false);
   const badge = aiReviewBadgeFor(runs, prUrl, headSha);
-  const running = badge.kind === "running";
+  const canStart = badge.kind !== "running" && !busy && !starting;
 
-  async function reviewWithAi() {
+  async function start() {
+    if (!canStart) {
+      return;
+    }
     setStarting(true);
     try {
       const response = await fetch("/api/prs/ai-review/run", {
@@ -50,37 +54,38 @@ export function AiReviewCardActions({ prUrl, label, headSha, runs, busy, onRunSt
     }
   }
 
+  return { badge, starting, canStart, start };
+}
+
+type AiReviewBadgeButtonProps = {
+  badge: AiReviewBadge;
+  label: string;
+  onOpenLogs: () => void;
+};
+
+/** The AI status pill; clicking it opens the run logs. Renders nothing when the PR has no AI review. */
+export function AiReviewBadgeButton({ badge, label, onOpenLogs }: AiReviewBadgeButtonProps) {
+  if (badge.kind === "none" || !badge.label) {
+    return null;
+  }
   return (
-    <div className="review-queue-card__ai">
-      {badge.kind !== "none" ? (
-        <span className={cn("review-queue-card__ai-badge", AI_REVIEW_BADGE_CLASS[badge.kind])} data-testid="ai-review-badge">
-          {running ? <Loader2 className="size-3 animate-spin" aria-hidden /> : <Bot className="size-3" aria-hidden />}
-          {badge.label}
-        </span>
-      ) : null}
-      <div className="ml-auto flex items-center gap-1">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={running || busy || starting}
-          aria-label={copy.reviewWithAiAria(label)}
-          onClick={() => void reviewWithAi()}
-        >
-          {starting ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Bot className="size-3.5" aria-hidden />}
-          {copy.reviewWithAi}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={copy.logsAria(label)}
-          onClick={() => setLogsOpen(true)}
-        >
-          {running ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <ScrollText className="size-4" aria-hidden />}
-        </Button>
-      </div>
-      <AiReviewLogsSheet prUrl={prUrl} label={label} open={logsOpen} onOpenChange={setLogsOpen} />
-    </div>
+    <button
+      type="button"
+      className={cn("review-queue-card__ai-badge", AI_REVIEW_BADGE_CLASS[badge.kind])}
+      data-testid="ai-review-badge"
+      aria-label={copy.badgeLogsAria(badge.label, label)}
+      title={copy.logsAria(label)}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpenLogs();
+      }}
+    >
+      {badge.kind === "running" ? (
+        <Loader2 className="size-3 animate-spin" aria-hidden />
+      ) : (
+        <Bot className="size-3" aria-hidden />
+      )}
+      {badge.label}
+    </button>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -21,8 +21,16 @@ import { AiReviewPanel } from "@/modules/pr-ai-review/components/ai-review-panel
 import { useAiReviewRuns } from "@/modules/pr-ai-review/hooks/use-ai-review-runs";
 import { hasRunningAiReviewRun } from "@/modules/pr-ai-review/lib/ai-review-ui";
 import { PrReviewerQueueItem } from "@/modules/prs/components/pr-reviewer-queue-item";
+import { PrViewModeToggle } from "@/modules/prs/components/pr-view-mode-toggle";
 import { usePrReviewerQueueSync } from "@/modules/prs/hooks/use-pr-reviewer-queue-sync";
 import type { MyReviewStatus, ReviewerQueuePr } from "@/modules/prs/lib/domain";
+import {
+  DEFAULT_PR_VIEW_MODE,
+  loadPrViewMode,
+  type PrViewMode,
+  REVIEW_QUEUE_VIEW_MODE_STORAGE_KEY,
+  savePrViewMode
+} from "@/modules/prs/lib/pr-view-mode-storage";
 import {
   type ReviewQueueFilter,
   reviewQueueFilterLabel
@@ -72,6 +80,14 @@ function ReviewQueueCardSkeleton() {
 export function PrReviewerQueuePage() {
   const { response, loading, isFetching, refresh } = usePrReviewerQueueSync();
   const [filter, setFilter] = useState<ReviewQueueFilter>("all");
+  const [viewMode, setViewMode] = useState<PrViewMode>(DEFAULT_PR_VIEW_MODE);
+  useEffect(() => {
+    setViewMode(loadPrViewMode(REVIEW_QUEUE_VIEW_MODE_STORAGE_KEY));
+  }, []);
+  const changeViewMode = (mode: PrViewMode) => {
+    setViewMode(mode);
+    savePrViewMode(mode, REVIEW_QUEUE_VIEW_MODE_STORAGE_KEY);
+  };
   const aiReview = useAiReviewRuns();
   const aiBusy = hasRunningAiReviewRun(aiReview.runs);
   const onAiRunStarted = () => {
@@ -196,34 +212,37 @@ export function PrReviewerQueuePage() {
               </span>
             </div>
 
-            <div className="review-queue-page__filters" role="group" aria-label="Filtrar por status">
-              {FILTER_OPTIONS.map((option) => {
-                const count =
-                  option === "all"
-                    ? okData.length
-                    : counts[option as MyReviewStatus];
-                const isActive = filter === option;
-
-                return (
-                  <Button
-                    key={option}
-                    type="button"
-                    size="sm"
-                    variant={isActive ? "default" : "outline"}
-                    className={cn(
-                      "review-queue-page__filter",
-                      !isActive && "review-queue-page__filter--idle"
-                    )}
-                    aria-pressed={isActive}
-                    onClick={() => setFilter(option)}
-                  >
-                    {reviewQueueFilterLabel(option)}
-                    <span className="review-queue-page__filter-count" aria-hidden>
-                      {count}
-                    </span>
-                  </Button>
-                );
-              })}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="review-queue-page__filters" role="group" aria-label="Filtrar por status">
+                {FILTER_OPTIONS.map((option) => {
+                  const count =
+                    option === "all"
+                      ? okData.length
+                      : counts[option as MyReviewStatus];
+                  const isActive = filter === option;
+  
+                  return (
+                    <Button
+                      key={option}
+                      type="button"
+                      size="sm"
+                      variant={isActive ? "default" : "outline"}
+                      className={cn(
+                        "review-queue-page__filter",
+                        !isActive && "review-queue-page__filter--idle"
+                      )}
+                      aria-pressed={isActive}
+                      onClick={() => setFilter(option)}
+                    >
+                      {reviewQueueFilterLabel(option)}
+                      <span className="review-queue-page__filter-count" aria-hidden>
+                        {count}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <PrViewModeToggle onChange={changeViewMode} value={viewMode} />
             </div>
 
             {isFetching ? (
@@ -320,11 +339,17 @@ export function PrReviewerQueuePage() {
         ) : null}
 
         {hasData && filtered.length > 0 ? (
-          <ul className="review-queue-page__grid">
+          <ul
+            className={cn(
+              "review-queue-page__grid",
+              viewMode === "compact" && "review-queue-page__grid--compact"
+            )}
+          >
             {filtered.map((pr) => (
               <PrReviewerQueueItem
                 key={pr.id}
                 pr={pr}
+                variant={viewMode === "compact" ? "compact" : "card"}
                 aiRuns={aiReview.runs}
                 aiBusy={aiBusy}
                 onAiRunStarted={onAiRunStarted}
