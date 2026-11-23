@@ -16,8 +16,13 @@
     "install:docker": "./scripts/install.sh",
     "test": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-sqlite\" vitest run",
     "test:watch": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-sqlite\" vitest",
+    "test:related": "NODE_OPTIONS=\"${NODE_OPTIONS:+$NODE_OPTIONS }--experimental-sqlite\" vitest related --run --passWithNoTests",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p .",
+    "check": "npm run lint && npm run typecheck && npm test",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "node scripts/migrate.mjs"
+    "db:migrate": "node scripts/migrate.mjs",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -64,7 +69,11 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.6",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^16.4.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.14",
     "vitest": "^4.1.7"

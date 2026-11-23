@@ -141,9 +141,9 @@ async function getAuthenticatedLogin(run: CommandRunner): Promise<string> {
     throw new GhCommandError("Falha ao descobrir usuario autenticado: resposta vazia do gh api user");
   }
 
-  let payload: any;
+  let payload: { login?: unknown } | null;
   try {
-    payload = JSON.parse(fallback.stdout);
+    payload = JSON.parse(fallback.stdout) as { login?: unknown } | null;
   } catch (error) {
     const parseError = error instanceof Error ? error.message : String(error);
     throw new GhCommandError(`Falha ao parsear usuario autenticado: ${parseError}`);
@@ -248,16 +248,16 @@ export async function collectOpenPrsFromRepos(
       throw new GhCommandError(`GraphQL retornou resposta vazia para ${repo}. Stderr: ${output.stderr || "(vazio)"}`);
     }
 
-    let payload: any;
+    let payload: { data?: unknown; errors?: unknown };
     try {
-      payload = JSON.parse(output.stdout);
+      payload = JSON.parse(output.stdout) as { data?: unknown; errors?: unknown };
     } catch (error) {
       const parseError = error instanceof Error ? error.message : String(error);
       throw new GhCommandError(`Falha ao parsear resposta GraphQL para ${repo}: ${parseError}. Resposta: ${output.stdout.substring(0, 200)}`);
     }
 
     if (payload.errors && Array.isArray(payload.errors) && payload.errors.length > 0) {
-      const errorMessages = payload.errors.map((e: any) => e.message).join("; ");
+      const errorMessages = payload.errors.map((e: { message?: string }) => e.message).join("; ");
       throw new GhCommandError(`Erro GraphQL para ${repo}: ${errorMessages}`);
     }
 

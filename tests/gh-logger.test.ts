@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import { mkdtempSync, chmodSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { GhLogger } from "@/modules/prs/lib/gh-logger";
@@ -63,7 +62,6 @@ describe("GhLogger", () => {
 
   it("should throw if log directory is not writable at startup", () => {
     // Create a nested temp directory and make it read-only
-    const { mkdirSync } = require("node:fs");
     const readOnlyDir = join(tempDir, "readonly");
     mkdirSync(readOnlyDir, { recursive: true });
     chmodSync(readOnlyDir, 0o444);
@@ -78,8 +76,6 @@ describe("GhLogger", () => {
   });
 
   it("should rotate log file when it exceeds size threshold", () => {
-    const { readdirSync, statSync } = require("node:fs");
-    
     // Create logger with small 500-byte threshold for testing
     const testLogger = new GhLogger(tempDir, 500);
 
@@ -101,7 +97,7 @@ describe("GhLogger", () => {
 
     // Check that rotated files have correct naming: .log, .log.1, .log.2, etc.
     const logPatterns = files.map((f: string) => f.match(/gh-commands\.log(\.\d+)?$/));
-    expect(logPatterns.every((p: any) => p)).toBe(true);
+    expect(logPatterns.every((p) => p)).toBe(true);
 
     // Verify original log file exists (current writes go here)
     expect(files).toContain("gh-commands.log");

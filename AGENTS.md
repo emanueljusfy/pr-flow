@@ -13,6 +13,11 @@ Guia rápido para trabalhar neste repositório. Vocabulário de domínio (notebo
 
 Implementação dos tokens: `app/globals.css` (`.dark`).
 
+## Antes de rodar testes, lint ou typecheck
+
+1. **[docs/testing.md](docs/testing.md)** — rodar testes **só** via `npm test -- <arquivo>` / `npm run test:related -- <arquivos>` (nunca `npx vitest`: falta a flag `--experimental-sqlite` e os testes de banco quebram). Antes de entregar: `npm run check`.
+2. O `git commit` passa pelo pre-commit (husky + lint-staged: ESLint nos staged, `tsc` no projeto, testes relacionados). Não use `--no-verify`; se falhar, corrija e faça um commit novo.
+
 ## Stack
 
 - Next.js (App Router), React, TypeScript
@@ -42,7 +47,11 @@ Rodapé do sidebar: **Configurações** → abas Alertas, Crons, Repositórios, 
 npm run dev           # http://localhost:3847 (host)
 npm run docker:dev    # mesmo app no Docker com hot reload (sem rebuild)
 npm run docker:up     # imagem de produção; ./data com UID do host
-npm test
+npm test                          # suíte inteira (~1 min); um arquivo: npm test -- tests/x.test.ts
+npm run test:related -- <arquivos> # só testes afetados pelos arquivos
+npm run lint                      # ESLint (eslint.config.mjs)
+npm run typecheck                 # tsc --noEmit
+npm run check                     # lint + typecheck + testes
 npm run build
 ```
 
@@ -54,7 +63,7 @@ Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN` e 
 - UI nova fora do módulo PRs: `Surface` + shadcn; não criar terceiro estilo de card. Ver `docs/shadcn-for-agents.md`.
 - Dados não confiáveis (request, env, APIs externas, `sessionStorage`): validar com **Zod** quando possível. Ver `docs/zod-validation.md`.
 - Não commitar `.env`.
-- Testes: Vitest em `tests/`; atualizar se mudar labels pt-BR ou `aria-label`.
+- Testes: Vitest em `tests/`; atualizar se mudar labels pt-BR ou `aria-label`. Como rodar e escrever: `docs/testing.md`.
 
 ## tlc-spec-lean
 

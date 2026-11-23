@@ -95,7 +95,7 @@ function truncateEvent(event: SystemLogEvent): SystemLogEvent {
     };
   }
 
-  let line = JSON.stringify(next);
+  const line = JSON.stringify(next);
   if (Buffer.byteLength(line, "utf8") <= MAX_LOG_LINE_BYTES) {
     return next;
   }
