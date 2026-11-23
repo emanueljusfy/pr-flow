@@ -340,12 +340,12 @@ describe("PrMonitorPage", () => {
     });
 
     renderWithProviders(<PrMonitorPage />);
-    const stack = await screen.findByRole("region", { name: "Pilha de 2 PRs sobre main" });
+    const stack = await screen.findByRole("region", { name: "Stack de 2 PRs (merge em main)" });
 
     expect(within(stack).getByText("parte 1 checkout")).toBeInTheDocument();
     expect(within(stack).getByText("parte 2 checkout")).toBeInTheDocument();
-    expect(within(stack).getByText("Base da pilha")).toBeInTheDocument();
-    expect(within(stack).getByText("Sobre #1")).toBeInTheDocument();
+    expect(within(stack).getByText("Base da stack")).toBeInTheDocument();
+    expect(within(stack).getByText("empilha em #1")).toBeInTheDocument();
     expect(within(stack).queryByText("fix isolado")).not.toBeInTheDocument();
     expect(screen.getByText("fix isolado")).toBeInTheDocument();
   });
