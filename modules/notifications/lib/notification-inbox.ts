@@ -93,8 +93,36 @@ export function pushNotificationInboxItem(input: {
       read: false
     },
     ...existing
-  ].slice(0, MAX_NOTIFICATION_INBOX_ITEMS);
-  persist(next);
+  ];
+  persist(capInbox(next));
+}
+
+/** Drops the oldest read items first so unread alerts are not evicted while read ones remain. */
+function capInbox(items: NotificationInboxItem[]): NotificationInboxItem[] {
+  let overflow = items.length - MAX_NOTIFICATION_INBOX_ITEMS;
+  if (overflow <= 0) {
+    return items;
+  }
+  const dropped = new Set<NotificationInboxItem>();
+  for (let index = items.length - 1; index >= 0 && overflow > 0; index -= 1) {
+    if (items[index]!.read) {
+      dropped.add(items[index]!);
+      overflow -= 1;
+    }
+  }
+  return items.filter((item) => !dropped.has(item)).slice(0, MAX_NOTIFICATION_INBOX_ITEMS);
+}
+
+export function setNotificationInboxItemRead(id: string, read: boolean): NotificationInboxItem[] {
+  const items = loadNotificationInbox().map((item) => (item.id === id ? { ...item, read } : item));
+  persist(items);
+  return items;
+}
+
+export function removeNotificationInboxItem(id: string): NotificationInboxItem[] {
+  const items = loadNotificationInbox().filter((item) => item.id !== id);
+  persist(items);
+  return items;
 }
 
 export function markAllNotificationInboxRead(): NotificationInboxItem[] {

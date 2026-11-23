@@ -5,7 +5,9 @@ import {
   loadNotificationInbox,
   markAllNotificationInboxRead,
   MAX_NOTIFICATION_INBOX_ITEMS,
-  pushNotificationInboxItem
+  pushNotificationInboxItem,
+  removeNotificationInboxItem,
+  setNotificationInboxItemRead
 } from "@/modules/notifications/lib/notification-inbox";
 
 describe("notification inbox", () => {
@@ -51,5 +53,41 @@ describe("notification inbox", () => {
     const items = markAllNotificationInboxRead();
     expect(items.every((item) => item.read)).toBe(true);
     expect(countUnreadNotificationInbox(items)).toBe(0);
+  });
+
+  it("marks one item read or unread", () => {
+    pushNotificationInboxItem({ id: "a", title: "A", body: "one" });
+    pushNotificationInboxItem({ id: "b", title: "B", body: "two" });
+
+    setNotificationInboxItemRead("a", true);
+    expect(loadNotificationInbox().find((item) => item.id === "a")?.read).toBe(true);
+    expect(loadNotificationInbox().find((item) => item.id === "b")?.read).toBe(false);
+
+    setNotificationInboxItemRead("a", false);
+    expect(countUnreadNotificationInbox()).toBe(2);
+  });
+
+  it("removes one item", () => {
+    pushNotificationInboxItem({ id: "a", title: "A", body: "one" });
+    pushNotificationInboxItem({ id: "b", title: "B", body: "two" });
+
+    removeNotificationInboxItem("a");
+    expect(loadNotificationInbox().map((item) => item.id)).toEqual(["b"]);
+  });
+
+  it("evicts the oldest read items before unread ones when full", () => {
+    pushNotificationInboxItem({ id: "old-unread", title: "U", body: "b", createdAt: 0 });
+    for (let index = 1; index < MAX_NOTIFICATION_INBOX_ITEMS; index += 1) {
+      pushNotificationInboxItem({ id: `id-${index}`, title: "T", body: "b", createdAt: index });
+    }
+    setNotificationInboxItemRead("id-5", true);
+
+    pushNotificationInboxItem({ id: "new", title: "N", body: "b", createdAt: 999 });
+
+    const ids = loadNotificationInbox().map((item) => item.id);
+    expect(ids).toHaveLength(MAX_NOTIFICATION_INBOX_ITEMS);
+    expect(ids).toContain("old-unread");
+    expect(ids).not.toContain("id-5");
+    expect(ids[0]).toBe("new");
   });
 });

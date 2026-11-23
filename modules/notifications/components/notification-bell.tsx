@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Check, CircleDot, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -12,6 +12,7 @@ import {
   PopoverTrigger
 } from "@/components/ui/popover";
 import { ptBR } from "@/modules/messages/pt-BR";
+import { cn } from "@/lib/utils";
 import { useNotificationInbox } from "@/modules/notifications/hooks/use-notification-inbox";
 
 const copy = ptBR.notifications;
@@ -34,23 +35,11 @@ function formatRelativeTime(createdAt: number): string {
 }
 
 export function NotificationBell() {
-  const { items, unreadCount, markAllRead } = useNotificationInbox();
+  const { items, unreadCount, markAllRead, setRead, remove, clearAll } = useNotificationInbox();
   const [open, setOpen] = useState(false);
 
-  if (unreadCount === 0 && !open) {
-    return null;
-  }
-
   return (
-    <Popover
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (nextOpen && unreadCount > 0) {
-          markAllRead();
-        }
-      }}
-    >
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         render={
           <Button
@@ -78,17 +67,30 @@ export function NotificationBell() {
             <PopoverTitle>{copy.inboxTitle}</PopoverTitle>
             <PopoverDescription className="sr-only">{copy.inboxDescription}</PopoverDescription>
           </div>
-          {items.some((item) => !item.read) ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 shrink-0 px-2 text-xs"
-              onClick={() => markAllRead()}
-            >
-              {copy.markAllRead}
-            </Button>
-          ) : null}
+          <div className="flex shrink-0 items-center gap-1">
+            {unreadCount > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => markAllRead()}
+              >
+                {copy.markAllRead}
+              </Button>
+            ) : null}
+            {items.length > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => clearAll()}
+              >
+                {copy.clearAll}
+              </Button>
+            ) : null}
+          </div>
         </PopoverHeader>
 
         {items.length === 0 ? (
@@ -98,15 +100,52 @@ export function NotificationBell() {
             {items.map((item) => (
               <li
                 key={`${item.id}-${item.createdAt}`}
-                className="rounded-md px-2 py-1.5 text-sm text-[var(--app-text)]"
+                data-read={item.read ? "true" : "false"}
+                className={cn(
+                  "group flex items-start gap-2 rounded-md px-2 py-1.5 text-sm",
+                  item.read ? "text-[var(--app-text-muted)]" : "bg-[var(--app-surface-raised)] text-[var(--app-text)]"
+                )}
               >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-medium leading-snug">{item.title}</span>
-                  <span className="shrink-0 text-[10px] text-[var(--app-text-muted)]">
-                    {formatRelativeTime(item.createdAt)}
-                  </span>
+                <span
+                  className={cn(
+                    "mt-1.5 size-1.5 shrink-0 rounded-full",
+                    item.read ? "bg-transparent" : "bg-[var(--brand)]"
+                  )}
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className={cn("leading-snug", !item.read && "font-medium")}>{item.title}</span>
+                    <span className="shrink-0 text-[10px] text-[var(--app-text-muted)]">
+                      {formatRelativeTime(item.createdAt)}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 break-words text-xs leading-snug text-[var(--app-text-muted)]">
+                    {item.body}
+                  </p>
                 </div>
-                <p className="mt-0.5 text-xs leading-snug text-[var(--app-text-muted)]">{item.body}</p>
+                <div className="flex shrink-0 items-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={item.read ? copy.markUnread : copy.markRead}
+                    title={item.read ? copy.markUnread : copy.markRead}
+                    onClick={() => setRead(item.id, !item.read)}
+                  >
+                    {item.read ? <CircleDot aria-hidden /> : <Check aria-hidden />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={copy.removeItem}
+                    title={copy.removeItem}
+                    onClick={() => remove(item.id)}
+                  >
+                    <X aria-hidden />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>

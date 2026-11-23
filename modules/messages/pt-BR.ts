@@ -362,11 +362,15 @@ export const ptBR = {
     alertPrChangesRequested: "Alterações solicitadas",
     alertPrStale: "PR parada há muitos dias",
     bellAriaLabel: (count: number) =>
-      count === 1 ? "1 alerta não lido" : `${count} alertas não lidos`,
+      count === 0 ? "Alertas, nenhum não lido" : count === 1 ? "1 alerta não lido" : `${count} alertas não lidos`,
     inboxTitle: "Alertas recentes",
     inboxDescription: "Lista dos alertas recentes de PRs.",
     inboxEmpty: "Nenhum alerta recente.",
-    markAllRead: "Marcar todas como lidas"
+    markAllRead: "Marcar todas como lidas",
+    clearAll: "Limpar tudo",
+    markRead: "Marcar como lida",
+    markUnread: "Marcar como não lida",
+    removeItem: "Apagar alerta"
   },
   aiReview: {
     panelTitle: "Revisor IA",
