@@ -3,6 +3,7 @@ import type { RoutineDto, RoutineRunDto } from "@/modules/routines/lib/domain";
 import {
   ackRuns,
   deleteRoutineById,
+  failStaleRunningRuns,
   getRoutineById,
   insertRoutine,
   listRoutines,
@@ -121,6 +122,9 @@ export async function getRoutineRuns(query: {
   unread?: boolean;
   limit?: number;
 }): Promise<RoutineRunDto[]> {
+  // Heal orphaned "running" rows so the UI does not show "Em execução" forever
+  // after a process restart mid-run.
+  await failStaleRunningRuns();
   return listRuns({
     routineId: query.routineId ?? undefined,
     unread: query.unread,

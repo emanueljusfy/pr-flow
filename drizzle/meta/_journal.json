@@ -43,6 +43,13 @@
       "when": 1792400000000,
       "tag": "0005_routines",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792500000000,
+      "tag": "0006_routine_run_cost",
+      "breakpoints": true
     }
   ]
 }

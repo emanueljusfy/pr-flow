@@ -26,6 +26,8 @@ export type RoutineRunDto = {
   reason: string | null;
   stdout: string | null;
   stderr: string | null;
+  /** Agent-reported spend in USD when available (Claude JSON output). */
+  costUsd: number | null;
   slackSkipped: boolean | null;
   startedAt: string;
   finishedAt: string | null;
@@ -44,3 +46,7 @@ export type PresetIntervalMinutes = (typeof PRESET_INTERVAL_MINUTES)[number];
 
 export const ROUTINE_OUTPUT_TRUNCATE_CHARS = 100_000;
 export const ROUTINE_RUN_TIMEOUT_MS = 12 * 60 * 1000;
+/** Grace after agent timeout before a `running` row is treated as orphaned (process crash / restart). */
+export const ROUTINE_STALE_RUN_GRACE_MS = 2 * 60 * 1000;
+export const ROUTINE_STALE_RUN_MS = ROUTINE_RUN_TIMEOUT_MS + ROUTINE_STALE_RUN_GRACE_MS;
+export const ROUTINE_STALE_RUN_REASON = "stale";

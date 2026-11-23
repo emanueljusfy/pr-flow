@@ -2,6 +2,7 @@ import type { CommandRunner } from "@/modules/routines/lib/command-runner";
 import type { BinaryProbe } from "@/modules/routines/lib/agent-registry";
 import {
   advanceRoutineNextRunAt,
+  failStaleRunningRuns,
   finalizeRun,
   getRoutineById,
   hasRunningRun,
@@ -9,7 +10,7 @@ import {
   listDueRoutines
 } from "@/modules/routines/lib/routine-repository";
 import { computeNextRunAt } from "@/modules/routines/lib/routine-schedule";
-import { runRoutineAgent } from "@/modules/routines/lib/routine-runner";
+import { truncateOutput, runRoutineAgent } from "@/modules/routines/lib/routine-runner";
 import {
   appendRoutineJournalNote,
   notifyRoutineSlack
@@ -22,6 +23,7 @@ export type ProcessDueRoutinesResult = {
   succeeded: number;
   failed: number;
   skippedRunning: number;
+  staleReaped: number;
 };
 
 async function executeRoutineRun(input: {
@@ -30,11 +32,23 @@ async function executeRoutineRun(input: {
   run?: CommandRunner;
   probe?: BinaryProbe;
 }): Promise<"succeeded" | "failed"> {
-  const agentResult = await runRoutineAgent({
-    routine: input.routine,
-    run: input.run,
-    probe: input.probe
-  });
+  let agentResult: Awaited<ReturnType<typeof runRoutineAgent>>;
+  try {
+    agentResult = await runRoutineAgent({
+      routine: input.routine,
+      run: input.run,
+      probe: input.probe
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    agentResult = {
+      status: "failed",
+      reason: "exec_error",
+      stdout: "",
+      stderr: truncateOutput(message),
+      costUsd: null
+    };
+  }
 
   let slackSkipped: boolean | null = null;
   const draftRun = {
@@ -44,6 +58,7 @@ async function executeRoutineRun(input: {
     reason: agentResult.reason,
     stdout: agentResult.stdout,
     stderr: agentResult.stderr,
+    costUsd: agentResult.costUsd,
     slackSkipped: null,
     startedAt: new Date().toISOString(),
     finishedAt: new Date().toISOString(),
@@ -63,14 +78,30 @@ async function executeRoutineRun(input: {
     slackSkipped = true;
   }
 
-  await finalizeRun({
-    runId: input.runId,
-    status: agentResult.status,
-    reason: agentResult.reason,
-    stdout: agentResult.stdout,
-    stderr: agentResult.stderr,
-    slackSkipped
-  });
+  try {
+    await finalizeRun({
+      runId: input.runId,
+      status: agentResult.status,
+      reason: agentResult.reason,
+      stdout: agentResult.stdout,
+      stderr: agentResult.stderr,
+      costUsd: agentResult.costUsd,
+      slackSkipped
+    });
+  } catch {
+    // Last resort: never leave the row as running if finalize itself fails once.
+    try {
+      await finalizeRun({
+        runId: input.runId,
+        status: "failed",
+        reason: "exec_error",
+        stderr: "Falha ao gravar o resultado da execução."
+      });
+    } catch {
+      // Row may stay running; failStaleRunningRuns will reap it.
+    }
+    return "failed";
+  }
 
   const nextRunAt = computeNextRunAt({
     scheduleKind: input.routine.scheduleKind,
@@ -87,6 +118,7 @@ export async function processDueRoutines(
   asOf: Date = new Date(),
   deps: { run?: CommandRunner; probe?: BinaryProbe } = {}
 ): Promise<ProcessDueRoutinesResult> {
+  const staleReaped = await failStaleRunningRuns(asOf);
   const due = await listDueRoutines(asOf);
   let started = 0;
   let succeeded = 0;
@@ -119,7 +151,8 @@ export async function processDueRoutines(
     started,
     succeeded,
     failed,
-    skippedRunning
+    skippedRunning,
+    staleReaped
   };
 }
 
@@ -135,6 +168,7 @@ export async function startManualRoutineRun(
   if (!routine) {
     return { ok: false, status: 404 };
   }
+  await failStaleRunningRuns();
   if (await hasRunningRun(routineId)) {
     return { ok: false, status: 409 };
   }
@@ -160,6 +194,7 @@ export async function runRoutineToCompletionForTests(
   if (!routine) {
     return { ok: false, status: 404 };
   }
+  await failStaleRunningRuns();
   if (await hasRunningRun(routineId)) {
     return { ok: false, status: 409 };
   }

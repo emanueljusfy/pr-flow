@@ -42,6 +42,7 @@ function sampleRun(overrides: Partial<RoutineRunDto> = {}): RoutineRunDto {
     reason: null,
     stdout: "saída útil",
     stderr: "",
+    costUsd: null,
     slackSkipped: null,
     startedAt: new Date().toISOString(),
     finishedAt: new Date().toISOString(),

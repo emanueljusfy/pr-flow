@@ -32,6 +32,7 @@ function runDto(overrides: Partial<RoutineRunDto>): RoutineRunDto {
     reason: null,
     stdout: null,
     stderr: null,
+    costUsd: null,
     slackSkipped: null,
     startedAt: "2026-11-19T14:00:00.000Z",
     finishedAt: null,

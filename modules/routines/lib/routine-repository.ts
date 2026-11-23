@@ -1,6 +1,12 @@
-import { and, asc, desc, eq, inArray, isNull, lte, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, lte, ne } from "drizzle-orm";
 import { getDb } from "@/modules/db/lib/db";
-import type { RoutineDto, RoutineRunDto, RoutineRunStatus } from "@/modules/routines/lib/domain";
+import {
+  ROUTINE_STALE_RUN_MS,
+  ROUTINE_STALE_RUN_REASON,
+  type RoutineDto,
+  type RoutineRunDto,
+  type RoutineRunStatus
+} from "@/modules/routines/lib/domain";
 import { routineRuns, routines, type RoutineRow, type RoutineRunRow } from "@/modules/routines/lib/schema";
 
 function toRoutineDto(row: RoutineRow): RoutineDto {
@@ -30,6 +36,7 @@ function toRunDto(row: RoutineRunRow, routineName?: string): RoutineRunDto {
     reason: row.reason,
     stdout: row.stdout,
     stderr: row.stderr,
+    costUsd: row.costUsd ?? null,
     slackSkipped: row.slackSkipped,
     startedAt: row.startedAt.toISOString(),
     finishedAt: row.finishedAt ? row.finishedAt.toISOString() : null,
@@ -130,6 +137,30 @@ export async function hasRunningRun(routineId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+/**
+ * Marks orphaned `running` rows as failed. Needed when the Node process dies mid-run
+ * (restart, crash, hot reload) before finalizeRun — otherwise the UI stays "Em execução"
+ * and hasRunningRun blocks new starts forever.
+ */
+export async function failStaleRunningRuns(
+  asOf: Date = new Date(),
+  staleAfterMs: number = ROUTINE_STALE_RUN_MS
+): Promise<number> {
+  const cutoff = new Date(asOf.getTime() - staleAfterMs);
+  const db = getDb();
+  const rows = await db
+    .update(routineRuns)
+    .set({
+      status: "failed",
+      reason: ROUTINE_STALE_RUN_REASON,
+      stderr: "Execução interrompida (processo reiniciado ou sem finalização).",
+      finishedAt: asOf
+    })
+    .where(and(eq(routineRuns.status, "running"), lt(routineRuns.startedAt, cutoff)))
+    .returning({ id: routineRuns.id });
+  return rows.length;
+}
+
 export async function insertRunningRun(routineId: string, startedAt: Date = new Date()): Promise<RoutineRunDto> {
   const db = getDb();
   const rows = await db
@@ -149,6 +180,7 @@ export async function finalizeRun(input: {
   reason?: string | null;
   stdout?: string | null;
   stderr?: string | null;
+  costUsd?: number | null;
   slackSkipped?: boolean | null;
   finishedAt?: Date;
 }): Promise<RoutineRunDto | null> {
@@ -160,6 +192,7 @@ export async function finalizeRun(input: {
       reason: input.reason ?? null,
       stdout: input.stdout ?? null,
       stderr: input.stderr ?? null,
+      costUsd: input.costUsd ?? null,
       slackSkipped: input.slackSkipped ?? null,
       finishedAt: input.finishedAt ?? new Date()
     })

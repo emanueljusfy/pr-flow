@@ -43,9 +43,13 @@ describe("routines runner", () => {
     });
 
     expect(result.status).toBe("succeeded");
+    expect(result.costUsd).toBeNull();
     expect(calls).toHaveLength(1);
     expect(calls[0]?.command).toBe("claude");
     expect(calls[0]?.args).toContain("do the thing");
+    expect(calls[0]?.args).toContain("--output-format");
+    expect(calls[0]?.args).toContain("json");
+    expect(calls[0]?.args).toContain("--dangerously-skip-permissions");
     expect(calls[0]?.cwd).toBe(dir);
     expect(
       resolveRoutineCwd(
@@ -68,6 +72,35 @@ describe("routines runner", () => {
       )
     ).toBe("/fallback");
     fs.rmdirSync(dir);
+  });
+
+  it("passes --force to cursor-agent for unattended tool approval", async () => {
+    const calls: Array<{ command: string; args: string[] }> = [];
+    const result = await runRoutineAgent({
+      routine: {
+        id: "r1",
+        name: "n",
+        prompt: "do the thing",
+        agentId: "cursor-agent",
+        scheduleKind: "preset",
+        intervalMinutes: 15,
+        cronExpr: null,
+        cwd: null,
+        notifySlack: false,
+        enabled: true,
+        nextRunAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      run: async (command, args) => {
+        calls.push({ command, args });
+        return { stdout: "ok", stderr: "", code: 0 };
+      },
+      probe: async () => true
+    });
+
+    expect(result.status).toBe("succeeded");
+    expect(calls[0]?.args).toEqual(["-p", "do the thing", "--force"]);
   });
 
   it("fails with agent_not_found and advances nextRunAt", async () => {
@@ -101,6 +134,68 @@ describe("routines runner", () => {
       const updated = await getRoutineById(created.routine.id);
       expect(updated).toBeTruthy();
       expect(new Date(updated!.nextRunAt).getTime()).toBeGreaterThan(beforeNext);
+    });
+  });
+
+  it("parses Claude JSON stdout into result text and costUsd", async () => {
+    const payload = JSON.stringify({
+      type: "result",
+      subtype: "success",
+      is_error: false,
+      result: "review posted",
+      total_cost_usd: 1.2345,
+      usage: { input_tokens: 10, output_tokens: 20 }
+    });
+    const result = await runRoutineAgent({
+      routine: {
+        id: "r1",
+        name: "n",
+        prompt: "judge",
+        agentId: "claude",
+        scheduleKind: "preset",
+        intervalMinutes: 15,
+        cronExpr: null,
+        cwd: null,
+        notifySlack: false,
+        enabled: true,
+        nextRunAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      run: async () => ({ stdout: payload, stderr: "", code: 0 }),
+      probe: async () => true
+    });
+    expect(result.status).toBe("succeeded");
+    expect(result.stdout).toBe("review posted");
+    expect(result.costUsd).toBe(1.2345);
+  });
+
+  it("persists costUsd on finalize", async () => {
+    await withRoutinesTestDb(async () => {
+      const created = await createRoutineFromInput({
+        name: "with-cost",
+        prompt: "p",
+        agentId: "claude",
+        scheduleKind: "preset",
+        intervalMinutes: 15
+      });
+      expect(created.ok).toBe(true);
+      if (!created.ok) {
+        return;
+      }
+      const payload = JSON.stringify({
+        result: "ok",
+        total_cost_usd: 0.42,
+        is_error: false
+      });
+      await runRoutineToCompletionForTests(created.routine.id, {
+        probe: async () => true,
+        run: async () => ({ stdout: payload, stderr: "", code: 0 })
+      });
+      const runs = await listRuns({ routineId: created.routine.id });
+      expect(runs[0]?.status).toBe("succeeded");
+      expect(runs[0]?.stdout).toBe("ok");
+      expect(runs[0]?.costUsd).toBe(0.42);
     });
   });
 

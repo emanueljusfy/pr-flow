@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const routines = sqliteTable("routines", {
   id: text("id")
@@ -33,6 +33,7 @@ export const routineRuns = sqliteTable("routine_runs", {
   reason: text("reason"),
   stdout: text("stdout"),
   stderr: text("stderr"),
+  costUsd: real("cost_usd"),
   slackSkipped: integer("slack_skipped", { mode: "boolean" }),
   startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
   finishedAt: integer("finished_at", { mode: "timestamp_ms" }),

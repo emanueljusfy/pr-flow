@@ -5,6 +5,7 @@ import {
   resolveAdapterBinary,
   type BinaryProbe
 } from "@/modules/routines/lib/agent-registry";
+import { parseClaudeAgentOutput } from "@/modules/routines/lib/claude-agent-output";
 import {
   defaultCommandRunner,
   type CommandRunner
@@ -20,6 +21,7 @@ export type AgentRunResult = {
   reason: string | null;
   stdout: string;
   stderr: string;
+  costUsd: number | null;
 };
 
 export function truncateOutput(value: string, max = ROUTINE_OUTPUT_TRUNCATE_CHARS): string {
@@ -63,7 +65,8 @@ export async function runRoutineAgent(input: {
       status: "failed",
       reason: "agent_not_found",
       stdout: "",
-      stderr: "Adapter desconhecido."
+      stderr: "Adapter desconhecido.",
+      costUsd: null
     };
   }
 
@@ -73,7 +76,8 @@ export async function runRoutineAgent(input: {
       status: "failed",
       reason: "agent_not_found",
       stdout: "",
-      stderr: `Binário do agente não encontrado no PATH (${adapter.binary}).`
+      stderr: `Binário do agente não encontrado no PATH (${adapter.binary}).`,
+      costUsd: null
     };
   }
 
@@ -84,7 +88,8 @@ export async function runRoutineAgent(input: {
       status: "failed",
       reason: "bad_cwd",
       stdout: "",
-      stderr: `cwd inválido: ${cwd}`
+      stderr: `cwd inválido: ${cwd}`,
+      costUsd: null
     };
   }
 
@@ -97,18 +102,29 @@ export async function runRoutineAgent(input: {
       timeoutMs: input.timeoutMs ?? ROUTINE_RUN_TIMEOUT_MS
     });
 
-    const stdout = truncateOutput(result.stdout ?? "");
     const stderr = truncateOutput(result.stderr ?? "");
+    let stdout = truncateOutput(result.stdout ?? "");
+    let costUsd: number | null = null;
+
+    if (adapter.id === "claude") {
+      const parsed = parseClaudeAgentOutput(result.stdout ?? "");
+      stdout = truncateOutput(parsed.resultText);
+      costUsd = parsed.costUsd;
+      if (result.code === 0 && parsed.isError) {
+        return { status: "failed", reason: "exit_nonzero", stdout, stderr, costUsd };
+      }
+    }
 
     if (result.code === 0) {
-      return { status: "succeeded", reason: null, stdout, stderr };
+      return { status: "succeeded", reason: null, stdout, stderr, costUsd };
     }
 
     return {
       status: "failed",
       reason: result.code === 124 ? "timeout" : "exit_nonzero",
       stdout,
-      stderr
+      stderr,
+      costUsd
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -117,14 +133,16 @@ export async function runRoutineAgent(input: {
         status: "failed",
         reason: "agent_not_found",
         stdout: "",
-        stderr: message
+        stderr: message,
+        costUsd: null
       };
     }
     return {
       status: "failed",
       reason: "exec_error",
       stdout: "",
-      stderr: truncateOutput(message)
+      stderr: truncateOutput(message),
+      costUsd: null
     };
   }
 }

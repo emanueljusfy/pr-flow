@@ -17,6 +17,7 @@ import {
 import { ptBR } from "@/modules/messages/pt-BR";
 import { notifyRoutineRunStarted } from "@/modules/routines/hooks/use-routine-run-notifications";
 import { RoutineLogsSheet } from "@/modules/routines/components/routine-logs-sheet";
+import { formatRoutineCostUsd } from "@/modules/routines/lib/claude-agent-output";
 import {
   PRESET_INTERVAL_MINUTES,
   type RoutineAgentInfo,
@@ -50,6 +51,11 @@ function runStatusLabel(status: RoutineRunDto["status"]): string {
     return copy.statusSucceeded;
   }
   return copy.statusFailed;
+}
+
+function costLabel(costUsd: number | null | undefined): string {
+  const formatted = formatRoutineCostUsd(costUsd);
+  return formatted ? copy.costSuffix(formatted) : "";
 }
 
 export function RoutinesPage() {
@@ -407,8 +413,8 @@ export function RoutinesPage() {
                   {run.routineName ?? run.routineId}
                 </span>{" "}
                 · {runStatusLabel(run.status)}
-                {run.reason ? ` (${run.reason})` : ""} ·{" "}
-                {new Date(run.startedAt).toLocaleString("pt-BR")}
+                {run.reason ? ` (${run.reason})` : ""}
+                {costLabel(run.costUsd)} · {new Date(run.startedAt).toLocaleString("pt-BR")}
               </li>
             ))}
           </ul>

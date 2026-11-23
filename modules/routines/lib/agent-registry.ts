@@ -19,14 +19,25 @@ export const ROUTINE_AGENT_ADAPTERS: readonly AgentAdapter[] = [
     id: "claude",
     label: "Claude Code",
     binary: "claude",
-    buildArgs: (prompt) => ["-p", prompt, "--output-format", "text"]
+    // Print mode starts in Manual permission mode: anything that would prompt
+    // (Write outside cwd, Bash for review_gate/post_review, etc.) is denied.
+    // Routines are unattended, so skip those checks like other headless runners.
+    buildArgs: (prompt) => [
+      "-p",
+      prompt,
+      "--output-format",
+      "json",
+      "--dangerously-skip-permissions"
+    ]
   },
   {
     id: "cursor-agent",
     label: "Cursor Agent",
     binary: "agent",
     binaryCandidates: ["agent", "cursor-agent"],
-    buildArgs: (prompt) => ["-p", prompt]
+    // -p already exposes write/shell; --force auto-approves commands that would
+    // otherwise wait for a human that never answers in a routine.
+    buildArgs: (prompt) => ["-p", prompt, "--force"]
   }
 ] as const;
 
