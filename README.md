@@ -119,12 +119,16 @@ gh auth status
 ### 2. Subir
 
 ```bash
-docker compose up --build
+npm run docker:up             # recomenda: passa o UID do host para ./data
+# equivalente:
+# DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) docker compose up --build
 # ou em segundo plano:
-docker compose up -d --build
+npm run docker:up -- -d
 ```
 
 Na primeira execução: build da imagem, migrations do SQLite em `./data` e start do app. A porta **3847** evita conflito com outros serviços na 3000.
+
+O compose grava `./data` com o **UID do host** (`DOCKER_UID` / `DOCKER_GID`). Assim você pode alternar com `npm run dev` sem cair em `attempt to write a readonly database`.
 
 | Serviço | URL |
 |---------|-----|
@@ -135,15 +139,27 @@ docker compose logs -f app   # logs do app
 docker compose down           # parar; o SQLite em ./data permanece
 ```
 
-No container os logs saem em JSON Lines (`LOG_FORMAT=json`). Em `npm run dev`, o padrão é texto legível (`LOG_FORMAT=pretty` se quiser forçar).
+### Docker em modo dev (hot reload)
+
+Para desenvolver **sem rebuild** a cada mudança de código (mesmo `.env` e `./data` do compose de produção):
+
+```bash
+npm run docker:dev            # next dev no container, source montado
+npm run docker:dev:down       # parar
+```
+
+No container de produção os logs saem em JSON Lines (`LOG_FORMAT=json`). Em `npm run dev` / `npm run docker:dev`, o padrão é texto legível (`LOG_FORMAT=pretty` se quiser forçar).
 
 ## Comandos npm
 
 | Comando | Uso |
 |---------|-----|
 | `npm run install:docker` | Wizard `.env` + `docker compose build` |
+| `npm run docker:up` | Compose de produção com UID do host em `./data` |
+| `npm run docker:dev` | Compose de desenvolvimento (hot reload, sem rebuild) |
+| `npm run docker:dev:down` | Para o compose de desenvolvimento |
 | `npm run gh:sync-env` | Copia `gh auth token` para o `.env` |
-| `npm run dev` | Dev server na porta 3847 |
+| `npm run dev` | Dev server na porta 3847 (host) |
 | `npm test` | Testes (Vitest) |
 | `npm run test:watch` | Testes em watch |
 | `npm run build` | Build de produção |
@@ -279,7 +295,7 @@ docker compose up -d --build
 ### Opção C — montar as credenciais do host
 
 ```bash
-UID=$(id -u) GID=$(id -g) docker compose -f docker-compose.yml -f docker-compose.gh-host.yml up --build
+DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) docker compose -f docker-compose.yml -f docker-compose.gh-host.yml up --build
 ```
 
 **Erro "Could not resolve to a Repository":** o token não alcança os repos (SSO ou PAT). Rode `./scripts/sync-gh-env.sh` ou autorize o PAT na org.

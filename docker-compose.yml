@@ -9,6 +9,10 @@ services:
       LOG_FORMAT: json
       DATABASE_URL: file:/app/data/pr-flow.sqlite
       PR_FLOW_ROOT: /app
+      # Keep ./data owned by the host user (avoids "readonly database" on npm run dev).
+      # Prefer: DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) docker compose up --build
+      HOST_UID: ${DOCKER_UID:-1000}
+      HOST_GID: ${DOCKER_GID:-1000}
       GH_TOKEN: ${GH_TOKEN}
       MONITORED_REPOSITORIES: ${MONITORED_REPOSITORIES}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}

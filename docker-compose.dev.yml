@@ -1,0 +1,61 @@
+# Hot-reload Next.js in Docker (no image rebuild on every change).
+#
+#   npm run docker:dev
+#   # or:
+#   DOCKER_UID=$(id -u) DOCKER_GID=$(id -g) docker compose -f docker-compose.dev.yml up --build
+#
+# Source is bind-mounted. ./data is owned by your host UID so `npm run dev` on the
+# host keeps write access to the same SQLite file.
+
+services:
+  app:
+    image: pr-flow-dev:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${PORT:-3847}:3847"
+    environment:
+      PORT: 3847
+      HOSTNAME: 0.0.0.0
+      NODE_ENV: development
+      LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      DATABASE_URL: file:/app/data/pr-flow.sqlite
+      PR_FLOW_ROOT: /app
+      HOST_UID: ${DOCKER_UID:-1000}
+      HOST_GID: ${DOCKER_GID:-1000}
+      GH_TOKEN: ${GH_TOKEN}
+      MONITORED_REPOSITORIES: ${MONITORED_REPOSITORIES}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      GEMINI_MODEL_FALLBACK: ${GEMINI_MODEL_FALLBACK:-}
+      SUMMARY_CAREER_LEVEL: ${SUMMARY_CAREER_LEVEL:-}
+      SUMMARY_CRON_TZ: ${SUMMARY_CRON_TZ:-}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_TOKEN: ${JIRA_TOKEN:-}
+      JIRA_SITE_URL: ${JIRA_SITE_URL:-}
+      JIRA_SPRINT_PROJECT_KEY: ${JIRA_SPRINT_PROJECT_KEY:-}
+      JIRA_SPRINT_BOARD_ID: ${JIRA_SPRINT_BOARD_ID:-}
+      DISABLE_JIRA_SYNC_CRON: ${DISABLE_JIRA_SYNC_CRON:-}
+      DISABLE_PR_SYNC_CRON: ${DISABLE_PR_SYNC_CRON:-}
+      DISABLE_SUMMARY_CRON: ${DISABLE_SUMMARY_CRON:-}
+      DISABLE_DASHBOARD_BRIEFING_CRON: ${DISABLE_DASHBOARD_BRIEFING_CRON:-}
+      DISABLE_ROUTINES_CRON: ${DISABLE_ROUTINES_CRON:-}
+      JUSFY_ROOT: ${JUSFY_ROOT:-}
+      SLACK_BOT_OAUTH_TOKEN: ${SLACK_BOT_OAUTH_TOKEN:-}
+      SLACK_PR_CHANNEL: ${SLACK_PR_CHANNEL:-}
+      GOOGLE_CALENDAR_ICAL_URL: ${GOOGLE_CALENDAR_ICAL_URL:-}
+      # Set WATCHPACK_POLLING=1 if file watching misses changes (e.g. some remote FS).
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-}
+    volumes:
+      - .:/app
+      - pr_flow_dev_node_modules:/app/node_modules
+      - pr_flow_dev_next:/app/.next
+      - ./data:/app/data
+      - ${JUSFY_ROOT:-./data}:${JUSFY_ROOT:-/app/data}
+    mem_limit: 768m
+
+volumes:
+  pr_flow_dev_node_modules:
+  pr_flow_dev_next:

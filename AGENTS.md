@@ -5,7 +5,7 @@ Guia rápido para trabalhar neste repositório. Vocabulário de domínio (notebo
 ## Antes de mudar UI
 
 1. **[docs/shadcn-for-agents.md](docs/shadcn-for-agents.md)** — usar **preferencialmente** componentes shadcn (`@/components/ui/*`); quando adicionar UI nova, começar por aqui.
-2. **[docs/design-system.md](docs/design-system.md)** — tokens, acento laranja ember, componente `Surface`, pt-BR, e o que não misturar com cores de status de PR.
+2. **[docs/design-system.md](docs/design-system.md)** — chrome flat estilo Herdr (near-black, inset shell), acento ember só em ação/marca, `Surface`, pt-BR, e o que não misturar com cores de status de PR.
 
 ## Antes de validar dados (API, env, JSON externo)
 
@@ -43,7 +43,9 @@ Rodapé do sidebar: **Devtools** → Crons, Repositórios, Ambiente local. Stack
 ## Comandos
 
 ```bash
-npm run dev      # http://localhost:3847
+npm run dev           # http://localhost:3847 (host)
+npm run docker:dev    # mesmo app no Docker com hot reload (sem rebuild)
+npm run docker:up     # imagem de produção; ./data com UID do host
 npm test
 npm run build
 ```

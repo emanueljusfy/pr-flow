@@ -722,7 +722,8 @@ print_finish() {
   echo -e "  ${GREEN}${BOLD}Instalação concluída${RESET}"
   echo
   echo -e "  ${WHITE}${BOLD}Próximos passos${RESET}"
-  echo -e "  ${icon_dot} Subir o stack:  ${CYAN}${BOLD}docker compose up -d${RESET}"
+  echo -e "  ${icon_dot} Subir o stack:  ${CYAN}${BOLD}npm run docker:up -- -d${RESET}"
+  echo -e "  ${icon_dot} Dev (hot reload): ${CYAN}${BOLD}npm run docker:dev${RESET}"
   echo -e "  ${icon_dot} Ver logs:       ${DIM}docker compose logs -f app${RESET}"
   echo -e "  ${icon_dot} Sync GH token:  ${DIM}npm run gh:sync-env${RESET}  ${GRAY}(se renovar o login gh)${RESET}"
   echo
@@ -734,7 +735,7 @@ print_finish() {
   echo -e "  ${icon_link} Jira     ${DIM}${URL_JIRA_TOKEN}${RESET}"
   echo -e "  ${icon_link} GitHub   ${DIM}${URL_GH_TOKEN}${RESET}"
   echo
-  tip "SQLite fica em ./data (montado no container). Se a migração falhar com \"unable to open database file\", rode: sudo chown -R 1001:1001 data"
+  tip "SQLite fica em ./data (montado no container). Use npm run docker:up / docker:dev para gravar com o seu UID. Se ficar readonly: docker run --rm -v \"\$PWD/data:/data\" alpine chown -R \$(id -u):\$(id -g) /data"
   echo
 }
 
