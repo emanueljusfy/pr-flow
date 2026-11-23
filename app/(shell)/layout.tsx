@@ -16,20 +16,20 @@ export default async function ShellLayout({ children }: Readonly<{ children: Rea
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-[var(--app-bg-top)]">
       <AppSidebar initialGithubLogin={initialGithubLogin} />
-      <SidebarInset className="bg-transparent">
-        <header className="flex h-12 shrink-0 items-center gap-3 border-b border-[var(--app-border)]/70 px-4">
+      <SidebarInset className="overflow-hidden bg-[var(--app-surface)] md:peer-data-[variant=inset]:m-3 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-3">
+        <header className="flex h-11 shrink-0 items-center gap-3 border-b border-[var(--app-border)] px-4">
           <SidebarTrigger className="-ml-1" />
           <NotificationBell />
-          <span className="hidden text-sm font-semibold tracking-tight text-[var(--app-text)] sm:inline">
+          <span className="hidden text-sm font-medium tracking-tight text-[var(--app-text)] sm:inline">
             PR <span className="text-[var(--brand)]">Flow</span>
           </span>
           <span className="hidden text-xs text-[var(--app-text-muted)] md:inline">
-            Cockpit local de PRs, tarefas e journal
+            Cockpit local
           </span>
         </header>
-        {children}
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto">{children}</div>
       </SidebarInset>
       <QuickNoteDialog />
       <VacationCountdownBootstrap />

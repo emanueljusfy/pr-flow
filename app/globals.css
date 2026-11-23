@@ -7,21 +7,24 @@
 
 :root {
   color-scheme: dark;
-  --app-bg-top: #11151f;
-  --app-bg-bottom: #090c13;
-  --app-glow: rgba(95, 110, 146, 0.34);
-  --app-border: #353c4d;
-  --app-border-strong: #4e5566;
-  --app-text: #e6e9f3;
-  --app-text-muted: #a6b0ce;
-  --app-text-soft: #c4cbe2;
-  --app-surface-inset: rgba(15, 19, 27, 0.62);
-  --app-skeleton: #3a4358;
-  --app-skeleton-highlight: #4e566c;
+  /* Herdr-like charcoal chrome — flat near-black, hairline borders */
+  --app-bg-top: #0d0d0d;
+  --app-bg-bottom: #0d0d0d;
+  --app-glow: transparent;
+  --app-border: #2a2a2a;
+  --app-border-strong: #3a3a3a;
+  --app-text: #f2f2f2;
+  --app-text-muted: #8a8a8a;
+  --app-text-soft: #c8c8c8;
+  --app-surface: #141414;
+  --app-surface-raised: #1a1a1a;
+  --app-surface-inset: #111111;
+  --app-skeleton: #2a2a2a;
+  --app-skeleton-highlight: #3a3a3a;
   --brand: #f07832;
   --brand-bright: #ff9a5c;
-  --brand-dim: rgba(240, 120, 50, 0.14);
-  --brand-border: rgba(240, 120, 50, 0.42);
+  --brand-dim: rgba(240, 120, 50, 0.12);
+  --brand-border: rgba(240, 120, 50, 0.36);
   --brand-foreground: #1a0e06;
   --app-accent: var(--brand-bright);
   --app-link: #ffc18a;
@@ -72,10 +75,7 @@ body {
 
 body {
   font-family: var(--font-sans), system-ui, sans-serif;
-  background:
-    radial-gradient(circle at 12% -8%, rgba(240, 120, 50, 0.14) 0%, transparent 36%),
-    radial-gradient(circle at 50% -20%, var(--app-glow) 0%, transparent 42%),
-    linear-gradient(180deg, var(--app-bg-top) 0%, var(--app-bg-bottom) 100%);
+  background: var(--app-bg-top);
   color: var(--app-text);
   min-height: 100vh;
 }
@@ -88,31 +88,30 @@ a {
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: 24px 32px 36px;
+  padding: 20px 24px 28px;
   box-sizing: border-box;
 }
 
 .panel {
-  background: rgba(18, 22, 32, 0.82);
-  border: 1px solid color-mix(in oklab, var(--app-border) 78%, transparent);
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  box-shadow: none;
   transition:
     border-color 0.18s ease,
     background 0.18s ease;
 }
 
 .panel-inset {
-  border: 1px solid color-mix(in oklab, var(--app-border-strong) 70%, transparent);
-  border-radius: 10px;
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
   background: var(--app-surface-inset);
 }
 
 .panel-dashed {
-  border: 1px dashed color-mix(in oklab, var(--app-border-strong) 75%, transparent);
-  border-radius: 10px;
-  background: rgba(12, 15, 22, 0.4);
+  border: 1px dashed var(--app-border-strong);
+  border-radius: 8px;
+  background: var(--app-surface);
 }
 
 .journal-page .journal-nav {
@@ -130,9 +129,7 @@ a {
 }
 
 .journal-page .note-preview {
-  background:
-    radial-gradient(circle at 100% 0%, rgba(240, 120, 50, 0.06), transparent 40%),
-    var(--app-surface-inset);
+  background: var(--app-surface-inset);
 }
 
 .cards-grid > .panel {
@@ -218,11 +215,9 @@ a {
   text-align: left;
   max-width: none;
   padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid #353c4d;
-  background:
-    radial-gradient(circle at 18% -30%, rgba(255, 255, 255, 0.04), transparent 38%),
-    linear-gradient(145deg, rgba(37, 42, 54, 0.45), rgba(16, 20, 28, 0.65));
+  border-radius: 8px;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface-raised);
 }
 
 .weather-forecast--sidebar .weather-forecast__main {
@@ -237,7 +232,7 @@ a {
   height: 1.35rem;
   flex-shrink: 0;
   margin-left: auto;
-  color: #dbe2f6;
+  color: var(--app-text-soft);
 }
 
 .weather-forecast--sidebar .weather-forecast__temp {
@@ -246,7 +241,7 @@ a {
 }
 
 .weather-forecast--sidebar .weather-forecast__condition {
-  color: #a6b0ce;
+  color: var(--app-text-muted);
 }
 
 .weather-forecast--sidebar-icon {
@@ -830,14 +825,14 @@ a {
 }
 
 .pr-card:hover {
-  border-color: color-mix(in oklab, var(--app-border-strong) 88%, transparent);
-  background: rgba(22, 26, 38, 0.9);
+  border-color: var(--app-border-strong);
+  background: #1f1f1f;
 }
 
 .pr-card.pr-card--selected {
   border-color: var(--brand-border);
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand) 35%, transparent);
-  background: color-mix(in oklab, var(--brand-dim) 55%, rgba(22, 26, 38, 0.92));
+  background: color-mix(in oklab, var(--brand-dim) 55%, #1a1a1a);
 }
 
 .pr-card.pr-card--selected:focus-visible {
@@ -1524,14 +1519,7 @@ button.pr-review-reminder-icon:hover {
 }
 
 .jira-task-dialog__shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 80% 50% at 100% -10%, rgba(240, 120, 50, 0.16), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 0% 100%, rgba(90, 120, 200, 0.08), transparent 50%);
-  border-radius: inherit;
+  content: none;
 }
 
 .jira-task-dialog__header {
@@ -1544,11 +1532,7 @@ button.pr-review-reminder-icon:hover {
   gap: 12px 16px;
   padding: 18px 52px 16px 18px;
   border-bottom: 1px solid var(--app-border);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--brand) 8%, rgba(12, 16, 24, 0.92)) 0%,
-    rgba(12, 16, 24, 0.55) 100%
-  );
+  background: var(--app-surface-raised);
 }
 
 .jira-task-dialog__key {
@@ -1946,13 +1930,7 @@ button.pr-review-reminder-icon:hover {
 }
 
 .jira-page__toolbar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 70% 55% at 100% -20%, rgba(240, 120, 50, 0.14), transparent 58%),
-    radial-gradient(ellipse 50% 40% at 0% 110%, rgba(90, 120, 200, 0.07), transparent 52%);
+  content: none;
 }
 
 .jira-page__toolbar-head,
@@ -1969,11 +1947,7 @@ button.pr-review-reminder-icon:hover {
   gap: 12px 16px;
   padding: 16px 18px 14px;
   border-bottom: 1px solid var(--app-border);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--brand) 7%, rgba(12, 16, 24, 0.9)) 0%,
-    rgba(12, 16, 24, 0.45) 100%
-  );
+  background: var(--app-surface-raised);
 }
 
 .jira-page__toolbar-body {
@@ -2120,7 +2094,7 @@ button.pr-review-reminder-icon:hover {
 
 .jira-issue-card:not(.jira-issue-card--skeleton):hover {
   border-color: color-mix(in oklab, var(--brand-border) 70%, var(--app-border));
-  background: rgba(22, 26, 38, 0.9);
+  background: #1f1f1f;
 }
 
 .jira-issue-card__main {
@@ -2267,13 +2241,7 @@ button.pr-review-reminder-icon:hover {
 }
 
 .review-queue-page__toolbar::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 65% 50% at 100% -15%, rgba(240, 120, 50, 0.16), transparent 55%),
-    radial-gradient(ellipse 45% 35% at 0% 105%, rgba(38, 195, 111, 0.06), transparent 50%);
+  content: none;
 }
 
 .review-queue-page__toolbar-head,
@@ -2290,11 +2258,7 @@ button.pr-review-reminder-icon:hover {
   gap: 12px 16px;
   padding: 16px 18px 14px;
   border-bottom: 1px solid var(--app-border);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--brand) 8%, rgba(12, 16, 24, 0.92)) 0%,
-    rgba(12, 16, 24, 0.45) 100%
-  );
+  background: var(--app-surface-raised);
 }
 
 .review-queue-page__toolbar-body {
@@ -2676,75 +2640,89 @@ button.pr-review-reminder-icon:hover {
 }
 
 .dark {
-  --app-bg-top: #11151f;
-  --app-bg-bottom: #090c13;
-  --app-glow: rgba(95, 110, 146, 0.28);
-  --app-border: #353c4d;
-  --app-border-strong: #4e5566;
-  --app-text: #e6e9f3;
-  --app-text-muted: #a6b0ce;
-  --app-text-soft: #c4cbe2;
-  --app-surface-inset: rgba(15, 19, 27, 0.62);
-  --app-skeleton: #3a4358;
-  --app-skeleton-highlight: #4e566c;
+  --app-bg-top: #0d0d0d;
+  --app-bg-bottom: #0d0d0d;
+  --app-glow: transparent;
+  --app-border: #2a2a2a;
+  --app-border-strong: #3a3a3a;
+  --app-text: #f2f2f2;
+  --app-text-muted: #8a8a8a;
+  --app-text-soft: #c8c8c8;
+  --app-surface: #141414;
+  --app-surface-raised: #1a1a1a;
+  --app-surface-inset: #111111;
+  --app-skeleton: #2a2a2a;
+  --app-skeleton-highlight: #3a3a3a;
   --brand: #f07832;
   --brand-bright: #ff9a5c;
-  --brand-dim: rgba(240, 120, 50, 0.14);
-  --brand-border: rgba(240, 120, 50, 0.42);
+  --brand-dim: rgba(240, 120, 50, 0.12);
+  --brand-border: rgba(240, 120, 50, 0.36);
   --brand-foreground: #1a0e06;
   --app-accent: var(--brand-bright);
   --app-link: #ffc18a;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --background: #141414;
+  --foreground: #f2f2f2;
+  --card: #1a1a1a;
+  --card-foreground: #f2f2f2;
+  --popover: #1a1a1a;
+  --popover-foreground: #f2f2f2;
   --primary: oklch(0.72 0.17 52);
   --primary-foreground: oklch(0.2 0.04 48);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.32 0.06 52);
-  --accent-foreground: oklch(0.92 0.04 75);
+  --secondary: #222222;
+  --secondary-foreground: #f2f2f2;
+  --muted: #222222;
+  --muted-foreground: #8a8a8a;
+  --accent: #222222;
+  --accent-foreground: #f2f2f2;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.17 52 / 55%);
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: oklch(0.72 0.17 52 / 45%);
   --chart-1: oklch(0.72 0.17 52);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: #0f141c;
-  --sidebar-foreground: #e6e9f3;
-  --sidebar-primary: #4a2b14;
-  --sidebar-primary-foreground: #ffe8d4;
-  --sidebar-accent: rgba(240, 120, 50, 0.12);
-  --sidebar-accent-foreground: #ffd4b0;
-  --sidebar-border: #353c4d;
-  --sidebar-ring: #f07832;
+  --sidebar: #0d0d0d;
+  --sidebar-foreground: #f2f2f2;
+  --sidebar-primary: #2a2a2a;
+  --sidebar-primary-foreground: #f2f2f2;
+  --sidebar-accent: #1f1f1f;
+  --sidebar-accent-foreground: #f2f2f2;
+  --sidebar-border: #2a2a2a;
+  --sidebar-ring: #3a3a3a;
 }
 
 .dark [data-slot="sidebar-inner"],
 .dark [data-mobile="true"][data-slot="sidebar"] {
-  background:
-    radial-gradient(circle at 0% 0%, rgba(240, 120, 50, 0.1), transparent 40%),
-    radial-gradient(circle at 50% -20%, rgba(95, 110, 146, 0.14), transparent 42%),
-    radial-gradient(circle at 18% -30%, rgba(255, 255, 255, 0.05), transparent 38%),
-    linear-gradient(180deg, #121820 0%, #090d14 100%);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.04);
+  background: var(--sidebar);
+  box-shadow: none;
 }
 
+/* Herdr-like active nav: quiet mid-grey pill, no brand filament */
 .dark [data-active="true"][data-slot="sidebar-menu-button"] {
-  background: var(--brand-dim);
-  color: var(--brand-bright);
-  box-shadow: inset 3px 0 0 var(--brand);
+  background: #1f1f1f;
+  color: var(--app-text);
+  box-shadow: none;
 }
 
 .dark [data-active="true"][data-slot="sidebar-menu-button"] svg {
-  color: var(--brand-bright);
+  color: var(--app-text);
+}
+
+.dark [data-slot="sidebar-inset"] {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+/* Soften inset sidebar gap so chrome reads as one Herdr-like window */
+.dark [data-slot="sidebar-wrapper"] {
+  background: var(--app-bg-top);
+}
+
+.dark [data-variant="inset"] [data-slot="sidebar-inner"] {
+  border-radius: 0;
 }
 
 @keyframes app-skeleton-shimmer {

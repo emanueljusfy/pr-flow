@@ -13,7 +13,7 @@ import {
   Ticket,
   Container,
   Timer,
-  Wrench
+  Settings2
 } from "lucide-react";
 import {
   Sidebar,
@@ -69,7 +69,7 @@ const navItems = [
 ] as const;
 
 function userInitials(login: string) {
-  return login.slice(0, 2).toUpperCase();
+  return login.slice(0, 1).toUpperCase();
 }
 
 interface AppSidebarProps {
@@ -83,19 +83,22 @@ export function AppSidebar({ initialGithubLogin }: AppSidebarProps) {
   const displayName = githubLogin ?? "Carregando...";
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="gap-3 border-b border-sidebar-border group-data-[collapsible=icon]:gap-2">
+    <Sidebar collapsible="icon" variant="inset">
+      <SidebarHeader className="gap-3 group-data-[collapsible=icon]:gap-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" render={<Link href="/dashboard" />} tooltip={displayName}>
-              <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg border border-[var(--brand-border)] bg-sidebar-primary text-sidebar-primary-foreground shadow-[inset_0_1px_0_rgba(255,200,150,0.15)]">
+              <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-full bg-[#2a2a2a] text-[var(--app-text)]">
                 {githubLogin ? (
                   <span className="text-xs font-semibold tracking-wide">{userInitials(githubLogin)}</span>
                 ) : (
                   <GitPullRequest className="size-4" />
                 )}
               </div>
-              <span className="truncate font-medium">{displayName}</span>
+              <div className="flex min-w-0 flex-col gap-0.5 leading-none">
+                <span className="truncate text-sm font-medium">{displayName}</span>
+                <span className="truncate text-[10px] text-[var(--app-text-muted)]">PR Flow</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -103,7 +106,9 @@ export function AppSidebar({ initialGithubLogin }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Módulos</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] font-medium uppercase tracking-wider text-[var(--app-text-muted)]">
+            Módulos
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => (
@@ -168,10 +173,12 @@ export function AppSidebar({ initialGithubLogin }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border">
+      <SidebarFooter>
         <NotificationPreferencesTrigger />
         <SidebarGroup className="p-0">
-          <SidebarGroupLabel>Devtools</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] font-medium uppercase tracking-wider text-[var(--app-text-muted)]">
+            Devtools
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -215,8 +222,8 @@ export function AppSidebar({ initialGithubLogin }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <div className="flex items-center gap-2 px-2 py-1 text-[10px] uppercase tracking-wide text-[var(--app-text-muted)] group-data-[collapsible=icon]:hidden">
-          <Wrench className="size-3 shrink-0 opacity-70" aria-hidden />
+        <div className="flex items-center gap-2 px-2 py-1 text-[10px] text-[var(--app-text-muted)] group-data-[collapsible=icon]:hidden">
+          <Settings2 className="size-3 shrink-0 opacity-70" aria-hidden />
           <span>Ferramentas internas</span>
         </div>
       </SidebarFooter>
