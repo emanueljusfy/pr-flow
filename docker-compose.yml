@@ -18,7 +18,6 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-}
       GEMINI_MODEL_FALLBACK: ${GEMINI_MODEL_FALLBACK:-}
-      SUMMARY_CAREER_LEVEL: ${SUMMARY_CAREER_LEVEL:-}
       SUMMARY_CRON_TZ: ${SUMMARY_CRON_TZ:-}
       JIRA_EMAIL: ${JIRA_EMAIL:-}
       JIRA_TOKEN: ${JIRA_TOKEN:-}
@@ -27,15 +26,14 @@ services:
       JIRA_SPRINT_BOARD_ID: ${JIRA_SPRINT_BOARD_ID:-}
       DISABLE_JIRA_SYNC_CRON: ${DISABLE_JIRA_SYNC_CRON:-}
       DISABLE_PR_SYNC_CRON: ${DISABLE_PR_SYNC_CRON:-}
-      DISABLE_SUMMARY_CRON: ${DISABLE_SUMMARY_CRON:-}
       DISABLE_DASHBOARD_BRIEFING_CRON: ${DISABLE_DASHBOARD_BRIEFING_CRON:-}
-      DISABLE_ROUTINES_CRON: ${DISABLE_ROUTINES_CRON:-}
+      DISABLE_PR_AI_REVIEW_CRON: ${DISABLE_PR_AI_REVIEW_CRON:-}
       JUSFY_ROOT: ${JUSFY_ROOT:-}
       SLACK_BOT_OAUTH_TOKEN: ${SLACK_BOT_OAUTH_TOKEN:-}
       SLACK_PR_CHANNEL: ${SLACK_PR_CHANNEL:-}
       GOOGLE_CALENDAR_ICAL_URL: ${GOOGLE_CALENDAR_ICAL_URL:-}
     volumes:
       - ./data:/app/data
-      # Host tree for routines cwd (same path inside the container). Set JUSFY_ROOT in .env.
+      # Host tree for the AI reviewer cwd (same path inside the container). Set JUSFY_ROOT in .env.
       - ${JUSFY_ROOT:-./data}:${JUSFY_ROOT:-/app/data}
     mem_limit: 768m

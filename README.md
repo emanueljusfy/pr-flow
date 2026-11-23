@@ -10,7 +10,7 @@
 
 <br>
 
-Hub local do dia de trabalho: PRs no GitHub, Jira, journal, tarefas e briefing com IA.
+Hub local do dia de trabalho: PRs no GitHub, Jira, journal e briefing com IA.
 
 </div>
 
@@ -42,28 +42,25 @@ O <code>/dashboard</code> abre o dia já montado.
 
 | Área | O que você ganha |
 |------|------------------|
-| **PRs** | Suas PRs abertas, fila de reviews e wizard para abrir PR a partir de branches |
+| **PRs** | Suas PRs abertas e fila de reviews |
 | **Jira** | Tickets atribuídos a você, com sync automático e branch sugerida por IA |
-| **Tasks e Journal** | Tarefas locais e uma nota markdown por dia (notebook day) |
-| **Resumos** | Diário (Feedback 3×3) e semanal (Bússola de Tendência), à meia-noite |
+| **Journal** | Uma nota markdown por dia (notebook day) |
 | **Slack** | Compartilhar uma PR no canal do time |
 | **Devtools** | Crons sob demanda, repositórios monitorados e o Portainer do stack Jusfy |
 
-### Pull requests (`/prs`, `/prs/reviews`, `/prs/open`)
+### Pull requests (`/prs`, `/prs/reviews`)
 
 - Só PRs **abertas** do usuário autenticado no GitHub
 - Universo de reviewers = `requested_reviewers`; “avaliou” = qualquer review (`COMMENTED`, `APPROVED`, `CHANGES_REQUESTED`); o último review da pessoa vence
 - PR sem reviewers continua visível, com indicador explícito
 - Sync por cron e refresh manual
-- **Abrir PR:** descobre branches suas, sugere a base, monta título e corpo (IA opcional) e cria via `gh`
 
-### Jira, journal e resumos
+### Jira e journal
 
 - Cache Jira a cada ~10 min; chaves `JOR-xxx` viram link no markdown
-- **Criar branch com IA:** repos monitorados → slug `feat/` ou `fix/` → refs remotas no GitHub
+- **Criar branch com IA:** repos monitorados → slug `feat/` ou `fix/` → refs remotas no GitHub; no fim, link para abrir a PR no GitHub
 - Uma nota markdown ativa por dia (soft-delete, corpo obrigatório); o calendário marca os dias que já têm nota
-- Resumos usam o notebook day (journal + tasks + Jira + PRs). Se o app estava offline à meia-noite, o boot gera até 14 dias pendentes
-- Tom dos resumos: `SUMMARY_CAREER_LEVEL` (`junior`, `pleno` ou `senior`)
+- O briefing do dashboard usa o notebook day (journal + Jira + PRs + commits)
 
 ## Startup rápido
 
@@ -175,14 +172,12 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | Módulo | Responsabilidade |
 |--------|------------------|
 | `dashboard` | Hub, widgets e briefing |
-| `prs` | Monitor, reviews, abrir PR, sync GitHub, Slack |
+| `prs` | Monitor, reviews, sync GitHub, Slack |
 | `jira` | UI e sync de tickets atribuídos |
 | `jira-branch` | Wizard de criação de branch com IA |
 | `jira-issue-key` | Chaves Jira e linkify |
-| `tasks` | Tarefas locais |
 | `journal` | Notas por dia, streak, calendário |
 | `notebook-day` | Contexto do dia para a IA |
-| `summaries` | Resumos diário/semanal e catch-up |
 | `llm-generation` | Seam Gemini (`LlmTextGenerator`) |
 | `day-calendar` | Eventos do dia via iCal |
 | `vacation-countdown` | Countdown de férias |
@@ -201,11 +196,8 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | `/dashboard` | Hub do dia |
 | `/prs` | Minhas PRs |
 | `/prs/reviews` | Fila de reviews |
-| `/prs/open` | Wizard abrir PR |
 | `/jira` | Tickets Jira |
-| `/tasks` | Tarefas |
 | `/journal` | Journal |
-| `/summaries` | Histórico de resumos |
 | `/devtools/crons` | Disparo manual de crons |
 | `/devtools/local-docker` | Ambiente local Jusfy |
 
@@ -216,7 +208,7 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | Sync de PRs | a cada 10 min | `DISABLE_PR_SYNC_CRON=1` |
 | Sync Jira | a cada 10 min | `DISABLE_JIRA_SYNC_CRON=1` |
 | Briefing do dashboard | horária | `DISABLE_DASHBOARD_BRIEFING_CRON=1` |
-| Resumos diário/semanal | meia-noite | `DISABLE_SUMMARY_CRON=1` |
+| Revisor IA (`/prs/reviews`) | a cada 1 min (ciclo no intervalo configurado) | `DISABLE_PR_AI_REVIEW_CRON=1` |
 
 Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 
@@ -237,7 +229,6 @@ Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 | `SLACK_BOT_OAUTH_TOKEN` | Não | Bot com escopo `chat:write`; `find_pr_in_slack` também precisa de `channels:read` e `channels:history` (`groups:*` se o canal for privado); a reação :rocket: em PR mergeada precisa de `reactions:write` |
 | `SLACK_PR_CHANNEL` | Não | Padrão `squad-jornada-pr` |
 | `GOOGLE_CALENDAR_ICAL_URL` | Não | Feed iCal secreto (não commitar) |
-| `SUMMARY_CAREER_LEVEL` | Não | `junior` \| `pleno` \| `senior` |
 | `PORT` | Não | Padrão **3847** |
 | `PR_FLOW_MCP_TOKEN` | Não | Se definido, `/api/mcp` exige `Authorization: Bearer <token>` |
 | `LOCAL_DOCKER_ROOT` / `JUSFY_ROOT` | Não | Stack Jusfy no Devtools |
@@ -308,7 +299,7 @@ Trate o token como senha: não commite o `.env`.
 - **Tailwind v4** + **shadcn/ui**
 - **SQLite** + **Drizzle** (`data/pr-flow.sqlite`)
 - **GitHub CLI** / `GH_TOKEN` para PRs
-- **Gemini** para resumos, briefing e sugestões
+- **Gemini** para briefing e sugestões
 - UI em **pt-BR**; código e identificadores em **inglês**
 
 ## Docs para agentes e contribuidores
@@ -316,7 +307,7 @@ Trate o token como senha: não commite o `.env`.
 | Doc | Quando usar |
 |-----|-------------|
 | [AGENTS.md](AGENTS.md) | Rotas, stack, convenções rápidas |
-| [CONTEXT.md](CONTEXT.md) | Vocabulário de domínio (notebook day, briefing vs resumo, streak) |
+| [CONTEXT.md](CONTEXT.md) | Vocabulário de domínio (notebook day, briefing, streak) |
 | [docs/design-system.md](docs/design-system.md) | Tokens, Surface, acento ember |
 | [docs/shadcn-for-agents.md](docs/shadcn-for-agents.md) | Preferência por componentes shadcn |
 | [docs/zod-validation.md](docs/zod-validation.md) | Validação de request, env e APIs externas |

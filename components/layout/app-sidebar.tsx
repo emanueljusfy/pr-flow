@@ -4,12 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
-  CheckSquare,
-  FileText,
   GitBranch,
   GitPullRequest,
   LayoutDashboard,
-  Repeat,
   Ticket,
   Container,
   Timer,
@@ -42,11 +39,6 @@ const navItems = [
     icon: LayoutDashboard
   },
   {
-    title: "Tasks",
-    href: "/tasks",
-    icon: CheckSquare
-  },
-  {
     title: "Jira",
     href: "/jira",
     icon: Ticket
@@ -55,16 +47,6 @@ const navItems = [
     title: "Journal",
     href: "/journal",
     icon: BookOpen
-  },
-  {
-    title: "Resumos",
-    href: "/summaries",
-    icon: FileText
-  },
-  {
-    title: "Rotinas",
-    href: "/routines",
-    icon: Repeat
   }
 ] as const;
 
@@ -157,14 +139,6 @@ export function AppSidebar({ initialGithubLogin }: AppSidebarProps) {
                           </span>
                         ) : null}
                       </span>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton
-                      isActive={pathname.startsWith("/prs/open")}
-                      render={<Link href="/prs/open" />}
-                    >
-                      Abrir PR
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>

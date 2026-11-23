@@ -20,18 +20,6 @@ export const CRON_JOB_SCHEDULE_SPECS: readonly CronJobScheduleSpec[] = [
     runOnStart: true
   },
   {
-    id: "cron:summaries-daily",
-    expression: "0 0 * * *",
-    disableEnvVar: "DISABLE_SUMMARY_CRON",
-    useSummaryTimezone: true
-  },
-  {
-    id: "cron:summaries-weekly",
-    expression: "0 0 * * *",
-    disableEnvVar: "DISABLE_SUMMARY_CRON",
-    useSummaryTimezone: true
-  },
-  {
     id: "cron:dashboard-briefing",
     expression: "0 * * * *",
     disableEnvVar: "DISABLE_DASHBOARD_BRIEFING_CRON",
@@ -39,9 +27,9 @@ export const CRON_JOB_SCHEDULE_SPECS: readonly CronJobScheduleSpec[] = [
     runOnStart: true
   },
   {
-    id: "cron:routines",
+    id: "cron:pr-ai-review",
     expression: "*/1 * * * *",
-    disableEnvVar: "DISABLE_ROUTINES_CRON"
+    disableEnvVar: "DISABLE_PR_AI_REVIEW_CRON"
   }
 ] as const;
 

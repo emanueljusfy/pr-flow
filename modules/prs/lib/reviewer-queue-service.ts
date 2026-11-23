@@ -18,7 +18,10 @@ export function mapReviewerQueuePr(pr: MonitoredPrRaw, githubLogin: string): Rev
     title: pr.title,
     url: pr.url,
     repository: pr.repository,
-    myReviewStatus: getMyReviewStatus(pr, githubLogin)
+    myReviewStatus: getMyReviewStatus(pr, githubLogin),
+    authorLogin: pr.authorLogin,
+    isDraft: pr.isDraft ?? false,
+    headSha: pr.headSha
   };
 }
 

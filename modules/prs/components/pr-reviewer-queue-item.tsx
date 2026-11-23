@@ -1,6 +1,8 @@
 "use client";
 
 import { ChevronRight, ExternalLink, GitPullRequest } from "lucide-react";
+import { AiReviewCardActions } from "@/modules/pr-ai-review/components/ai-review-card-actions";
+import type { PrAiReviewRunDto } from "@/modules/pr-ai-review/lib/domain";
 import type { ReviewerQueuePr } from "@/modules/prs/lib/domain";
 import { myReviewStatusLabel } from "@/modules/prs/lib/core/my-review-status";
 import {
@@ -11,6 +13,9 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   pr: ReviewerQueuePr;
+  aiRuns?: PrAiReviewRunDto[];
+  aiBusy?: boolean;
+  onAiRunStarted?: () => void;
 }
 
 function formatRepository(repository: string): string {
@@ -21,7 +26,7 @@ function formatRepository(repository: string): string {
   return repository.slice(slashIndex + 1);
 }
 
-export function PrReviewerQueueItem({ pr }: Props) {
+export function PrReviewerQueueItem({ pr, aiRuns = [], aiBusy = false, onAiRunStarted = () => {} }: Props) {
   const statusClass = reviewQueueCardClass(pr.myReviewStatus);
 
   return (
@@ -65,6 +70,14 @@ export function PrReviewerQueueItem({ pr }: Props) {
             <ExternalLink className="size-4" aria-hidden />
           </a>
         </div>
+        <AiReviewCardActions
+          prUrl={pr.url}
+          label={`${formatRepository(pr.repository)}#${pr.number}`}
+          headSha={pr.headSha}
+          runs={aiRuns}
+          busy={aiBusy}
+          onRunStarted={onAiRunStarted}
+        />
       </article>
     </li>
   );

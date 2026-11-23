@@ -31,23 +31,15 @@ const META: Record<CronJobId, Pick<CronJobDefinition, "schedule" | "description"
     description:
       "Sincroniza issues atribuídas, detalhes e sprints do Jira; complementa chaves vindas do cache de PRs."
   },
-  "cron:summaries-daily": {
-    schedule: "Diariamente à meia-noite (fuso SUMMARY_CRON_TZ)",
-    description: "Gera e persiste o resumo diário do dia anterior via IA (Gemini)."
-  },
-  "cron:summaries-weekly": {
-    schedule: "Segundas à meia-noite (fuso SUMMARY_CRON_TZ)",
-    description: "Gera e persiste o resumo semanal da semana anterior via IA (Gemini)."
-  },
   "cron:dashboard-briefing": {
     schedule: "A cada hora (fuso SUMMARY_CRON_TZ)",
     description:
       "Atualiza o briefing do dashboard: entregas do último dia útil por ticket, projeção para hoje e motivação."
   },
-  "cron:routines": {
-    schedule: "A cada 1 minuto",
+  "cron:pr-ai-review": {
+    schedule: "A cada 1 minuto (ciclo no intervalo configurado)",
     description:
-      "Executa rotinas vencidas (agente local com prompt e contexto limpo). Desligue com DISABLE_ROUTINES_CRON=1."
+      "Revisor IA: revisa com agente local as PRs da fila Para revisar que passam no filtro e reage no anúncio da PR no canal. Desligue com DISABLE_PR_AI_REVIEW_CRON=1."
   }
 };
 

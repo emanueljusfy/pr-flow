@@ -4,21 +4,6 @@ export const ptBR = {
   helpHint: {
     ariaLabel: "Mais informações"
   },
-  summary: {
-    missingApiKey: "Configure GEMINI_API_KEY no .env para gerar resumos.",
-    invalidDate: "Data inválida. Use o formato YYYY-MM-DD.",
-    invalidWeekMonday: "Semana inválida. Use segunda-feira no formato YYYY-MM-DD.",
-    generationFailed: "Falha ao gerar resumo.",
-    dailyAlreadyExists: (day: string) => `Resumo diário de ${day} já existe.`,
-    weeklyAlreadyExists: (weekMonday: string) => `Resumo semanal de ${weekMonday} já existe.`,
-    dailyNoInput:
-      "Não há anotações, tarefas concluídas, tickets Jira movimentados, commits de autoria nem atividade de PR (review, merge ou mudança de status) neste dia — resumo não gerado para economizar cota da API.",
-    weeklyNoInput:
-      "Não há anotações, tarefas concluídas, atividade Jira nem PR/review na semana — resumo semanal não gerado.",
-    loadFailed: "Falha ao carregar resumos.",
-    loadHistoryFailed: "Não foi possível carregar o histórico de resumos.",
-    listFailed: "Falha ao listar resumos."
-  },
   briefing: {
     widgetTitle: "Briefing do dia",
     widgetHelp:
@@ -41,43 +26,18 @@ export const ptBR = {
     invalidDate: "Data inválida. Use o formato YYYY-MM-DD.",
     generationFailed: "Falha ao gerar briefing do dash."
   },
-  tasksWidget: {
-    widgetTitle: "Tarefas",
-    widgetHelp: "Tarefas pessoais em aberto nesta instância local.",
-    viewAll: "Ver todas",
-    loading: "Carregando lista…",
-    openCount: (count: number) => `${count} em aberto`,
-    openWithOverdue: (open: number, overdue: number) =>
-      `${open} em aberto · ${overdue} atrasada${overdue === 1 ? "" : "s"}`,
-    empty: "Lista vazia por agora.",
-    create: "Criar tarefa",
-    retry: "Tentar novamente",
-    listAriaLabel: "Tarefas em aberto",
-    loadingAriaLabel: "Carregando tarefas",
-    overdueBadge: "Atrasada",
-    completeAriaLabel: (title: string) => `Concluir ${title}`,
-    completeSuccess: (title: string) => `“${title}” concluída.`,
-    completeError: "Não foi possível concluir a tarefa.",
-    hiddenCount: (count: number) =>
-      `+ ${count} ${count === 1 ? "tarefa" : "tarefas"} em`
-  },
   quickNote: {
     title: "Nota rápida",
     description:
-      "Sempre salva no caderno de hoje. A IA cria tarefas relacionadas quando o texto pede ação. Ctrl+Enter para salvar.",
+      "Salva no caderno de hoje. Ctrl+Enter para salvar.",
     placeholder: "Digite sua nota rápida...",
     textAriaLabel: "Texto da nota rápida",
     savedJournal: "Salvo no caderno de hoje.",
-    savedJournalFallback: "Salvo no caderno de hoje (IA indisponível).",
-    savedWithTasks: (count: number) =>
-      count === 1
-        ? "Salvo no caderno e 1 tarefa criada."
-        : `Salvo no caderno e ${count} tarefas criadas.`,
     saveError: "Não foi possível salvar a nota rápida."
   },
   gemini: {
     rateLimit:
-      "O limite de uso da API Gemini foi atingido (cota mensal ou muitas requisições). Os resumos automáticos das crons voltarão quando a cota for liberada. Para ajustar o limite, acesse o Google AI Studio.",
+      "O limite de uso da API Gemini foi atingido (cota mensal ou muitas requisições). O briefing automático volta quando a cota for liberada. Para ajustar o limite, acesse o Google AI Studio.",
     unavailable:
       "Os modelos de IA estão temporariamente indisponíveis (alta demanda no Google). O app já tentou modelos alternativos automaticamente — aguarde alguns minutos e tente novamente."
   },
@@ -88,8 +48,7 @@ export const ptBR = {
     createNone: "Nenhuma branch nova foi criada."
   },
   cron: {
-    manualConfirmation: "Confirmo execução manual deste cron no PR Flow.",
-    bootCatchupCheck: "Boot: verificando resumos pendentes no banco."
+    manualConfirmation: "Confirmo execução manual deste cron no PR Flow."
   },
   vacation: {
     setupTitle: "Quando começam as férias?",
@@ -270,7 +229,7 @@ export const ptBR = {
     invalidDate: "Data inválida. Use o formato YYYY-MM-DD.",
     invalidJson: "JSON inválido.",
     noInput:
-      "Não há anotação, tarefa concluída, ticket Jira movimentado nem atividade de PR neste dia para montar as anotações."
+      "Não há anotação, ticket Jira movimentado nem atividade de PR neste dia para montar as anotações."
   },
   journalStreak: {
     widgetTitle: "Streak do journal",
@@ -380,30 +339,6 @@ export const ptBR = {
     notShared: "Envie a PR ao Slack antes de publicar o lembrete na thread.",
     noPending: "Ninguém está pendente de revisão nesta PR."
   },
-  followUp: {
-    panelTitle: "Acompanhamento do dia",
-    scriptTitle: "Roteiro de daily",
-    summaryTitle: "Resumo do dia",
-    quizTitle: "Quiz do dia",
-    yesterday: "Ontem",
-    today: "Hoje",
-    blocker: "Bloqueio",
-    noSummaryYet: "Sem resumo ainda.",
-    windowClosed: "Janela fechada.",
-    noNextQuestion: "Não há próxima pergunta.",
-    nextQuestion: "Próxima pergunta",
-    markUsed: "Marcar como usado",
-    scriptUsed: "Roteiro usado",
-    draftHint: "Rascunho. Só ler não fecha a janela.",
-    answerLabel: "Resposta",
-    sendAnswer: "Enviar resposta",
-    answerRejected: "A janela deste dia já fechou. A resposta não foi gravada.",
-    gapLabel: "Lacuna",
-    mentoringLabel: "Mentoria",
-    loading: "Carregando acompanhamento…",
-    loadFailed: "Não foi possível carregar o acompanhamento deste dia.",
-    saveFailed: "Não foi possível atualizar o acompanhamento."
-  },
   notifications: {
     prefsTriggerLabel: "Alertas",
     prefsTriggerAriaLabel: "Configurar alertas",
@@ -433,66 +368,87 @@ export const ptBR = {
     inboxEmpty: "Nenhum alerta recente.",
     markAllRead: "Marcar todas como lidas"
   },
-  routines: {
-    pageTitle: "Rotinas",
-    pageDescription:
-      "Agende prompts com um agente local instalado. Cada execução abre uma janela de contexto limpa.",
-    createTitle: "Nova rotina",
-    nameLabel: "Nome",
-    promptLabel: "Prompt",
-    agentLabel: "Agente",
-    scheduleKindLabel: "Frequência",
-    schedulePreset: "Intervalo",
-    scheduleCron: "Cron",
+  aiReview: {
+    panelTitle: "Revisor IA",
+    panelDescription:
+      "Revisa com um agente local as PRs da sua fila que ainda faltam avaliar, uma por vez, e reage no anúncio da PR no canal.",
+    enabledLabel: "Ligado",
     intervalLabel: "A cada",
-    cronLabel: "Expressão cron",
-    cwdLabel: "Diretório de trabalho (opcional)",
-    notifySlackLabel: "Notificar no Slack",
-    enabledLabel: "Ativa",
-    create: "Criar rotina",
-    save: "Salvar",
-    runNow: "Executar agora",
-    disable: "Desativar",
-    enable: "Ativar",
-    remove: "Excluir",
-    empty: "Nenhuma rotina ainda. Crie a primeira com um prompt e um agente local.",
-    loadFailed: "Não foi possível carregar as rotinas.",
-    createSuccess: "Rotina criada.",
-    createFailed: "Não foi possível criar a rotina.",
-    updateSuccess: "Rotina atualizada.",
-    updateFailed: "Não foi possível atualizar a rotina.",
-    removeSuccess: "Rotina excluída.",
-    removeFailed: "Não foi possível excluir a rotina.",
-    runQueued: "Execução enfileirada.",
-    runFailed: "Não foi possível iniciar a execução.",
-    runConflict: "Já existe uma execução em andamento para esta rotina.",
+    intervalOption: (minutes: number) =>
+      minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`,
+    agentLabel: "Agente",
     agentNotInstalled: "não instalado",
+    authorsLabel: "Autores",
+    authorsPlaceholder: "login1, login2 (vazio = qualquer autor)",
+    repoPatternLabel: "Repositórios",
+    repoPatternPlaceholder: "justracker-* (vazio = qualquer repo)",
+    cwdLabel: "Diretório de trabalho",
+    cwdPlaceholder: "/caminho/absoluto (vazio = diretório do app)",
+    editPrompt: "Editar prompt",
+    promptDialogTitle: "Prompt do Revisor IA",
+    promptDialogDescription:
+      "Usado em cada PR. Placeholders: {{pr_url}} (obrigatório), {{repository}}, {{number}}, {{title}}, {{author}}, {{head_sha}}.",
+    promptResetDefault: "Restaurar padrão",
+    save: "Salvar",
+    cancel: "Cancelar",
+    runNow: "Rodar agora",
+    lastRun: (when: string, count: number) =>
+      `Última execução: ${when} · ${count === 1 ? "1 PR revisada" : `${count} PRs revisadas`}`,
+    noRunsYet: "Nenhuma execução ainda",
     nextRun: (when: string) => `Próxima: ${when}`,
-    recentRuns: "Execuções recentes",
-    runningBadge: "Em execução",
+    configSaved: "Revisor IA atualizado",
+    configFailed: "Não foi possível salvar o Revisor IA.",
+    loadFailed: "Não foi possível carregar o Revisor IA.",
+    cycleStarted: (count: number) =>
+      count === 1 ? "IA revisando 1 PR" : `IA revisando ${count} PRs`,
+    nothingToReview: "Nenhuma PR para a IA revisar agora.",
+    runFailed: "Não foi possível iniciar a revisão da IA.",
+    conflict: "Já existe uma revisão da IA em andamento.",
+    prNotInQueue: "A PR não está na sua fila de revisão.",
+    reviewWithAi: "Revisar com IA",
+    reviewWithAiAria: (label: string) => `Revisar ${label} com IA`,
+    logsAria: (label: string) => `Ver revisões da IA de ${label}`,
+    badgeRunning: "IA revisando…",
+    badgeFailed: "IA: Falhou",
+    badgeStale: "IA: desatualizada",
+    badgeVerdict: {
+      APPROVE: "IA: Aprovado",
+      COMMENT: "IA: Comentou",
+      REQUEST_CHANGES: "IA: Pediu mudanças"
+    },
+    verdictLabel: {
+      APPROVE: "Aprovado",
+      COMMENT: "Comentou",
+      REQUEST_CHANGES: "Pediu mudanças"
+    },
+    noVerdict: "sem review postada",
     statusRunning: "Em execução",
-    statusSucceeded: "Sucesso",
+    statusSucceeded: "Concluída",
     statusFailed: "Falhou",
-    logsAria: (name: string) => `Ver logs de ${name}`,
-    logsSheetTitle: (name: string) => `Logs — ${name}`,
-    logsSheetDescription: "Histórico de execuções desta rotina.",
-    logsEmpty: "Nenhuma execução ainda para esta rotina.",
-    logsStdoutEmpty: "Sem saída padrão.",
-    logsStderrEmpty: "Sem saída de erro.",
+    logsSheetTitle: (label: string) => `Revisões da IA — ${label}`,
+    logsSheetDescription: "Execuções do agente nesta PR, mais recente primeiro.",
+    logsEmpty: "Nenhuma revisão da IA para esta PR.",
+    logsLoadFailed: "Não foi possível carregar as revisões.",
     logsStdoutLabel: "Saída padrão",
     logsStderrLabel: "Saída de erro",
-    logsCostLabel: "Custo",
+    logsStdoutEmpty: "Sem saída padrão.",
+    logsStderrEmpty: "Sem saída de erro.",
     logsCostUnknown: "Custo não informado",
-    costSuffix: (formatted: string) => ` · ${formatted}`,
-    alertStarted: (name: string) => `Rotina "${name}" iniciou`,
-    alertStartedBody: "Execução em andamento.",
-    alertSucceeded: (name: string) => `Rotina "${name}" concluiu com sucesso`,
-    alertFailed: (name: string) => `Rotina "${name}" falhou`
+    logsOpenReview: "Abrir review no GitHub",
+    slackReaction: {
+      reacted: "Reação adicionada no canal",
+      already_reacted: "Reação já estava no canal",
+      not_found: "Anúncio da PR não encontrado no canal",
+      error: "Falha ao reagir no canal",
+      skipped: "Slack não configurado"
+    },
+    alertStarted: (label: string) => `IA revisando ${label}`,
+    alertStartedBody: "Revisão em andamento.",
+    alertFinished: (label: string, outcome: string) => `IA terminou ${label}: ${outcome}`,
+    alertFailed: (label: string) => `IA falhou em ${label}`
   }
 } as const;
 
-export const DAILY_SUMMARY_NO_INPUT_MESSAGE = ptBR.summary.dailyNoInput;
-export const WEEKLY_SUMMARY_NO_INPUT_MESSAGE = ptBR.summary.weeklyNoInput;
 export const GEMINI_RATE_LIMIT_USER_MESSAGE = ptBR.gemini.rateLimit;
 export const GEMINI_UNAVAILABLE_USER_MESSAGE = ptBR.gemini.unavailable;
 export const CRON_MANUAL_CONFIRMATION_PHRASE = ptBR.cron.manualConfirmation;

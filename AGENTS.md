@@ -1,6 +1,6 @@
 # Agentes — PR Flow
 
-Guia rápido para trabalhar neste repositório. Vocabulário de domínio (notebook day, briefing vs resumo): **[CONTEXT.md](CONTEXT.md)**.
+Guia rápido para trabalhar neste repositório. Vocabulário de domínio (notebook day, briefing): **[CONTEXT.md](CONTEXT.md)**.
 
 ## Antes de mudar UI
 
@@ -17,7 +17,7 @@ Implementação dos tokens: `app/globals.css` (`.dark`).
 
 - Next.js (App Router), React, TypeScript
 - Tailwind v4 + shadcn/ui (`components/ui/`)
-- SQLite + Drizzle (Tasks, Journal, Summaries, Dashboard, cache Jira). Arquivo em `data/pr-flow.sqlite` (`DATABASE_URL=file:./data/pr-flow.sqlite`)
+- SQLite + Drizzle (Journal, Dashboard/briefing, cache Jira). Arquivo em `data/pr-flow.sqlite` (`DATABASE_URL=file:./data/pr-flow.sqlite`)
 - PRs via GitHub CLI / `GH_TOKEN`
 
 ## Rotas principais
@@ -26,12 +26,9 @@ Implementação dos tokens: `app/globals.css` (`.dark`).
 |------|--------|
 | `/dashboard` | Hub + férias + eventos do dia (iCal Google) + deck de atalhos + streak do journal + briefing (IA, horária) |
 | `/prs` | Minhas pull requests (monitor completo) |
-| `/prs/reviews` | PRs em que sou revisor (fila simples) |
-| `/tasks` | Tarefas abertas/concluídas |
+| `/prs/reviews` | PRs em que sou revisor + Revisor IA (agente local revisa a fila filtrada e reage ✅/💬 no anúncio do canal) |
 | `/journal` | Notas markdown por dia |
-| `/summaries` | Histórico de resumos (UI pt-BR; redirect legado `/summaries`) |
 | `/jira` | Tickets Jira atribuídos ao usuário |
-| `/routines` | Rotinas locais (prompt + agente + frequência) |
 | `/devtools/crons` | Forçar execução on-demand dos fluxos agendados (confirmação manual) |
 | `/api/mcp` | Servidor MCP (PRs + Slack) — ferramentas em `modules/mcp/lib/tools/` |
 | `/devtools/local-docker` | Portainer do stack Jusfy local — ligar painel e gerenciar containers |
@@ -50,7 +47,7 @@ npm test
 npm run build
 ```
 
-Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN` e `GOOGLE_CALENDAR_ICAL_URL` (feed iCal secreto). Repositórios GitHub monitorados: cadastro em **Devtools → Repositórios** (tabela `monitored_repositories`); na primeira execução importa `MONITORED_REPOSITORIES` do `.env` se o banco estiver vazio. Crons: `modules/cron-scheduling/` (`startAllCrons` em `instrumentation.ts`). Jira sync 10 min (`DISABLE_JIRA_SYNC_CRON=1`). Briefing horário (`DISABLE_DASHBOARD_BRIEFING_CRON=1`). Resumos meia-noite (`DISABLE_SUMMARY_CRON=1`); no boot, `runSummaryCatchup` consulta `summaries` e gera dias/semana pendentes (até 14 dias) se o app estava offline à meia-noite.
+Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN` e `GOOGLE_CALENDAR_ICAL_URL` (feed iCal secreto). Repositórios GitHub monitorados: cadastro em **Devtools → Repositórios** (tabela `monitored_repositories`); na primeira execução importa `MONITORED_REPOSITORIES` do `.env` se o banco estiver vazio. Crons: `modules/cron-scheduling/` (`startAllCrons` em `instrumentation.ts`). Jira sync 10 min (`DISABLE_JIRA_SYNC_CRON=1`). Briefing horário (`DISABLE_DASHBOARD_BRIEFING_CRON=1`). Revisor IA: `cron:pr-ai-review` a cada minuto, ciclo no intervalo configurado em `/prs/reviews` (`DISABLE_PR_AI_REVIEW_CRON=1`); módulo `modules/pr-ai-review/`.
 
 ## Convenções de código
 

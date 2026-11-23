@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+const runAiReviewCronTick = vi.fn(async () => ({ status: "disabled" as const }));
+vi.mock("@/modules/pr-ai-review/lib/review-service", () => ({
+  runAiReviewCronTick: () => runAiReviewCronTick()
+}));
 import {
   getScheduledCronJob,
   isCronJobDisabled,
@@ -24,15 +29,6 @@ describe("cron-scheduling", () => {
       const job = getScheduledCronJob("cron:prs-sync");
       expect(isCronJobDisabled(job, env({ DISABLE_PR_SYNC_CRON: "1" }))).toBe(true);
       expect(isCronJobDisabled(job, env({ DISABLE_PR_SYNC_CRON: "0" }))).toBe(false);
-    });
-
-    it("não desliga o briefing do dash com DISABLE_SUMMARY_CRON (só resumos)", () => {
-      const resumos = getScheduledCronJob("cron:summaries-daily");
-      const briefing = getScheduledCronJob("cron:dashboard-briefing");
-      const summaryOff = env({ DISABLE_SUMMARY_CRON: "1" });
-
-      expect(isCronJobDisabled(resumos, summaryOff)).toBe(true);
-      expect(isCronJobDisabled(briefing, summaryOff)).toBe(false);
     });
 
     it("desliga o briefing do dash apenas com DISABLE_DASHBOARD_BRIEFING_CRON", () => {
@@ -108,9 +104,9 @@ describe("cron-scheduling", () => {
     it("aplica SUMMARY_CRON_TZ nos jobs com useSummaryTimezone", () => {
       const scheduler = fakeScheduler();
       const job: CronJobSchedule = {
-        id: "cron:summaries-daily",
-        expression: "0 0 * * *",
-        disableEnvVar: "DISABLE_SUMMARY_CRON",
+        id: "cron:dashboard-briefing",
+        expression: "0 * * * *",
+        disableEnvVar: "DISABLE_DASHBOARD_BRIEFING_CRON",
         useSummaryTimezone: true,
         run: vi.fn()
       };
@@ -121,49 +117,6 @@ describe("cron-scheduling", () => {
       });
 
       expect(scheduler.calls[0]?.timezone).toBe("Europe/Lisbon");
-    });
-  });
-
-  describe("runCronCatchupOnStart", () => {
-    it("não chama catchup quando DISABLE_SUMMARY_CRON=1", async () => {
-      const catchupModule = await import("@/modules/summaries/lib/summary-catchup");
-      const catchupSpy = vi.spyOn(catchupModule, "runSummaryCatchup").mockResolvedValue({
-        dailyGenerated: [],
-        dailySkipped: [],
-        dailyFailed: [],
-        weeklyGenerated: [],
-        weeklySkipped: [],
-        weeklyFailed: []
-      });
-
-      const { runCronCatchupOnStart } = await import(
-        "@/modules/cron-scheduling/lib/run-cron-catchup-on-start"
-      );
-      await runCronCatchupOnStart(env({ DISABLE_SUMMARY_CRON: "1" }));
-
-      expect(catchupSpy).not.toHaveBeenCalled();
-      catchupSpy.mockRestore();
-    });
-
-    it("executa catchup de resumos quando crons de resumo estão habilitadas", async () => {
-      const catchupModule = await import("@/modules/summaries/lib/summary-catchup");
-      const report = {
-        dailyGenerated: ["2026-05-27"],
-        dailySkipped: [],
-        dailyFailed: [],
-        weeklyGenerated: [],
-        weeklySkipped: ["2026-05-18"],
-        weeklyFailed: []
-      };
-      const catchupSpy = vi.spyOn(catchupModule, "runSummaryCatchup").mockResolvedValue(report);
-
-      const { runCronCatchupOnStart } = await import(
-        "@/modules/cron-scheduling/lib/run-cron-catchup-on-start"
-      );
-      await runCronCatchupOnStart(env());
-
-      expect(catchupSpy).toHaveBeenCalledOnce();
-      catchupSpy.mockRestore();
     });
   });
 
@@ -181,20 +134,25 @@ describe("cron-scheduling", () => {
       registerSpy.mockRestore();
       startModule.resetCronSchedulingStateForTests();
     });
+  });
 
-    it("dispara catchup de resumos no boot", async () => {
-      const registerModule = await import("@/modules/cron-scheduling/lib/register-scheduled-crons");
-      const catchupModule = await import("@/modules/cron-scheduling/lib/run-cron-catchup-on-start");
-      const startModule = await import("@/modules/cron-scheduling/lib/start-all-crons");
+  describe("pr ai review cron", () => {
+    it("registers pr ai review cron", async () => {
+      const spec = getScheduledCronJob("cron:pr-ai-review");
+      expect(spec.expression).toBe("*/1 * * * *");
+      expect(isCronJobDisabled(spec, env({ DISABLE_PR_AI_REVIEW_CRON: "1" }))).toBe(true);
+      expect(isCronJobDisabled(spec, env({}))).toBe(false);
 
-      vi.spyOn(registerModule, "registerScheduledCrons").mockImplementation(() => {});
-      const catchupSpy = vi.spyOn(catchupModule, "runCronCatchupOnStart").mockResolvedValue();
+      const { buildScheduledCronJobs } = await import("@/modules/cron-scheduling/lib/build-runtime-jobs");
+      const job = buildScheduledCronJobs().find((item) => item.id === "cron:pr-ai-review");
+      expect(job).toBeDefined();
+      job!.run();
+      await vi.waitFor(() => expect(runAiReviewCronTick).toHaveBeenCalledTimes(1));
 
-      startModule.resetCronSchedulingStateForTests();
-      startModule.startAllCrons();
-
-      expect(catchupSpy).toHaveBeenCalledOnce();
-      startModule.resetCronSchedulingStateForTests();
+      const { runCronJob } = await import("@/modules/devtools/lib/cron-job-runners");
+      const result = await runCronJob("cron:pr-ai-review", true);
+      expect(result).toMatchObject({ jobId: "cron:pr-ai-review", status: "ok", message: "Revisor IA desligado." });
+      expect(runAiReviewCronTick).toHaveBeenCalledTimes(2);
     });
   });
 });

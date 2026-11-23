@@ -1,15 +1,13 @@
 import { writeSystemLogFireAndForget } from "@/modules/observability/lib/system-logger";
 import type { MonitoredPr } from "@/modules/prs/lib/domain";
 import { getPullRequestState } from "@/modules/prs/lib/gh-client";
-import { getPrSlackShareThreadByUrl } from "@/modules/prs/lib/pr-slack-share-repository";
-import { findPrMentionsInSlackChannel, resolveSlackChannelId } from "@/modules/slack/lib/slack-channel-history";
+import { findPrAnnouncements } from "@/modules/prs/lib/pr-slack-announcement";
+import { resolveSlackChannelId } from "@/modules/slack/lib/slack-channel-history";
 import { addSlackReaction } from "@/modules/slack/lib/slack-client";
-import { getSlackPrChannel, isSlackConfigured } from "@/modules/slack/lib/slack-config";
+import { isSlackConfigured } from "@/modules/slack/lib/slack-config";
 
 const MERGE_REACTION_LOG_SOURCE = "prs:merge-reaction";
 export const MERGE_REACTION_EMOJI = "rocket";
-/** How far back to look for a PR posted by hand (not recorded in `pr_slack_shares`). */
-const HAND_POSTED_LOOKBACK_DAYS = 30;
 
 type MergedPr = Pick<MonitoredPr, "id" | "number" | "url" | "repository">;
 
@@ -57,37 +55,9 @@ export async function reactToMergedPrs(prs: MergedPr[]): Promise<MergeReactionOu
     return logOutcomes(outcomes);
   }
 
-  const targets = new Map<string, { channel: string; ts: string }>();
-  const unrecorded: MergedPr[] = [];
-  for (const pr of merged) {
-    const share = await getPrSlackShareThreadByUrl(pr.url);
-    if (share) {
-      targets.set(pr.url, { channel: share.channel, ts: share.threadTs });
-    } else {
-      unrecorded.push(pr);
-    }
-  }
-
-  if (unrecorded.length > 0) {
-    try {
-      const channel = getSlackPrChannel();
-      const found = await findPrMentionsInSlackChannel({
-        channel,
-        urls: unrecorded.map((pr) => pr.url),
-        lookbackDays: HAND_POSTED_LOOKBACK_DAYS
-      });
-      for (const pr of unrecorded) {
-        // Newest first; the announcement is the oldest top-level message linking the PR.
-        const announcement = (found.mentionsByUrl.get(pr.url) ?? []).filter((m) => m.ts === m.threadTs).at(-1);
-        if (announcement) {
-          targets.set(pr.url, { channel: found.channelId, ts: announcement.ts });
-        }
-      }
-    } catch (error) {
-      for (const pr of unrecorded) {
-        outcomes.push({ url: pr.url, status: "error", error: errorMessage(error) });
-      }
-    }
+  const { targets, errors } = await findPrAnnouncements(merged.map((pr) => pr.url));
+  for (const [url, error] of errors) {
+    outcomes.push({ url, status: "error", error });
   }
 
   for (const pr of merged) {

@@ -6,7 +6,6 @@ import { BetterSQLiteSession } from "drizzle-orm/better-sqlite3/session";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { appSettings } from "@/modules/app/lib/schema";
 import { notes } from "@/modules/journal/lib/schema";
-import { quizAnswers, standupScripts } from "@/modules/day-follow-up/lib/schema";
 import {
   jiraIssueDetails,
   jiraIssuesCache,
@@ -14,13 +13,11 @@ import {
   jiraSyncMeta
 } from "@/modules/jira/lib/schema";
 import { prTimelineEvents } from "@/modules/prs/lib/schema";
-import { routineRuns, routines } from "@/modules/routines/lib/schema";
-import { summaries } from "@/modules/summaries/lib/schema";
-import { tasks } from "@/modules/tasks/lib/schema";
+import { prAiReviewConfig, prAiReviewRuns } from "@/modules/pr-ai-review/lib/schema";
+import { summaries } from "@/modules/dashboard/lib/dashboard-briefing-schema";
 import { openNodeSqlite, type NodeSqliteClient } from "@/modules/db/lib/node-sqlite";
 
 const schema = {
-  tasks,
   notes,
   appSettings,
   summaries,
@@ -29,10 +26,8 @@ const schema = {
   jiraIssuesCache,
   jiraIssueDetails,
   prTimelineEvents,
-  standupScripts,
-  quizAnswers,
-  routines,
-  routineRuns
+  prAiReviewConfig,
+  prAiReviewRuns
 };
 
 const POSTGRES_URL_ERROR =

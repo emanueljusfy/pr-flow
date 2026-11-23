@@ -1,21 +1,11 @@
 import { syncJiraCache } from "@/modules/jira/lib/jira-sync-service";
-import { isValidNotebookDay, todayLocalDateString } from "@/modules/journal/lib/notebook-day";
 import type { CronJobId } from "@/modules/devtools/lib/cron-job-definitions";
 import type { CronLogSourceId } from "@/modules/observability/lib/log-domain";
 import { writeSystemLogFireAndForget } from "@/modules/observability/lib/system-logger";
 import { processDuePrReviewReminderSchedules } from "@/modules/prs/lib/pr-review-reminder-schedule-service";
 import { syncPrCache } from "@/modules/prs/lib/pr-sync-service";
 import { generateAndPersistDashboardBriefing } from "@/modules/dashboard/lib/dashboard-briefing-service";
-import {
-  generateAndPersistDailySummary,
-  generateAndPersistWeeklySummary
-} from "@/modules/summaries/lib/summary-generation-service";
-import {
-  isMonday,
-  lastCompletedWeekMonday,
-  yesterdayLocalDay
-} from "@/modules/summaries/lib/summary-period";
-import { processDueRoutines } from "@/modules/routines/lib/process-due-routines";
+import { runAiReviewCronTick } from "@/modules/pr-ai-review/lib/review-service";
 export type { CronJobId } from "@/modules/devtools/lib/cron-job-definitions";
 
 export type CronRunResult = {
@@ -134,35 +124,6 @@ export async function runJiraSyncCron(ctx: RunContext): Promise<CronRunResult> {
   }
 }
 
-export async function runSummariesDailyCron(ctx: RunContext): Promise<CronRunResult> {
-  const source: CronJobId = "cron:summaries-daily";
-  const day = yesterdayLocalDay();
-
-  if (!isValidNotebookDay(day)) {
-    const message = `Dia inválido para resumo diário (${day}); job ignorado.`;
-    writeSystemLogFireAndForget({ level: "debug", source, message });
-    return { jobId: source, status: "skipped", message };
-  }
-
-  logStart(
-    source,
-    ctx.manual
-      ? `Execução manual: gerando resumo diário para ${day}.`
-      : `Gerando resumo diário para ${day}.`
-  );
-
-  const result = await generateAndPersistDailySummary(day, { force: true });
-  if (result.status === "ok" || result.status === "skipped") {
-    const message = `Resumo diário: ${result.status}.`;
-    logOutcome(source, "info", message, result);
-    return { jobId: source, status: "ok", message, details: result };
-  }
-
-  const message = "Falha no resumo diário.";
-  logOutcome(source, "error", message, result);
-  return { jobId: source, status: "error", message, details: result };
-}
-
 export async function runDashboardBriefingCron(ctx: RunContext): Promise<CronRunResult> {
   const source: CronJobId = "cron:dashboard-briefing";
   const prefix = ctx.manual ? "manual" : "agendada";
@@ -198,58 +159,33 @@ export async function runDashboardBriefingCron(ctx: RunContext): Promise<CronRun
   }
 }
 
-export async function runSummariesWeeklyCron(ctx: RunContext): Promise<CronRunResult> {
-  const source: CronJobId = "cron:summaries-weekly";
-  const today = todayLocalDateString();
-
-  if (!ctx.manual && !isMonday(today)) {
-    const message = "Hoje não é segunda; resumo semanal ignorado.";
-    writeSystemLogFireAndForget({ level: "debug", source, message });
-    return { jobId: source, status: "skipped", message };
-  }
-
-  const weekMonday = lastCompletedWeekMonday(today);
-  logStart(
-    source,
-    ctx.manual
-      ? `Execução manual: gerando resumo semanal para semana de ${weekMonday}.`
-      : `Gerando resumo semanal para semana de ${weekMonday}.`
-  );
-
-  const result = await generateAndPersistWeeklySummary(weekMonday);
-  if (result.status === "ok" || result.status === "skipped") {
-    const message = `Resumo semanal: ${result.status}.`;
-    logOutcome(source, "info", message, result);
-    return { jobId: source, status: "ok", message, details: result };
-  }
-
-  const message = "Falha no resumo semanal.";
-  logOutcome(source, "error", message, result);
-  return { jobId: source, status: "error", message, details: result };
-}
-
-export async function runRoutinesCron(ctx: RunContext): Promise<CronRunResult> {
-  const source: CronJobId = "cron:routines";
+export async function runPrAiReviewCron(ctx: RunContext): Promise<CronRunResult> {
+  const source: CronJobId = "cron:pr-ai-review";
   const prefix = ctx.manual ? "manual" : "agendada";
-  logStart(source, `Iniciando execução ${prefix} de rotinas vencidas.`);
+  logStart(source, `Iniciando verificação ${prefix} do Revisor IA.`);
 
   try {
-    const result = await processDueRoutines();
-    if (result.started === 0) {
-      const message =
-        result.skippedRunning > 0
-          ? `Nenhuma rotina nova iniciada (${result.skippedRunning} já em execução).`
-          : "Nenhuma rotina vencida.";
+    const result = await runAiReviewCronTick();
+    if (result.status === "queue_error") {
+      const message = `Revisor IA: falha ao ler a fila de revisão (${result.error}).`;
+      logOutcome(source, "warn", message, result);
+      return { jobId: source, status: "error", message, details: result };
+    }
+    if (result.status !== "ran") {
+      const messages = {
+        disabled: "Revisor IA desligado.",
+        not_due: "Revisor IA ainda não está no horário.",
+        busy: "Revisor IA já está em execução."
+      } as const;
+      const message = messages[result.status];
       logOutcome(source, "info", message, result);
       return { jobId: source, status: "ok", message, details: result };
     }
-
-    const message = `Rotinas: iniciadas ${result.started}, sucesso ${result.succeeded}, falha ${result.failed}, ignoradas em execução ${result.skippedRunning}.`;
-    const level = result.failed > 0 ? "warn" : "info";
-    logOutcome(source, level, message, result);
+    const message = `Revisor IA: ${result.reviewed} PR(s) revisada(s).`;
+    logOutcome(source, "info", message, result);
     return { jobId: source, status: "ok", message, details: result };
   } catch (error) {
-    const message = "Erro inesperado ao processar rotinas.";
+    const message = "Erro inesperado no Revisor IA.";
     logOutcome(source, "error", message, error instanceof Error ? error.message : error);
     return { jobId: source, status: "error", message, details: error };
   }
@@ -259,10 +195,8 @@ const RUNNERS: Record<CronJobId, (ctx: RunContext) => Promise<CronRunResult>> = 
   "cron:prs-sync": runPrSyncCron,
   "cron:pr-review-reminders": runPrReviewRemindersCron,
   "cron:jira-sync": runJiraSyncCron,
-  "cron:summaries-daily": runSummariesDailyCron,
-  "cron:summaries-weekly": runSummariesWeeklyCron,
   "cron:dashboard-briefing": runDashboardBriefingCron,
-  "cron:routines": runRoutinesCron
+  "cron:pr-ai-review": runPrAiReviewCron
 };
 
 export async function runCronJob(jobId: CronJobId, manual: boolean): Promise<CronRunResult> {

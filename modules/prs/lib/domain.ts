@@ -17,6 +17,9 @@ export interface MonitoredPrRaw {
   baseRefName?: string;
   /** Branch the PR comes from. */
   headRefName?: string;
+  /** Head commit SHA (`headRefOid`). */
+  headSha?: string;
+  isDraft?: boolean;
   authorLogin?: string;
   requestedReviewers: string[];
   reviews: PrReview[];
@@ -99,6 +102,10 @@ export interface ReviewerQueuePr {
   url: string;
   repository: string;
   myReviewStatus: MyReviewStatus;
+  /** Optional for caches written before the AI reviewer existed. */
+  authorLogin?: string;
+  isDraft?: boolean;
+  headSha?: string;
 }
 
 /** Minimal review snapshot persisted during sync for daily summaries. */

@@ -2557,6 +2557,57 @@ button.pr-review-reminder-icon:hover {
   background: var(--brand-dim);
 }
 
+.review-queue-card__ai {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--app-border);
+}
+
+.review-queue-card__ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 650;
+  border: 1px solid var(--app-border);
+  color: var(--app-text-muted);
+}
+
+.review-queue-card__ai--running {
+  color: var(--brand-bright);
+  border-color: color-mix(in oklab, var(--brand) 42%, transparent);
+}
+
+.review-queue-card__ai--approve {
+  color: #78f0ab;
+  border-color: #2a9657;
+}
+
+.review-queue-card__ai--comment {
+  color: #9cc8ff;
+  border-color: #3b6fb0;
+}
+
+.review-queue-card__ai--changes {
+  color: #ffb4a8;
+  border-color: #b0493b;
+}
+
+.review-queue-card__ai--failed {
+  color: #ff8f8f;
+  border-color: #a33a3a;
+}
+
+.review-queue-card__ai--stale {
+  color: #f1cf7b;
+  border-color: #b48a30;
+}
+
 .review-queue-card--skeleton {
   border-left-width: 1px;
 }

@@ -17,6 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Surface } from "@/components/ui/surface";
 import { isReviewerQueueWithData } from "@/modules/app/lib/sync-data-helpers";
+import { AiReviewPanel } from "@/modules/pr-ai-review/components/ai-review-panel";
+import { useAiReviewRuns } from "@/modules/pr-ai-review/hooks/use-ai-review-runs";
+import { hasRunningAiReviewRun } from "@/modules/pr-ai-review/lib/ai-review-ui";
 import { PrReviewerQueueItem } from "@/modules/prs/components/pr-reviewer-queue-item";
 import { usePrReviewerQueueSync } from "@/modules/prs/hooks/use-pr-reviewer-queue-sync";
 import type { MyReviewStatus, ReviewerQueuePr } from "@/modules/prs/lib/domain";
@@ -69,6 +72,12 @@ function ReviewQueueCardSkeleton() {
 export function PrReviewerQueuePage() {
   const { response, loading, isFetching, refresh } = usePrReviewerQueueSync();
   const [filter, setFilter] = useState<ReviewQueueFilter>("all");
+  const aiReview = useAiReviewRuns();
+  const aiBusy = hasRunningAiReviewRun(aiReview.runs);
+  const onAiRunStarted = () => {
+    aiReview.markRunning();
+    void aiReview.refresh();
+  };
 
   const hasData = isReviewerQueueWithData(response);
   const okData = hasData ? response.data : [];
@@ -112,6 +121,7 @@ export function PrReviewerQueuePage() {
       aria-label="Fila de revisão"
       aria-busy={isFetching}
     >
+      <AiReviewPanel runs={aiReview.runs} onRunStarted={onAiRunStarted} />
       {response?.status === "stale" ? (
         <StaleDataBanner
           message={response.message}
@@ -312,7 +322,13 @@ export function PrReviewerQueuePage() {
         {hasData && filtered.length > 0 ? (
           <ul className="review-queue-page__grid">
             {filtered.map((pr) => (
-              <PrReviewerQueueItem key={pr.id} pr={pr} />
+              <PrReviewerQueueItem
+                key={pr.id}
+                pr={pr}
+                aiRuns={aiReview.runs}
+                aiBusy={aiBusy}
+                onAiRunStarted={onAiRunStarted}
+              />
             ))}
           </ul>
         ) : null}

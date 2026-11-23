@@ -34,6 +34,8 @@ query($owner: String!, $name: String!) {
         createdAt
         baseRefName
         headRefName
+        headRefOid
+        isDraft
         mergeStateStatus
         mergeable
         author {
@@ -170,6 +172,8 @@ function mapGraphqlPrNode(
     createdAt?: string;
     baseRefName?: string;
     headRefName?: string;
+    headRefOid?: string;
+    isDraft?: boolean;
     mergeable?: string;
     author?: { login?: string };
     reviewThreads?: { nodes?: Array<{ isResolved?: boolean }> };
@@ -203,6 +207,8 @@ function mapGraphqlPrNode(
     repository: repo,
     baseRefName: pr.baseRefName,
     headRefName: pr.headRefName,
+    headSha: pr.headRefOid,
+    isDraft: pr.isDraft ?? false,
     authorLogin: pr.author?.login,
     requestedReviewers,
     reviews,
@@ -266,6 +272,8 @@ export async function collectOpenPrsFromRepos(
             createdAt?: string;
             baseRefName?: string;
             headRefName?: string;
+            headRefOid?: string;
+            isDraft?: boolean;
             mergeStateStatus?: string;
             mergeable?: string;
             author?: { login?: string };
@@ -481,4 +489,81 @@ export async function getPullRequestState(
     throw new GhCommandError(`Estado inesperado da pull request: ${String(state)}`);
   }
   return state;
+}
+
+export type PullRequestReviewRecord = {
+  login: string;
+  state: string;
+  submittedAt: string;
+  url: string | null;
+};
+
+const pullRequestReviewsQuery = `
+query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      reviews(last: 50) {
+        nodes {
+          state
+          submittedAt
+          url
+          author {
+            login
+          }
+        }
+      }
+    }
+  }
+}
+`;
+
+/** Latest reviews on one PR (oldest first). Used to read what an AI review posted. */
+export async function listPullRequestReviews(
+  input: { repository: string; number: number },
+  run: CommandRunner = defaultRunner
+): Promise<PullRequestReviewRecord[]> {
+  const { owner, name } = parseRepo(input.repository);
+  const output = await run([
+    "api",
+    "graphql",
+    "-f",
+    `query=${pullRequestReviewsQuery}`,
+    "-F",
+    `owner=${owner}`,
+    "-F",
+    `name=${name}`,
+    "-F",
+    `number=${input.number}`
+  ]);
+
+  if (output.exitCode !== 0) {
+    if (isGhUnauthenticated(output.stderr)) {
+      throw new GhUnauthenticatedError(
+        "GitHub CLI sem autenticacao. Defina GH_TOKEN no .env ou execute `gh auth login`."
+      );
+    }
+    throw new GhCommandError(output.stderr || "Falha ao consultar reviews da pull request");
+  }
+
+  const payload = JSON.parse(output.stdout) as {
+    data?: {
+      repository?: {
+        pullRequest?: {
+          reviews?: {
+            nodes?: Array<{ state?: string; submittedAt?: string | null; url?: string; author?: { login?: string } | null }>;
+          };
+        } | null;
+      };
+    };
+  };
+
+  const nodes = payload.data?.repository?.pullRequest?.reviews?.nodes ?? [];
+  return nodes
+    .filter((node) => node.author?.login && node.submittedAt)
+    .map((node) => ({
+      login: node.author!.login!,
+      state: node.state ?? "",
+      submittedAt: node.submittedAt!,
+      url: node.url ?? null
+    }));
 }
