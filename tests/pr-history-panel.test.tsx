@@ -196,7 +196,8 @@ describe("PrHistoryPanel", () => {
     );
     expect(fetchMock).toHaveBeenCalledTimes(2);
 
-    resolveRefresh?.({
+    // Assigned inside the fetch mock closure; TS narrows the `let` to never without the cast.
+    (resolveRefresh as ((value: unknown) => void) | null)?.({
       ok: true,
       json: async () => ({
         status: "ok",
