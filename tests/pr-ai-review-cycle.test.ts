@@ -204,6 +204,30 @@ describe("AI review cycle", () => {
     });
   });
 
+  it("uses env defaults for filters and cwd left empty", async () => {
+    vi.stubEnv("PR_AI_REVIEW_AUTHORS", "felipegmotta");
+    vi.stubEnv("PR_AI_REVIEW_REPO_PATTERN", "justracker-*");
+    vi.stubEnv("PR_AI_REVIEW_CWD", os.tmpdir());
+    try {
+      await withAiReviewTestDb(async () => {
+        const h = harness([
+          queuePr(1, { authorLogin: "felipegmotta" }),
+          queuePr(2, { authorLogin: "cavanus" }),
+          queuePr(3, { authorLogin: "felipegmotta", repository: "jusfy/kor-dbjus" })
+        ]);
+        await enable();
+        await updateAiReviewConfig({ cwd: null });
+        const result = await runAiReviewCronTick(h.deps);
+        expect(result).toMatchObject({ status: "ran", reviewed: 1 });
+        const [, args, options] = h.run.mock.calls[0] as unknown as [string, string[], { cwd: string }];
+        expect(args[1]).toContain("/pull/1");
+        expect(options.cwd).toBe(os.tmpdir());
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("continues after a failed review", async () => {
     await withAiReviewTestDb(async () => {
       const h = harness([queuePr(1), queuePr(2)]);

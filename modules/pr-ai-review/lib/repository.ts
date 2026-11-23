@@ -11,6 +11,7 @@ import {
   type PrAiReviewConfigDto,
   type PrAiReviewRunDto
 } from "@/modules/pr-ai-review/lib/domain";
+import { readAiReviewEnvDefaults } from "@/modules/pr-ai-review/lib/env-defaults";
 import { DEFAULT_AI_REVIEW_PROMPT_TEMPLATE } from "@/modules/pr-ai-review/lib/prompt-template";
 import {
   prAiReviewConfig,
@@ -36,6 +37,7 @@ function toConfigDto(row: PrAiReviewConfigRow): PrAiReviewConfigDto {
     cwd: row.cwd,
     authorLogins: parseAuthorLogins(row.authorLogins),
     repoPattern: row.repoPattern,
+    defaults: readAiReviewEnvDefaults(),
     promptTemplate: row.promptTemplate ?? DEFAULT_AI_REVIEW_PROMPT_TEMPLATE,
     promptIsDefault: row.promptTemplate === null,
     nextRunAt: row.nextRunAt.toISOString(),

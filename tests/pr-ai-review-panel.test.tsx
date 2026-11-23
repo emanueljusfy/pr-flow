@@ -56,6 +56,25 @@ describe("AiReviewPanel", () => {
     expect(screen.getByTestId("ai-review-last-run")).toHaveTextContent(/Última execução: 23 nov, \d{2}:00 · 2 PRs revisadas/);
   });
 
+  it("shows env defaults as placeholders when fields were not edited", async () => {
+    setup({
+      "GET /api/prs/ai-review/config": {
+        body: aiConfig({
+          authorLogins: [],
+          repoPattern: "",
+          cwd: null,
+          defaults: { authorLogins: ["cavanus", "felipegmotta"], repoPattern: "justracker-*", cwd: "/home/me/jusfy" }
+        })
+      }
+    });
+    render(<AiReviewPanel runs={[]} onRunStarted={vi.fn()} />);
+    const authors = await screen.findByLabelText("Autores");
+    expect(authors).toHaveValue("");
+    expect(authors).toHaveAttribute("placeholder", "cavanus, felipegmotta");
+    expect(screen.getByLabelText("Repositórios")).toHaveAttribute("placeholder", "justracker-*");
+    expect(screen.getByLabelText("Diretório de trabalho")).toHaveAttribute("placeholder", "/home/me/jusfy");
+  });
+
   it("shows no runs yet", async () => {
     setup();
     render(<AiReviewPanel runs={[]} onRunStarted={vi.fn()} />);

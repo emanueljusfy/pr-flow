@@ -228,6 +228,7 @@ Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 | `JIRA_EMAIL` / `JIRA_TOKEN` | Sim (Jira) | [API token Atlassian](https://id.atlassian.com/manage-profile/security/api-tokens) |
 | `JIRA_SITE_URL` | Não | Padrão `https://jusfy.atlassian.net` |
 | `PR_REVIEW_REMINDER_MESSAGE` | Não | Texto do lembrete na thread do Slack (sino em `/prs`). Use `{reviewers}` para os pendentes |
+| `PR_AI_REVIEW_AUTHORS` / `PR_AI_REVIEW_REPO_PATTERN` / `PR_AI_REVIEW_CWD` | Não | Padrões do Revisor IA (autores separados por vírgula, glob de repo, diretório absoluto). Mostrados como placeholder; valor editado na tela tem prioridade |
 | `SLACK_JUSTRACKER_USERGROUP_ID` | Não | ID do user group `@justracker` se a mensagem custom ainda marcar o time |
 | `SLACK_BOT_OAUTH_TOKEN` | Não | Bot com escopo `chat:write`; `find_pr_in_slack` também precisa de `channels:read` e `channels:history` (`groups:*` se o canal for privado); a reação :rocket: em PR mergeada precisa de `reactions:write` |
 | `SLACK_PR_CHANNEL` | Não | Padrão `squad-jornada-pr` |

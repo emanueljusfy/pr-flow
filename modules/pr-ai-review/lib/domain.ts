@@ -16,13 +16,22 @@ export type AiReviewRunStatus = "running" | "succeeded" | "failed";
 export type AiReviewTrigger = "cron" | "manual";
 export type AiReviewSlackReaction = "reacted" | "already_reacted" | "not_found" | "error" | "skipped";
 
+/** Env fallbacks (`PR_AI_REVIEW_*`) for the fields the user did not edit. */
+export type AiReviewFieldDefaults = {
+  authorLogins: string[];
+  repoPattern: string;
+  cwd: string | null;
+};
+
 export type PrAiReviewConfigDto = {
   enabled: boolean;
   intervalMinutes: number;
   agentId: string;
+  /** Stored overrides: null / empty / "" mean "use `defaults`". */
   cwd: string | null;
   authorLogins: string[];
   repoPattern: string;
+  defaults: AiReviewFieldDefaults;
   promptTemplate: string;
   /** True when `promptTemplate` is the built-in default (nothing stored). */
   promptIsDefault: boolean;

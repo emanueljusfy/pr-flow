@@ -31,6 +31,9 @@ import { DEFAULT_AI_REVIEW_PROMPT_TEMPLATE } from "@/modules/pr-ai-review/lib/pr
 
 const copy = ptBR.aiReview;
 
+/** Edited values in full text color; env defaults show as the muted placeholder. */
+const FIELD_INPUT_CLASS = "mt-1 text-[var(--app-text)] placeholder:text-[var(--app-text-muted)]";
+
 type ConfigPatch = Partial<{
   enabled: boolean;
   intervalMinutes: number;
@@ -279,9 +282,9 @@ export function AiReviewPanel({ runs, onRunStarted }: AiReviewPanelProps) {
           <label className="block text-xs text-[var(--app-text-muted)]">
             {copy.authorsLabel}
             <Input
-              className="mt-1"
+              className={FIELD_INPUT_CLASS}
               value={authorsText}
-              placeholder={copy.authorsPlaceholder}
+              placeholder={config.defaults.authorLogins.join(", ") || copy.authorsPlaceholder}
               onChange={(event) => setAuthorsText(event.target.value)}
               onBlur={() => {
                 const next = parseLogins(authorsText);
@@ -294,9 +297,9 @@ export function AiReviewPanel({ runs, onRunStarted }: AiReviewPanelProps) {
           <label className="block text-xs text-[var(--app-text-muted)]">
             {copy.repoPatternLabel}
             <Input
-              className="mt-1"
+              className={FIELD_INPUT_CLASS}
               value={repoPattern}
-              placeholder={copy.repoPatternPlaceholder}
+              placeholder={config.defaults.repoPattern || copy.repoPatternPlaceholder}
               onChange={(event) => setRepoPattern(event.target.value)}
               onBlur={() => {
                 if (repoPattern.trim() !== config.repoPattern) {
@@ -308,9 +311,9 @@ export function AiReviewPanel({ runs, onRunStarted }: AiReviewPanelProps) {
           <label className="block text-xs text-[var(--app-text-muted)]">
             {copy.cwdLabel}
             <Input
-              className="mt-1"
+              className={FIELD_INPUT_CLASS}
               value={cwd}
-              placeholder={copy.cwdPlaceholder}
+              placeholder={config.defaults.cwd ?? copy.cwdPlaceholder}
               onChange={(event) => setCwd(event.target.value)}
               onBlur={() => {
                 const next = cwd.trim() || null;

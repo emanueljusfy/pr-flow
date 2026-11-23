@@ -6,6 +6,7 @@ import { getReviewerQueueData } from "@/modules/prs/lib/reviewer-queue-service";
 import type { BinaryProbe } from "@/modules/pr-ai-review/lib/agent-registry";
 import { runReviewAgent, truncateOutput } from "@/modules/pr-ai-review/lib/agent-runner";
 import { selectAiReviewCandidates } from "@/modules/pr-ai-review/lib/candidates";
+import { resolveAiReviewSettings } from "@/modules/pr-ai-review/lib/env-defaults";
 import type { CommandRunner } from "@/modules/pr-ai-review/lib/command-runner";
 import type {
   AiReviewPr,
@@ -122,7 +123,7 @@ async function reviewOnePr(input: {
     const agent = await runReviewAgent({
       agentId: config.agentId,
       prompt: renderAiReviewPrompt(config.promptTemplate, pr),
-      cwd: config.cwd,
+      cwd: resolveAiReviewSettings(config).cwd,
       run: deps.run,
       probe: deps.probe
     });
@@ -237,7 +238,7 @@ async function prepareCycle(deps: AiReviewDeps): Promise<PreparedCycle> {
       return { ok: false, status: 502, error: read.error };
     }
     const reviewedHeads = await listReviewedHeads(read.queue.map((pr) => pr.url));
-    const prs = selectAiReviewCandidates(read.queue, config, reviewedHeads);
+    const prs = selectAiReviewCandidates(read.queue, resolveAiReviewSettings(config), reviewedHeads);
     return { ok: true, prs, config, githubLogin: read.githubLogin };
   } catch (error) {
     jobInProgress = false;

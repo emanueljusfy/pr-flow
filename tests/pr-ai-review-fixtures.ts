@@ -35,6 +35,7 @@ export function aiConfig(overrides: Partial<PrAiReviewConfigDto> = {}): PrAiRevi
     cwd: null,
     authorLogins: ["cavanus"],
     repoPattern: "justracker-*",
+    defaults: { authorLogins: [], repoPattern: "", cwd: null },
     promptTemplate: "revise {{pr_url}}",
     promptIsDefault: false,
     nextRunAt: "2026-11-23T10:15:00.000Z",
