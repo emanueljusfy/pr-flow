@@ -82,6 +82,27 @@ describe("mapPullRequestHistory", () => {
     });
   });
 
+  it("keeps line breaks in comment bodies so markdown survives", () => {
+    const events = mapPullRequestHistory({
+      id: "PR_3",
+      createdAt: "2026-05-28T10:00:00Z",
+      author: { login: "rigon" },
+      timelineItems: {
+        nodes: [
+          {
+            __typename: "IssueComment",
+            id: "IC_md",
+            createdAt: "2026-05-28T11:30:00Z",
+            body: "  **Title**\r\n\r\n- item one\r\n- item two  ",
+            author: { login: "coelho" }
+          }
+        ]
+      }
+    });
+
+    expect(events[0]?.detail).toBe("**Title**\n\n- item one\n- item two");
+  });
+
   it("skips pending reviews and preserves long details", () => {
     const longBody = "x".repeat(200);
     const events = mapPullRequestHistory({

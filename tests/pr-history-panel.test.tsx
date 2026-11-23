@@ -148,6 +148,54 @@ describe("PrHistoryPanel", () => {
     expect(screen.queryByText("Ver menos")).not.toBeInTheDocument();
   });
 
+  it("renders comment bodies as sanitized markdown instead of raw text", async () => {
+    const botBody = [
+      "<!-- This is an auto-generated comment by CodeRabbit -->",
+      "**Actionable comments posted: 1**",
+      "",
+      "<details>",
+      "<summary>Prompt to fix all issues</summary>",
+      "",
+      "- Mask `$()` before checking `git commit`",
+      "</details>",
+      "<script>alert(1)</script>"
+    ].join("\n");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: "ok",
+        fetchedAt: "2026-05-28T15:00:00Z",
+        data: {
+          events: [
+            {
+              id: "PRR_bot",
+              type: "review_submitted",
+              occurredAt: "2026-05-28T13:00:00Z",
+              actorLogin: "coderabbitai",
+              url: null,
+              detail: botBody,
+              reviewState: "COMMENTED"
+            }
+          ]
+        }
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { container } = renderWithProviders(
+      <PrHistoryPanel onClose={() => undefined} pr={samplePr} />
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Actionable comments posted: 1").tagName).toBe("STRONG")
+    );
+    expect(screen.getByText("Prompt to fix all issues").tagName).toBe("SUMMARY");
+    expect(container.querySelector(".pr-history-markdown code")?.textContent).toBe("$()");
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.textContent).not.toContain("auto-generated comment");
+    expect(container.textContent).not.toContain("<details>");
+  });
+
   it("keeps events visible while a manual refresh is in flight", async () => {
     let resolveRefresh: ((value: unknown) => void) | null = null;
     const fetchMock = vi

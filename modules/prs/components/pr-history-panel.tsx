@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ptBR } from "@/modules/messages/pt-BR";
+import { PrHistoryDetailMarkdown } from "@/modules/prs/components/pr-history-detail-markdown";
+import { prHistoryDetailVisibleText } from "@/modules/prs/lib/core/pr-history-detail-text";
 import { formatPrHistoryEventSummary } from "@/modules/prs/lib/core/pr-history-labels";
 import {
   getPrHistoryEventVisual,
@@ -75,8 +77,8 @@ function PrHistoryEventDetail({ detail }: { detail: string }) {
   const [openValues, setOpenValues] = useState<string[]>([]);
   const isOpen = openValues.includes(DETAIL_ACCORDION_VALUE);
 
-  if (detail.length <= DETAIL_PREVIEW_MAX_LENGTH) {
-    return <p className="pr-history-timeline__detail">{detail}</p>;
+  if (prHistoryDetailVisibleText(detail).length <= DETAIL_PREVIEW_MAX_LENGTH) {
+    return <PrHistoryDetailMarkdown className="pr-history-timeline__detail" markdown={detail} />;
   }
 
   return (
@@ -90,13 +92,19 @@ function PrHistoryEventDetail({ detail }: { detail: string }) {
         className="pr-history-timeline__detail-accordion-item"
       >
         {!isOpen ? (
-          <p className="pr-history-timeline__detail pr-history-timeline__detail--clamped">{detail}</p>
+          <PrHistoryDetailMarkdown
+            className="pr-history-timeline__detail pr-history-timeline__detail--clamped"
+            markdown={detail}
+          />
         ) : null}
         <AccordionTrigger className="pr-history-timeline__detail-trigger">
           {isOpen ? copy.collapseDetail : copy.expandDetail}
         </AccordionTrigger>
         <AccordionContent className="pr-history-timeline__detail-content">
-          <p className="pr-history-timeline__detail pr-history-timeline__detail--expanded">{detail}</p>
+          <PrHistoryDetailMarkdown
+            className="pr-history-timeline__detail pr-history-timeline__detail--expanded"
+            markdown={detail}
+          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

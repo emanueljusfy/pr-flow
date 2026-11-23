@@ -31,7 +31,8 @@ function normalizeDetail(value: string | null | undefined): string | null {
   if (!value) {
     return null;
   }
-  const normalized = value.replace(/\s+/g, " ").trim();
+  // Keep line breaks: comment bodies are markdown and the panel renders them as such.
+  const normalized = value.replace(/\r\n?/g, "\n").trim();
   return normalized || null;
 }
 
