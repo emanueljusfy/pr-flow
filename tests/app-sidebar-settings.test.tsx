@@ -19,27 +19,22 @@ vi.mock("@/hooks/use-mobile", () => ({
   useIsMobile: () => false
 }));
 
-describe("AppSidebar Devtools footer", () => {
-  it("shows Crons and Repositories under Devtools", () => {
+describe("AppSidebar settings footer", () => {
+  it("links a single Configurações entry instead of Alertas and Devtools items", () => {
     render(
       <SidebarProvider>
         <AppSidebar />
       </SidebarProvider>
     );
 
-    expect(screen.getByText("Devtools")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /^logs$/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^crons$/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /^configurações$/i })).toHaveAttribute(
       "href",
-      "/devtools/crons"
+      "/settings/alerts"
     );
-    expect(screen.getByRole("link", { name: /^repositórios$/i })).toHaveAttribute(
-      "href",
-      "/devtools/repositories"
-    );
-    expect(screen.getByRole("link", { name: /^ambiente local$/i })).toHaveAttribute(
-      "href",
-      "/devtools/local-docker"
-    );
+    expect(screen.queryByText("Devtools")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /configurar alertas/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^crons$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^repositórios$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^ambiente local$/i })).not.toBeInTheDocument();
   });
 });

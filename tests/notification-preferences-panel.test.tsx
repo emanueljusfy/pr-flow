@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { NotificationPreferencesDialog } from "@/modules/notifications/components/notification-preferences-dialog";
+import { NotificationPreferencesPanel } from "@/modules/notifications/components/notification-preferences-panel";
 import {
   clearNotificationPreferences,
   loadNotificationPreferences
@@ -13,13 +13,13 @@ vi.mock("@/modules/notifications/hooks/use-app-notifications", () => ({
   })
 }));
 
-describe("NotificationPreferencesDialog", () => {
+describe("NotificationPreferencesPanel", () => {
   afterEach(() => {
     clearNotificationPreferences();
   });
 
   it("lets the user disable alert types and persist them", () => {
-    render(<NotificationPreferencesDialog open onOpenChange={vi.fn()} />);
+    render(<NotificationPreferencesPanel />);
 
     fireEvent.click(screen.getByRole("checkbox", { name: /PR aprovada/i }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar preferências" }));
@@ -28,7 +28,7 @@ describe("NotificationPreferencesDialog", () => {
   });
 
   it("lets the user toggle sound and poll monitoring prefs", () => {
-    render(<NotificationPreferencesDialog open onOpenChange={vi.fn()} />);
+    render(<NotificationPreferencesPanel />);
 
     fireEvent.click(screen.getByRole("checkbox", { name: /Alerta sonoro/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: /Sync rápido no expediente/i }));

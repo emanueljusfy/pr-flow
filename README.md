@@ -46,7 +46,7 @@ O <code>/dashboard</code> abre o dia já montado.
 | **Jira** | Tickets atribuídos a você, com sync automático e branch sugerida por IA |
 | **Journal** | Uma nota markdown por dia (notebook day) |
 | **Slack** | Compartilhar uma PR no canal do time |
-| **Devtools** | Crons sob demanda, repositórios monitorados e o Portainer do stack Jusfy |
+| **Configurações** | Abas de alertas, crons sob demanda, repositórios monitorados e o Portainer do stack Jusfy |
 
 ### Pull requests (`/prs`, `/prs/reviews`)
 
@@ -184,6 +184,7 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | `shortcut-deck` | Deck de atalhos |
 | `cron-scheduling` | Specs e `startAllCrons()` no boot |
 | `devtools` | Crons on-demand e repositórios |
+| `settings` | Abas da tela de Configurações |
 | `local-docker` | Portainer / stack Jusfy |
 | `observability` | System logs (stdout) |
 | `slack` | Envio ao canal |
@@ -198,8 +199,10 @@ Código por domínio em `modules/`. Rotas em `app/(shell)/` e `app/api/`. `/` re
 | `/prs/reviews` | Fila de reviews |
 | `/jira` | Tickets Jira |
 | `/journal` | Journal |
-| `/devtools/crons` | Disparo manual de crons |
-| `/devtools/local-docker` | Ambiente local Jusfy |
+| `/settings/alerts` | Preferências de alertas |
+| `/settings/crons` | Disparo manual de crons |
+| `/settings/repositories` | Repositórios monitorados |
+| `/settings/local-docker` | Ambiente local Jusfy |
 
 ### Crons (no boot)
 
@@ -231,7 +234,7 @@ Fuso padrão: `America/Sao_Paulo` (`SUMMARY_CRON_TZ`).
 | `GOOGLE_CALENDAR_ICAL_URL` | Não | Feed iCal secreto (não commitar) |
 | `PORT` | Não | Padrão **3847** |
 | `PR_FLOW_MCP_TOKEN` | Não | Se definido, `/api/mcp` exige `Authorization: Bearer <token>` |
-| `LOCAL_DOCKER_ROOT` / `JUSFY_ROOT` | Não | Stack Jusfy no Devtools |
+| `LOCAL_DOCKER_ROOT` / `JUSFY_ROOT` | Não | Stack Jusfy em Configurações → Ambiente local |
 | `LOCAL_DOCKER_PORTAINER_URL` | Não | Padrão `https://localhost:9443` |
 
 Lista completa e flags de cron: `.env.example`.

@@ -29,13 +29,12 @@ Implementação dos tokens: `app/globals.css` (`.dark`).
 | `/prs/reviews` | PRs em que sou revisor + Revisor IA (agente local revisa a fila filtrada e reage ✅/💬 no anúncio do canal) |
 | `/journal` | Notas markdown por dia |
 | `/jira` | Tickets Jira atribuídos ao usuário |
-| `/devtools/crons` | Forçar execução on-demand dos fluxos agendados (confirmação manual) |
+| `/settings/*` | Configurações em abas: `alerts`, `crons` (forçar execução com confirmação manual), `repositories`, `local-docker` |
 | `/api/mcp` | Servidor MCP (PRs + Slack) — ferramentas em `modules/mcp/lib/tools/` |
-| `/devtools/local-docker` | Portainer do stack Jusfy local — ligar painel e gerenciar containers |
 
 Redirect `/` → `/dashboard`.
 
-Rodapé do sidebar: **Devtools** → Crons, Repositórios, Ambiente local. Stack Jusfy local: `LOCAL_DOCKER_ROOT` + `JUSFY_ROOT` no `.env`; o app executa `docker compose` no host (requer CLI Docker acessível ao processo Node).
+Rodapé do sidebar: **Configurações** → abas Alertas, Crons, Repositórios, Ambiente local (`modules/settings/`; `/devtools/*` antigos redirecionam). Stack Jusfy local: `LOCAL_DOCKER_ROOT` + `JUSFY_ROOT` no `.env`; o app executa `docker compose` no host (requer CLI Docker acessível ao processo Node).
 
 ## Comandos
 
@@ -47,7 +46,7 @@ npm test
 npm run build
 ```
 
-Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN` e `GOOGLE_CALENDAR_ICAL_URL` (feed iCal secreto). Repositórios GitHub monitorados: cadastro em **Devtools → Repositórios** (tabela `monitored_repositories`); na primeira execução importa `MONITORED_REPOSITORIES` do `.env` se o banco estiver vazio. Crons: `modules/cron-scheduling/` (`startAllCrons` em `instrumentation.ts`). Jira sync 10 min (`DISABLE_JIRA_SYNC_CRON=1`). Briefing horário (`DISABLE_DASHBOARD_BRIEFING_CRON=1`). Revisor IA: `cron:pr-ai-review` a cada minuto, ciclo no intervalo configurado em `/prs/reviews` (`DISABLE_PR_AI_REVIEW_CRON=1`); módulo `modules/pr-ai-review/`.
+Ver `README.md` para `GH_TOKEN`, `GEMINI_API_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN` e `GOOGLE_CALENDAR_ICAL_URL` (feed iCal secreto). Repositórios GitHub monitorados: cadastro em **Configurações → Repositórios** (tabela `monitored_repositories`); na primeira execução importa `MONITORED_REPOSITORIES` do `.env` se o banco estiver vazio. Crons: `modules/cron-scheduling/` (`startAllCrons` em `instrumentation.ts`). Jira sync 10 min (`DISABLE_JIRA_SYNC_CRON=1`). Briefing horário (`DISABLE_DASHBOARD_BRIEFING_CRON=1`). Revisor IA: `cron:pr-ai-review` a cada minuto, ciclo no intervalo configurado em `/prs/reviews` (`DISABLE_PR_AI_REVIEW_CRON=1`); módulo `modules/pr-ai-review/`.
 
 ## Convenções de código
 

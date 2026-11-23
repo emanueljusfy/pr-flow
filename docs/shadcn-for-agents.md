@@ -33,7 +33,7 @@ Instalar componente novo (agente com shell):
 npx shadcn@latest add <nome> --yes
 ```
 
-Exemplos úteis ainda não no repo: `dropdown-menu`, `tabs`, `badge`, `checkbox`, `textarea`, `switch`. Ver [ui.shadcn.com](https://ui.shadcn.com/docs/components).
+Exemplos úteis ainda não no repo: `dropdown-menu`, `badge`, `switch`. Ver [ui.shadcn.com](https://ui.shadcn.com/docs/components).
 
 ## Componentes já disponíveis
 
@@ -54,6 +54,7 @@ Use estes antes de criar equivalentes custom:
 | `Sidebar` | `components/ui/sidebar.tsx` | Shell (`app-sidebar`) |
 | `Sheet` | `components/ui/sheet.tsx` | Painéis laterais (se necessário) |
 | `Separator` | `components/ui/separator.tsx` | Divisores em layout |
+| `Tabs` | `components/ui/tabs.tsx` | Abas; `variant="line"` + `render={<Link />}` para abas por rota (Configurações) |
 | `Surface` | `components/ui/surface.tsx` | **Wrapper** de seção (`.panel` / inset / dashed) — não substitui Button/Input |
 | `Toaster` / Sonner | `components/ui/sonner.tsx` | Feedback (`toast.success`, etc.) |
 

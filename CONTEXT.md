@@ -104,7 +104,7 @@ _Avoid_: system log
 
 ## Ambiente local (Jusfy Docker)
 
-Stack pessoal definido fora do PR Flow (`docker-compose.dev.yml` em `LOCAL_DOCKER_ROOT`). UI em **`/devtools/local-docker`**: um gatilho sobe só o **Portainer**; stacks, serviços e volumes são gerenciados no painel Portainer (iframe bloqueado por CSP — fallback em nova aba). Módulo **`modules/local-docker/`**. Variáveis: `LOCAL_DOCKER_ROOT`, `JUSFY_ROOT`, opcional `LOCAL_DOCKER_PORTAINER_URL`.
+Stack pessoal definido fora do PR Flow (`docker-compose.dev.yml` em `LOCAL_DOCKER_ROOT`). UI em **`/settings/local-docker`**: um gatilho sobe só o **Portainer**; stacks, serviços e volumes são gerenciados no painel Portainer (iframe bloqueado por CSP — fallback em nova aba). Módulo **`modules/local-docker/`**. Variáveis: `LOCAL_DOCKER_ROOT`, `JUSFY_ROOT`, opcional `LOCAL_DOCKER_PORTAINER_URL`.
 _Avoid_: ligar/desligar cada serviço Jusfy dentro do PR Flow; confundir com o Compose do próprio PR Flow (`docker-compose.yml` na raiz do repo)
 
 ## Contagem de férias

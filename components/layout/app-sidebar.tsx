@@ -2,16 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BookOpen,
-  GitBranch,
-  GitPullRequest,
-  LayoutDashboard,
-  Ticket,
-  Container,
-  Timer,
-  Settings2
-} from "lucide-react";
+import { BookOpen, GitPullRequest, LayoutDashboard, Settings, Ticket } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -27,10 +18,11 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem
 } from "@/components/ui/sidebar";
-import { NotificationPreferencesTrigger } from "@/modules/notifications/components/notification-preferences-dialog";
+import { ptBR } from "@/modules/messages/pt-BR";
 import { usePendingReviewCount } from "@/modules/notifications/hooks/use-pending-review-count";
 import { SidebarAmbientPanel } from "@/modules/vacation-countdown/components/sidebar-ambient-panel";
 import { useGithubLogin } from "@/modules/prs/hooks/use-github-login";
+import { SETTINGS_BASE_PATH, SETTINGS_TABS } from "@/modules/settings/lib/settings-tabs";
 
 const navItems = [
   {
@@ -148,58 +140,20 @@ export function AppSidebar({ initialGithubLogin }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <NotificationPreferencesTrigger />
-        <SidebarGroup className="p-0">
-          <SidebarGroupLabel className="text-[10px] font-medium uppercase tracking-wider text-[var(--app-text-muted)]">
-            Devtools
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={
-                    pathname === "/devtools/crons" || pathname.startsWith("/devtools/crons/")
-                  }
-                  render={<Link href="/devtools/crons" />}
-                  tooltip="Forçar execução de crons"
-                >
-                  <Timer />
-                  <span>Crons</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={
-                    pathname === "/devtools/repositories" ||
-                    pathname.startsWith("/devtools/repositories/")
-                  }
-                  render={<Link href="/devtools/repositories" />}
-                  tooltip="Repositórios GitHub monitorados"
-                >
-                  <GitBranch />
-                  <span>Repositórios</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  isActive={
-                    pathname === "/devtools/local-docker" ||
-                    pathname.startsWith("/devtools/local-docker/")
-                  }
-                  render={<Link href="/devtools/local-docker" />}
-                  tooltip="Portainer e stack Docker local Jusfy"
-                >
-                  <Container />
-                  <span>Ambiente local</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <div className="flex items-center gap-2 px-2 py-1 text-[10px] text-[var(--app-text-muted)] group-data-[collapsible=icon]:hidden">
-          <Settings2 className="size-3 shrink-0 opacity-70" aria-hidden />
-          <span>Ferramentas internas</span>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={
+                pathname === SETTINGS_BASE_PATH || pathname.startsWith(`${SETTINGS_BASE_PATH}/`)
+              }
+              render={<Link href={SETTINGS_TABS[0].href} />}
+              tooltip={ptBR.settings.navTooltip}
+            >
+              <Settings />
+              <span>{ptBR.settings.navLabel}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );

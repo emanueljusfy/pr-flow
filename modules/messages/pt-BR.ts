@@ -339,10 +339,20 @@ export const ptBR = {
     notShared: "Envie a PR ao Slack antes de publicar o lembrete na thread.",
     noPending: "Ninguém está pendente de revisão nesta PR."
   },
+  settings: {
+    navLabel: "Configurações",
+    navTooltip: "Alertas, crons, repositórios e ambiente local",
+    pageTitle: "Configurações",
+    pageDescription:
+      "Preferências de alertas e ferramentas internas: crons, repositórios monitorados e stack Docker local.",
+    tabsAriaLabel: "Seções de configuração",
+    tabAlerts: "Alertas",
+    tabCrons: "Crons",
+    tabRepositories: "Repositórios",
+    tabLocalDocker: "Ambiente local"
+  },
   notifications: {
-    prefsTriggerLabel: "Alertas",
-    prefsTriggerAriaLabel: "Configurar alertas",
-    prefsTitle: "Alertas configuráveis",
+    prefsSaved: "Preferências de alertas salvas.",
     prefsPermissionGranted: "Notificações do navegador ativas.",
     prefsPermissionDenied: "Permissão negada — alertas aparecem como toast.",
     prefsPermissionDefault: "Permita notificações para alertas com o app em segundo plano.",
