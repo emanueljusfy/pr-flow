@@ -7,6 +7,16 @@ export type AiReviewBadgeKind = "running" | "approve" | "comment" | "request_cha
 
 export type AiReviewBadge = { kind: AiReviewBadgeKind; label: string | null };
 
+/** Pill modifier classes (globals.css), shared by the card badge and the logs sheet. */
+export const AI_REVIEW_BADGE_CLASS: Record<Exclude<AiReviewBadgeKind, "none">, string> = {
+  running: "review-queue-card__ai--running",
+  approve: "review-queue-card__ai--approve",
+  comment: "review-queue-card__ai--comment",
+  request_changes: "review-queue-card__ai--changes",
+  failed: "review-queue-card__ai--failed",
+  stale: "review-queue-card__ai--stale"
+};
+
 function sameUrl(left: string, right: string): boolean {
   return left.replace(/\/+$/, "").toLowerCase() === right.replace(/\/+$/, "").toLowerCase();
 }
@@ -69,6 +79,44 @@ export function aiReviewOutcomeLabel(run: Pick<PrAiReviewRunDto, "status" | "ver
     return copy.statusRunning;
   }
   return run.verdict ? copy.verdictLabel[run.verdict] : copy.noVerdict;
+}
+
+/** Badge kind for a single run in the logs sheet (same palette as the card badge). */
+export function aiReviewRunBadgeKind(run: Pick<PrAiReviewRunDto, "status" | "verdict">): AiReviewBadgeKind {
+  if (run.status === "running") {
+    return "running";
+  }
+  if (run.status === "failed") {
+    return "failed";
+  }
+  if (run.verdict === "APPROVE") {
+    return "approve";
+  }
+  if (run.verdict === "COMMENT") {
+    return "comment";
+  }
+  return run.verdict === "REQUEST_CHANGES" ? "request_changes" : "none";
+}
+
+/** "38 s", "4 min 12 s", "1 h 3 min"; null while the run has no end. */
+export function formatAiReviewDuration(startedAt: string, finishedAt: string | null): string | null {
+  if (!finishedAt) {
+    return null;
+  }
+  const totalSeconds = Math.max(0, Math.round((Date.parse(finishedAt) - Date.parse(startedAt)) / 1000));
+  if (!Number.isFinite(totalSeconds)) {
+    return null;
+  }
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) {
+    return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+  }
+  if (minutes > 0) {
+    return seconds > 0 ? `${minutes} min ${seconds} s` : `${minutes} min`;
+  }
+  return `${seconds} s`;
 }
 
 /** Last cycle = the newest run that belongs to a cycle, with how many PRs that cycle reviewed. */

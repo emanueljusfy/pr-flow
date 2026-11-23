@@ -6,20 +6,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ptBR } from "@/modules/messages/pt-BR";
 import { AiReviewLogsSheet } from "@/modules/pr-ai-review/components/ai-review-logs-sheet";
-import { aiReviewBadgeFor, type AiReviewBadgeKind } from "@/modules/pr-ai-review/lib/ai-review-ui";
+import { AI_REVIEW_BADGE_CLASS, aiReviewBadgeFor } from "@/modules/pr-ai-review/lib/ai-review-ui";
 import type { PrAiReviewRunDto } from "@/modules/pr-ai-review/lib/domain";
 import { cn } from "@/lib/utils";
 
 const copy = ptBR.aiReview;
-
-const BADGE_CLASS: Record<Exclude<AiReviewBadgeKind, "none">, string> = {
-  running: "review-queue-card__ai--running",
-  approve: "review-queue-card__ai--approve",
-  comment: "review-queue-card__ai--comment",
-  request_changes: "review-queue-card__ai--changes",
-  failed: "review-queue-card__ai--failed",
-  stale: "review-queue-card__ai--stale"
-};
 
 type AiReviewCardActionsProps = {
   prUrl: string;
@@ -62,7 +53,7 @@ export function AiReviewCardActions({ prUrl, label, headSha, runs, busy, onRunSt
   return (
     <div className="review-queue-card__ai">
       {badge.kind !== "none" ? (
-        <span className={cn("review-queue-card__ai-badge", BADGE_CLASS[badge.kind])} data-testid="ai-review-badge">
+        <span className={cn("review-queue-card__ai-badge", AI_REVIEW_BADGE_CLASS[badge.kind])} data-testid="ai-review-badge">
           {running ? <Loader2 className="size-3 animate-spin" aria-hidden /> : <Bot className="size-3" aria-hidden />}
           {badge.label}
         </span>
