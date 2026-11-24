@@ -520,6 +520,31 @@ export const ptBR = {
       notDocumentRecord: (typeName: string) => `Registro do tipo "${typeName}" não pertence ao documento.`,
       boardNotEmpty: "O quadro do servidor já tem conteúdo; a importação foi ignorada."
     }
+  },
+  artifacts: {
+    navTitle: "Artefatos",
+    pageTitle: "Artefatos",
+    pageHelp:
+      "Documentos com abas, tabelas e listas que você e os agentes escrevem juntos. Tudo fica salvo no PR Flow e agentes editam pelo MCP.",
+    defaultArtifactTitle: "Sem título",
+    defaultTabTitle: (position: number) => `Aba ${position}`,
+    errors: {
+      artifactNotFound: (id: string) => `Artefato não encontrado: ${id}.`,
+      tabNotFound: (id: string) => `Aba não encontrada neste artefato: ${id}.`,
+      versionNotFound: (number: number) => `Versão não encontrada: ${number}.`,
+      tabIdRequired: (tabs: string) => `Este artefato tem mais de uma aba; informe tabId. Abas: ${tabs}.`,
+      titleInvalid: (max: number) => `O título precisa ter de 1 a ${max} caracteres.`,
+      contentTooLong: (max: number) => `O conteúdo da aba passa de ${max} caracteres.`,
+      tooManyTabs: (max: number) => `Um artefato aceita no máximo ${max} abas.`,
+      lastTab: "Não dá para excluir a única aba do artefato.",
+      revisionConflict: "A aba foi alterada por outra pessoa ou agente.",
+      oldStrEmpty: "old_str não pode ser vazio.",
+      oldStrNotFound: "old_str não foi encontrado na aba.",
+      oldStrAmbiguous: (count: number) =>
+        `old_str aparece em ${count} ocorrências; inclua mais contexto para que seja único.`,
+      reorderMismatch: "tabIds precisa conter exatamente as abas do artefato, sem repetir nem faltar.",
+      invalidBody: (message: string) => `Requisição inválida: ${message}`
+    }
   }
 } as const;
 

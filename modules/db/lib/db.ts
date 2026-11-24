@@ -16,6 +16,7 @@ import { prTimelineEvents } from "@/modules/prs/lib/schema";
 import { prAiReviewConfig, prAiReviewRuns } from "@/modules/pr-ai-review/lib/schema";
 import { summaries } from "@/modules/dashboard/lib/dashboard-briefing-schema";
 import { whiteboardMeta, whiteboardRecords } from "@/modules/whiteboard/lib/schema";
+import { artifactTabs, artifactVersions, artifacts } from "@/modules/artifacts/lib/schema";
 import { openNodeSqlite, type NodeSqliteClient } from "@/modules/db/lib/node-sqlite";
 
 const schema = {
@@ -30,7 +31,10 @@ const schema = {
   prAiReviewConfig,
   prAiReviewRuns,
   whiteboardRecords,
-  whiteboardMeta
+  whiteboardMeta,
+  artifacts,
+  artifactTabs,
+  artifactVersions
 };
 
 const POSTGRES_URL_ERROR =
