@@ -1,4 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerArtifactTools } from "@/modules/mcp/lib/tools/artifact-tools";
 import { registerPrTools } from "@/modules/mcp/lib/tools/pr-tools";
 import { registerWhiteboardTools } from "@/modules/mcp/lib/tools/whiteboard-tools";
 
@@ -13,6 +14,9 @@ const PR_FLOW_MCP_INSTRUCTIONS = [
   "To check whether a PR was already posted in the Slack channel (even by hand), use find_pr_in_slack.",
   "The *_whiteboard_* tools edit the user's tldraw board (PR Flow /whiteboard), stored on the server; an open tab shows changes live. Read list_whiteboard_pages / list_whiteboard_shapes before editing. Coordinates are relative to the shape's parent; y grows downward.",
   "delete_whiteboard_page and clear_whiteboard_page erase the user's drawings: confirm with the user before calling them.",
+  "The *_artifact_* tools manage the user's artifacts (PR Flow /artifacts): documents split into tabs, each tab is Markdown (GFM tables, `- [ ]` checklists, fenced code). An open page follows your writes live.",
+  "Call get_artifact before edit_artifact: old_str must match the tab's text exactly and occur once. Use update_artifact only to rewrite a whole tab; every write is saved as a version the user can restore.",
+  "delete_artifact erases the document with its tabs and versions: confirm with the user before calling it.",
   "Messages and errors returned by the tools are in Brazilian Portuguese; answer the user in the language they use."
 ].join("\n");
 
@@ -25,6 +29,7 @@ export function createPrFlowMcpServer(): McpServer {
 
   registerPrTools(server);
   registerWhiteboardTools(server);
+  registerArtifactTools(server);
 
   return server;
 }
