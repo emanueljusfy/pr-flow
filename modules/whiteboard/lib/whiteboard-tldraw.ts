@@ -51,10 +51,16 @@ export function getDefaultBindingProps(type: string): Record<string, unknown> | 
   return new Util({} as never).getDefaultProps() as Record<string, unknown>;
 }
 
-/** True when the record belongs to the shared document (not to one browser's session). */
+/**
+ * Record types shared through the server. tldraw also gives `user` (preferences) document scope;
+ * it stays per browser like the session records.
+ */
+export const WHITEBOARD_SYNCED_TYPE_NAMES: ReadonlySet<string> = new Set(["document", "page", "shape", "binding", "asset"]);
+
+/** True when the record belongs to the shared board (not to one browser's session or preferences). */
 export function isDocumentScopeRecord(store: TLStore, record: { typeName: string }): boolean {
   const type = (store.schema.types as Record<string, { scope: string } | undefined>)[record.typeName];
-  return type?.scope === "document";
+  return type?.scope === "document" && WHITEBOARD_SYNCED_TYPE_NAMES.has(record.typeName);
 }
 
 export function isDocumentScopeTypeName(store: TLStore, typeName: string): boolean {
