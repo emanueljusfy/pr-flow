@@ -15,6 +15,7 @@ import {
 import { prTimelineEvents } from "@/modules/prs/lib/schema";
 import { prAiReviewConfig, prAiReviewRuns } from "@/modules/pr-ai-review/lib/schema";
 import { summaries } from "@/modules/dashboard/lib/dashboard-briefing-schema";
+import { whiteboardMeta, whiteboardRecords } from "@/modules/whiteboard/lib/schema";
 import { openNodeSqlite, type NodeSqliteClient } from "@/modules/db/lib/node-sqlite";
 
 const schema = {
@@ -27,7 +28,9 @@ const schema = {
   jiraIssueDetails,
   prTimelineEvents,
   prAiReviewConfig,
-  prAiReviewRuns
+  prAiReviewRuns,
+  whiteboardRecords,
+  whiteboardMeta
 };
 
 const POSTGRES_URL_ERROR =

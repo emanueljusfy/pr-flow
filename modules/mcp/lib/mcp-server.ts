@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerPrTools } from "@/modules/mcp/lib/tools/pr-tools";
+import { registerWhiteboardTools } from "@/modules/mcp/lib/tools/whiteboard-tools";
 
 export const PR_FLOW_MCP_SERVER_NAME = "pr-flow";
 
@@ -10,6 +11,8 @@ const PR_FLOW_MCP_INSTRUCTIONS = [
   "To remind reviewers of several PRs, prefer one send_review_reminder_digest over many send_pr_review_reminder calls.",
   "reviewers.dismissed lists people whose approval was dismissed (e.g. by a new push); they are also in reviewers.pending.",
   "To check whether a PR was already posted in the Slack channel (even by hand), use find_pr_in_slack.",
+  "The *_whiteboard_* tools edit the user's tldraw board (PR Flow /whiteboard), stored on the server; an open tab shows changes live. Read list_whiteboard_pages / list_whiteboard_shapes before editing. Coordinates are relative to the shape's parent; y grows downward.",
+  "delete_whiteboard_page and clear_whiteboard_page erase the user's drawings: confirm with the user before calling them.",
   "Messages and errors returned by the tools are in Brazilian Portuguese; answer the user in the language they use."
 ].join("\n");
 
@@ -21,6 +24,7 @@ export function createPrFlowMcpServer(): McpServer {
   );
 
   registerPrTools(server);
+  registerWhiteboardTools(server);
 
   return server;
 }

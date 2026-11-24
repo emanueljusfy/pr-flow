@@ -489,9 +489,37 @@ export const ptBR = {
     navTitle: "Quadro",
     pageTitle: "Quadro",
     pageHelp:
-      "Quadro branco livre (tldraw) para rascunhar fluxos e ideias. O desenho fica salvo neste navegador.",
+      "Quadro branco livre (tldraw) para rascunhar fluxos e ideias. O desenho fica salvo no PR Flow e agentes podem editá-lo pelo MCP.",
     canvasAriaLabel: "Quadro de desenho",
-    loading: "Carregando quadro…"
+    loading: "Carregando quadro…",
+    loadError: "Não foi possível carregar o quadro.",
+    retry: "Tentar de novo",
+    notSaved: "Alterações não salvas. Tentando de novo na próxima edição.",
+    defaultPageName: "Página 1",
+    duplicatePageName: (name: string) => `${name} (cópia)`,
+    errors: {
+      pageNotFound: (id: string) => `Página não encontrada: ${id}.`,
+      onlyPage: "Não dá para excluir a única página do quadro.",
+      shapeNotFound: (id: string) => `Shape não encontrado: ${id}.`,
+      shapeAt: (position: number, reason: string) => `Shape na posição ${position}: ${reason}`,
+      unknownShapeType: (type: string) => `tipo "${type}" não suportado.`,
+      parentNotFound: (id: string) => `pai não encontrado: ${id}.`,
+      parentNotContainer: (id: string) => `${id} não pode conter shapes (use uma página, frame ou grupo).`,
+      parentIsDescendant: (id: string) => `${id} está dentro do próprio shape.`,
+      boundShapeNotFound: (id: string) => `shape ligado à seta não encontrado: ${id}.`,
+      bindingOnlyForArrows: "start/end só valem para setas.",
+      pointsOnlyForLines: "points só vale para line e draw.",
+      notEnoughPoints: "line e draw precisam de pelo menos 2 pontos.",
+      textNotSupported: (type: string) => `o tipo "${type}" não aceita text.`,
+      duplicateId: (id: string) => `id já existe: ${id}.`,
+      invalid: (message: string) => `inválido: ${message}`,
+      groupNeedsTwo: "Agrupar precisa de pelo menos 2 shapes.",
+      groupMixedParents: "Os shapes de um grupo precisam ter o mesmo pai.",
+      notAGroup: (id: string) => `${id} não é um grupo.`,
+      invalidRecord: (id: string, message: string) => `Registro inválido ${id}: ${message}`,
+      notDocumentRecord: (typeName: string) => `Registro do tipo "${typeName}" não pertence ao documento.`,
+      boardNotEmpty: "O quadro do servidor já tem conteúdo; a importação foi ignorada."
+    }
   }
 } as const;
 
