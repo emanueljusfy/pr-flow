@@ -113,7 +113,13 @@ describe("artifact MCP tools", () => {
 
         const after = await call(client, "list_artifacts");
         expect(after.artifacts.map((a: { title: string }) => a.title)).toEqual(["Primeiro", "Terceiro", "Segundo"]);
-        expect(Object.keys(after.artifacts[0]).sort()).toEqual(["id", "tabCount", "title", "updatedAt", "versionCount"]);
+        expect(Object.keys(after.artifacts[0]).sort()).toEqual([
+          "id",
+          "tabCount",
+          "title",
+          "updatedAt",
+          "versionCount"
+        ]);
         expect(after.artifacts[0]).toMatchObject({ tabCount: 1, versionCount: 2 });
       } finally {
         vi.useRealTimers();

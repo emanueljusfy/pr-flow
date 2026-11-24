@@ -1,0 +1,41 @@
+/*
+ * BlockNote (shadcn flavour, dark) mapped to the PR Flow tokens: flat near-black editor,
+ * hairline borders, ember only for focus and links. Colours of the editor chrome come from
+ * BlockNote's own variables, which is where its docs say to theme it.
+ */
+.pr-flow-artifact-editor {
+  --bn-font-family: var(--font-sans), system-ui, sans-serif;
+  --bn-colors-editor-background: transparent;
+  --bn-colors-editor-text: var(--app-text);
+  --bn-colors-menu-background: var(--app-surface-raised);
+  --bn-colors-menu-text: var(--app-text);
+  --bn-colors-tooltip-background: var(--app-surface-raised);
+  --bn-colors-tooltip-text: var(--app-text);
+  --bn-colors-hovered-background: #1f1f1f;
+  --bn-colors-hovered-text: var(--app-text);
+  --bn-colors-selected-background: var(--brand-dim);
+  --bn-colors-selected-text: var(--app-text);
+  --bn-colors-disabled-background: var(--app-surface-inset);
+  --bn-colors-disabled-text: var(--app-text-muted);
+  --bn-colors-border: var(--app-border);
+  --bn-colors-side-menu: var(--app-text-muted);
+  --bn-colors-highlights-blue-background: var(--brand-dim);
+  --bn-border-radius: 8px;
+  background: transparent;
+}
+
+.pr-flow-artifact-editor .bn-editor {
+  padding-inline: 0;
+  color: var(--app-text);
+}
+
+.pr-flow-artifact-editor a {
+  color: var(--app-link);
+}
+
+/* A table wider than the editor scrolls inside it, not the page (AC 40). */
+.pr-flow-artifact-editor .tableWrapper,
+.pr-flow-artifact-editor .bn-block-content[data-content-type="table"] {
+  max-width: 100%;
+  overflow-x: auto;
+}

@@ -1,6 +1,23 @@
+import fs from "node:fs";
+import path from "node:path";
 import { sql } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { withArtifactTestDb } from "./artifact-test-db";
+
+const ROOT = path.resolve(__dirname, "..");
+
+function sourceFiles(dir: string, found: string[] = []): string[] {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (["node_modules", ".next", ".git", "tests", "data", "drizzle"].includes(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      sourceFiles(full, found);
+    } else if (/\.(ts|tsx)$/.test(entry.name)) {
+      found.push(full);
+    }
+  }
+  return found;
+}
 
 describe("artifact landing", () => {
   it("migration creates the artifact tables", () =>
@@ -46,15 +63,61 @@ describe("artifact landing", () => {
 
       db.insert(artifacts).values({ id: "a1", title: "T", createdAt: 1, updatedAt: 1 }).run();
       db.insert(artifactTabs)
-        .values({ id: "t1", artifactId: "a1", title: "A", content: "", position: 0, revision: 1, createdAt: 1, updatedAt: 1 })
+        .values({
+          id: "t1",
+          artifactId: "a1",
+          title: "A",
+          content: "",
+          position: 0,
+          revision: 1,
+          createdAt: 1,
+          updatedAt: 1
+        })
         .run();
-      const version = { artifactId: "a1", number: 1, source: "agent", title: "T", tabs: "[]", createdAt: 1, updatedAt: 1 };
+      const version = {
+        artifactId: "a1",
+        number: 1,
+        source: "agent",
+        title: "T",
+        tabs: "[]",
+        createdAt: 1,
+        updatedAt: 1
+      };
       db.insert(artifactVersions).values(version).run();
       expect(() => db.insert(artifactVersions).values(version).run()).toThrow();
-      db.insert(artifactVersions).values({ ...version, number: 2 }).run();
+      db.insert(artifactVersions)
+        .values({ ...version, number: 2 })
+        .run();
 
       db.delete(artifacts).run();
       expect(db.select().from(artifactTabs).all()).toEqual([]);
       expect(db.select().from(artifactVersions).all()).toEqual([]);
     }));
+
+  it("blocknote is pinned and client only", () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+    };
+    for (const name of ["@blocknote/core", "@blocknote/react", "@blocknote/shadcn"]) {
+      expect(pkg.dependencies[name], name).toMatch(/^~0\.57\.\d+$/);
+    }
+
+    const allowedDir = path.join(ROOT, "modules", "artifacts", "components") + path.sep;
+    const importers = sourceFiles(ROOT).filter((file) => /from\s+["']@blocknote\//.test(fs.readFileSync(file, "utf8")));
+    expect(importers.length).toBeGreaterThan(0);
+    for (const file of importers) {
+      expect(file.startsWith(allowedDir), file).toBe(true);
+    }
+
+    const editorImporters = sourceFiles(ROOT).filter((file) =>
+      /from\s+["'][^"']*artifact-editor["']|import\(\s*["'][^"']*artifact-editor["']\s*\)/.test(
+        fs.readFileSync(file, "utf8")
+      )
+    );
+    expect(editorImporters.map((file) => path.relative(ROOT, file))).toEqual([
+      "modules/artifacts/components/artifact-editor-loader.tsx"
+    ]);
+    const loader = fs.readFileSync(editorImporters[0]!, "utf8");
+    expect(loader).toContain("ssr: false");
+  });
 });

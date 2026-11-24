@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, GitPullRequest, LayoutDashboard, PenTool, Settings, Ticket } from "lucide-react";
+import { BookOpen, FileText, GitPullRequest, LayoutDashboard, PenTool, Settings, Ticket } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -44,6 +44,11 @@ const navItems = [
     title: ptBR.whiteboard.navTitle,
     href: "/whiteboard",
     icon: PenTool
+  },
+  {
+    title: ptBR.artifacts.navTitle,
+    href: "/artifacts",
+    icon: FileText
   }
 ] as const;
 

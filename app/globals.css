@@ -2979,3 +2979,6 @@ button.pr-review-reminder-icon:hover {
     @apply font-sans;
   }
 }
+
+/* BlockNote's shadcn flavour ships Tailwind classes inside node_modules; Tailwind skips that folder by default. */
+@source "../node_modules/@blocknote/shadcn/dist";

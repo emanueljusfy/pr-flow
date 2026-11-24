@@ -8,7 +8,13 @@ import { GET as versionsRoute } from "@/app/api/artifacts/[id]/versions/route";
 import { GET as versionRoute } from "@/app/api/artifacts/[id]/versions/[number]/route";
 import { POST as restoreRoute } from "@/app/api/artifacts/[id]/versions/[number]/restore/route";
 import { GET as eventsRoute } from "@/app/api/artifacts/events/route";
-import { AGENT_ACTOR, createArtifact, getArtifact, listVersions, updateTab } from "@/modules/artifacts/lib/artifact-service";
+import {
+  AGENT_ACTOR,
+  createArtifact,
+  getArtifact,
+  listVersions,
+  updateTab
+} from "@/modules/artifacts/lib/artifact-service";
 import { withArtifactTestDb } from "./artifact-test-db";
 
 const CLIENT = "browser-1";
@@ -82,11 +88,19 @@ describe("artifact routes", () => {
       expect(missing.status).toBe(404);
       expect((await missing.json()).error).toBe("not_found");
 
-      const renamed = await patchRoute(req("PATCH", `/api/artifacts/${id}`, { clientId: CLIENT, title: "Novo" }), ctx({ id }));
+      const renamed = await patchRoute(
+        req("PATCH", `/api/artifacts/${id}`, { clientId: CLIENT, title: "Novo" }),
+        ctx({ id })
+      );
       expect(renamed.status).toBe(200);
       expect((await renamed.json()).artifact.title).toBe("Novo");
-      expect((await patchRoute(req("PATCH", `/api/artifacts/${id}`, { clientId: CLIENT, title: " " }), ctx({ id }))).status).toBe(400);
-      expect((await patchRoute(req("PATCH", `/api/artifacts/nope`, { clientId: CLIENT, title: "x" }), ctx({ id: "nope" }))).status).toBe(404);
+      expect(
+        (await patchRoute(req("PATCH", `/api/artifacts/${id}`, { clientId: CLIENT, title: " " }), ctx({ id }))).status
+      ).toBe(400);
+      expect(
+        (await patchRoute(req("PATCH", `/api/artifacts/nope`, { clientId: CLIENT, title: "x" }), ctx({ id: "nope" })))
+          .status
+      ).toBe(404);
 
       expect((await deleteRoute(req("DELETE", `/api/artifacts/${id}`), ctx({ id }))).status).toBe(400);
       const deleted = await deleteRoute(req("DELETE", `/api/artifacts/${id}?clientId=${CLIENT}`), ctx({ id }));
@@ -100,12 +114,20 @@ describe("artifact routes", () => {
       const { id, tabs } = await postArtifact();
       const first = tabs[0]!.id;
 
-      const added = await addTabRoute(req("POST", `/api/artifacts/${id}/tabs`, { clientId: CLIENT, title: "B", content: "b" }), ctx({ id }));
+      const added = await addTabRoute(
+        req("POST", `/api/artifacts/${id}/tabs`, { clientId: CLIENT, title: "B", content: "b" }),
+        ctx({ id })
+      );
       expect(added.status).toBe(201);
       const second = (await added.json()).tab as { id: string; position: number };
       expect(second.position).toBe(1);
-      expect((await addTabRoute(req("POST", `/api/artifacts/${id}/tabs`, { clientId: CLIENT, title: "" }), ctx({ id }))).status).toBe(400);
-      expect((await addTabRoute(req("POST", `/api/artifacts/nope/tabs`, { clientId: CLIENT }), ctx({ id: "nope" }))).status).toBe(404);
+      expect(
+        (await addTabRoute(req("POST", `/api/artifacts/${id}/tabs`, { clientId: CLIENT, title: "" }), ctx({ id })))
+          .status
+      ).toBe(400);
+      expect(
+        (await addTabRoute(req("POST", `/api/artifacts/nope/tabs`, { clientId: CLIENT }), ctx({ id: "nope" }))).status
+      ).toBe(404);
 
       const put = (tabId: string, body: unknown, artifactId = id) =>
         putTabRoute(req("PUT", `/api/artifacts/${artifactId}/tabs/${tabId}`, body), ctx({ id: artifactId, tabId }));
@@ -118,7 +140,10 @@ describe("artifact routes", () => {
       expect((await put(first, { clientId: CLIENT, baseRevision: 1, content: "stale" })).status).toBe(409);
 
       const order = (tabIds: string[], artifactId = id) =>
-        orderRoute(req("PUT", `/api/artifacts/${artifactId}/tab-order`, { clientId: CLIENT, tabIds }), ctx({ id: artifactId }));
+        orderRoute(
+          req("PUT", `/api/artifacts/${artifactId}/tab-order`, { clientId: CLIENT, tabIds }),
+          ctx({ id: artifactId })
+        );
       const reordered = await order([second.id, first]);
       expect(reordered.status).toBe(200);
       expect((await reordered.json()).artifact.tabs.map((t: { id: string }) => t.id)).toEqual([second.id, first]);
@@ -128,7 +153,10 @@ describe("artifact routes", () => {
       expect((await order([first], "nope")).status).toBe(404);
 
       const del = (tabId: string, artifactId = id, query = `?clientId=${CLIENT}`) =>
-        deleteTabRoute(req("DELETE", `/api/artifacts/${artifactId}/tabs/${tabId}${query}`), ctx({ id: artifactId, tabId }));
+        deleteTabRoute(
+          req("DELETE", `/api/artifacts/${artifactId}/tabs/${tabId}${query}`),
+          ctx({ id: artifactId, tabId })
+        );
       expect((await del(second.id)).status).toBe(204);
       expect((await del(second.id)).status).toBe(404);
       expect((await del(first, id, "")).status).toBe(400);
@@ -170,7 +198,10 @@ describe("artifact routes", () => {
       const { id, tabs } = await postArtifact();
       const tabId = tabs[0]!.id;
       const put = (content: string) =>
-        putTabRoute(req("PUT", `/api/artifacts/${id}/tabs/${tabId}`, { clientId: CLIENT, baseRevision: 1, content }), ctx({ id, tabId }));
+        putTabRoute(
+          req("PUT", `/api/artifacts/${id}/tabs/${tabId}`, { clientId: CLIENT, baseRevision: 1, content }),
+          ctx({ id, tabId })
+        );
 
       const responses = await Promise.all([put("first"), put("second")]);
 
@@ -200,11 +231,16 @@ describe("artifact routes", () => {
       expect(version).toMatchObject({ number: 1, source: "user", restoredFrom: null });
       expect(version.tabs).toEqual([{ id: tabs[0]!.id, title: "Aba 1", position: 0, content: "" }]);
       for (const number of ["9", "abc", "0"]) {
-        expect((await versionRoute(req("GET", `/api/artifacts/${id}/versions/${number}`), ctx({ id, number }))).status).toBe(404);
+        expect(
+          (await versionRoute(req("GET", `/api/artifacts/${id}/versions/${number}`), ctx({ id, number }))).status
+        ).toBe(404);
       }
 
       const restore = (number: string, artifactId = id) =>
-        restoreRoute(req("POST", `/api/artifacts/${artifactId}/versions/${number}/restore`, { clientId: CLIENT }), ctx({ id: artifactId, number }));
+        restoreRoute(
+          req("POST", `/api/artifacts/${artifactId}/versions/${number}/restore`, { clientId: CLIENT }),
+          ctx({ id: artifactId, number })
+        );
       expect((await restore("9")).status).toBe(404);
       expect((await restore("1", "nope")).status).toBe(404);
       expect((await restoreRoute(req("POST", `/x`, {}), ctx({ id, number: "1" }))).status).toBe(400);

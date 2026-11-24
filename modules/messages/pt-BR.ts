@@ -528,6 +528,83 @@ export const ptBR = {
       "Documentos com abas, tabelas e listas que você e os agentes escrevem juntos. Tudo fica salvo no PR Flow e agentes editam pelo MCP.",
     defaultArtifactTitle: "Sem título",
     defaultTabTitle: (position: number) => `Aba ${position}`,
+    editor: {
+      loading: "Carregando editor…",
+      deleteBlock: "Excluir bloco"
+    },
+    list: {
+      ariaLabel: "Lista de artefatos",
+      searchLabel: "Buscar artefatos",
+      searchPlaceholder: "Buscar por título",
+      newArtifact: "Novo artefato",
+      empty: "Nenhum artefato ainda",
+      noMatch: "Nenhum artefato encontrado",
+      loadError: "Não foi possível carregar os artefatos.",
+      createError: "Não foi possível criar o artefato."
+    },
+    emptyMain: {
+      title: "Nenhum artefato aberto",
+      body: "Crie um artefato ou peça a um agente para escrever um aqui."
+    },
+    document: {
+      loading: "Carregando artefato…",
+      notFound: "Artefato não encontrado",
+      backToList: "Voltar para Artefatos",
+      loadError: "Não foi possível carregar o artefato.",
+      retry: "Tentar novamente",
+      titleLabel: "Título do artefato",
+      tabsLabel: "Abas do artefato",
+      addTab: "+ Aba",
+      tabNameLabel: "Nome da aba",
+      tabOptions: (title: string) => `Opções da aba ${title}`,
+      renameTab: "Renomear",
+      deleteTab: "Excluir aba",
+      deleteTabTitle: "Excluir aba?",
+      deleteTabBody: (title: string) =>
+        `A aba "${title}" será excluída. Dá para trazê-la de volta restaurando uma versão anterior.`,
+      editorLabel: (title: string) => `Conteúdo da aba ${title}`,
+      copyMarkdown: "Copiar Markdown",
+      copied: "Markdown copiado",
+      copyError: "Não foi possível copiar o Markdown.",
+      versions: "Versões",
+      deleteArtifact: "Excluir",
+      deleteArtifactTitle: "Excluir artefato?",
+      deleteArtifactBody: (title: string) =>
+        `"${title}" será excluído com todas as abas e versões. Não dá para desfazer.`,
+      confirmDelete: "Excluir",
+      cancel: "Cancelar",
+      saving: "Salvando…",
+      saved: "Salvo",
+      notSaved: "Não salvo",
+      retrySave: "Tentar novamente",
+      actionError: "Não foi possível concluir a ação."
+    },
+    banner: {
+      message: "O agente atualizou esta aba.",
+      reload: "Recarregar",
+      keepMine: "Manter o meu"
+    },
+    toasts: {
+      tabDeleted: "Esta aba foi excluída",
+      artifactDeleted: "Este artefato foi excluído",
+      unsavedSwitch: "Esta aba tem alterações não salvas. Resolva antes de trocar de aba."
+    },
+    versions: {
+      title: "Versões",
+      description: "Cada alteração do agente e cada sessão de edição vira uma versão do documento inteiro.",
+      loadError: "Não foi possível carregar as versões.",
+      agent: "Agente",
+      user: "Você",
+      restoredFrom: (number: number) => `Restaurada da v${number}`,
+      label: (number: number) => `v${number}`,
+      tabCount: (count: number) => (count === 1 ? "1 aba" : `${count} abas`),
+      readOnly: "Somente leitura",
+      restore: "Restaurar esta versão",
+      restored: "Versão restaurada",
+      restoreError: "Não foi possível restaurar a versão.",
+      previewTabs: "Abas da versão",
+      pick: "Escolha uma versão para ver o conteúdo."
+    },
     errors: {
       artifactNotFound: (id: string) => `Artefato não encontrado: ${id}.`,
       tabNotFound: (id: string) => `Aba não encontrada neste artefato: ${id}.`,

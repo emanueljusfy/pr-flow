@@ -176,9 +176,27 @@ describe("artifact service", () => {
       const { getDb } = await import("@/modules/db/lib/db");
       const { artifactTabs, artifactVersions, artifacts } = await import("@/modules/artifacts/lib/schema");
       const db = getDb();
-      expect(db.select().from(artifacts).all().map((row) => row.id)).toEqual([survivor.id]);
-      expect(db.select().from(artifactTabs).all().map((row) => row.artifactId)).toEqual([survivor.id]);
-      expect(db.select().from(artifactVersions).all().map((row) => row.artifactId)).toEqual([survivor.id]);
+      expect(
+        db
+          .select()
+          .from(artifacts)
+          .all()
+          .map((row) => row.id)
+      ).toEqual([survivor.id]);
+      expect(
+        db
+          .select()
+          .from(artifactTabs)
+          .all()
+          .map((row) => row.artifactId)
+      ).toEqual([survivor.id]);
+      expect(
+        db
+          .select()
+          .from(artifactVersions)
+          .all()
+          .map((row) => row.artifactId)
+      ).toEqual([survivor.id]);
       expectError(() => getArtifact(artifact.id), "not_found");
     }));
 
@@ -212,7 +230,11 @@ describe("artifact service", () => {
 
   it("each agent tool adds exactly one agent version", () =>
     withArtifactTestDb(() => {
-      const artifact = make([{ title: "A", content: "a" }, { title: "B", content: "b" }, { title: "C", content: "c" }]);
+      const artifact = make([
+        { title: "A", content: "a" },
+        { title: "B", content: "b" },
+        { title: "C", content: "c" }
+      ]);
       const [a, b] = artifact.tabs as [(typeof artifact.tabs)[number], (typeof artifact.tabs)[number]];
       const id = artifact.id;
 
@@ -335,9 +357,9 @@ describe("artifact service", () => {
       const restored = restoreVersion(USER, id, 1);
 
       expect(restored.title).toBe("Doc v1");
-      expect(restored.tabs.map(({ id: tabId, title, position, content }) => ({ id: tabId, title, position, content }))).toEqual(
-        v1.tabs
-      );
+      expect(
+        restored.tabs.map(({ id: tabId, title, position, content }) => ({ id: tabId, title, position, content }))
+      ).toEqual(v1.tabs);
       expect(restored.tabs.map((t) => t.id)).toEqual([a.id, b.id]);
       expect(restored.tabs.some((t) => t.id === c.id)).toBe(false);
       expect(restored.tabs.find((t) => t.id === a.id)!.revision).toBe(aRevision + 1);
@@ -351,7 +373,10 @@ describe("artifact service", () => {
 
   it("stale baseRevision is rejected", () =>
     withArtifactTestDb(() => {
-      const artifact = make([{ title: "A", content: "a" }, { title: "B", content: "b" }]);
+      const artifact = make([
+        { title: "A", content: "a" },
+        { title: "B", content: "b" }
+      ]);
       const [a, b] = artifact.tabs as [(typeof artifact.tabs)[number], (typeof artifact.tabs)[number]];
       updateTab(AGENT_ACTOR, artifact.id, a.id, { content: "agent" });
       const versionsBefore = listVersions(artifact.id).length;
@@ -387,7 +412,11 @@ describe("artifact service", () => {
       updateTab(AGENT_ACTOR, artifact.id, artifact.tabs[0]!.id, { content: "agent" });
       expect(seen["tab-1"]).toHaveLength(1);
       expect(seen["tab-2"]).toHaveLength(2);
-      expect(seen["tab-1"]![0]).toMatchObject({ source: "agent", sourceClientId: null, tabIds: [artifact.tabs[0]!.id] });
+      expect(seen["tab-1"]![0]).toMatchObject({
+        source: "agent",
+        sourceClientId: null,
+        tabIds: [artifact.tabs[0]!.id]
+      });
 
       deleteArtifact(USER, artifact.id);
       expect(seen["tab-1"]).toHaveLength(1);
