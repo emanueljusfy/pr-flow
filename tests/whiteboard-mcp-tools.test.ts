@@ -44,13 +44,15 @@ async function call(client: Client, name: string, args: Record<string, unknown> 
 
 /** A rejected call: a tool error result or a protocol error. Returns the error text. */
 async function callError(client: Client, name: string, args: Record<string, unknown>): Promise<string> {
+  let result: CallResult;
   try {
-    const result = await client.callTool({ name, arguments: args });
-    expect(result.isError, `${name} should fail`).toBe(true);
-    return JSON.stringify(parseText(result));
+    result = await client.callTool({ name, arguments: args });
   } catch (error) {
+    // protocol-level rejection (e.g. arguments that fail the input schema)
     return error instanceof Error ? error.message : String(error);
   }
+  expect(result.isError, `${name} should fail`).toBe(true);
+  return JSON.stringify(parseText(result));
 }
 
 describe("whiteboard MCP tools", () => {
@@ -78,11 +80,13 @@ describe("whiteboard MCP tools", () => {
   it("create page appends after last page", () =>
     withWhiteboardTestDb(async () => {
       const client = await connectClient();
-      const created = await call(client, "create_whiteboard_page", { name: "Arquitetura" });
-      expect(created.id).toMatch(/^page:/);
+      const first = await call(client, "create_whiteboard_page", { name: "Arquitetura" });
+      const second = await call(client, "create_whiteboard_page", { name: "Fluxo" });
+      expect(second.id).toMatch(/^page:/);
       const { pages } = await call(client, "list_whiteboard_pages");
-      expect(pages.at(-1)).toMatchObject({ id: created.id, name: "Arquitetura" });
-      expect(pages[0].index < pages[1].index).toBe(true);
+      expect(pages.map((p: { id: string }) => p.id).slice(1)).toEqual([first.id, second.id]);
+      expect(pages.at(-1)).toMatchObject({ id: second.id, name: "Fluxo" });
+      expect(pages[1].index > pages[0].index && pages[2].index > pages[1].index).toBe(true);
     }));
 
   it("rename page", () =>

@@ -141,10 +141,14 @@ describe("whiteboard document service", () => {
       expect(listed.shapes.map((s) => s.id)).toEqual([ids[0], ids[1], ids[2], ids[3]]);
       const inside = listed.shapes[1]!;
       expect(inside).toMatchObject({ id: ids[1], type: "geo", parentId: ids[0], x: 10, y: 10, rotation: 0, w: 100, h: 100 });
-      expect(inside.props).toBeDefined();
+      expect(inside.props).toMatchObject({ geo: "rectangle", w: 100, h: 100, color: "black" });
+      expect(inside.props).not.toHaveProperty("richText");
       expect(listed.shapes[2]).toMatchObject({ text: "oi" });
-      expect(listed.bindings).toHaveLength(2);
-      expect(listed.bindings[0]).toEqual(expect.objectContaining({ arrowId: ids[3] }));
+      const byTerminal = (b: { terminal: string }[]) => [...b].sort((x, y) => x.terminal.localeCompare(y.terminal));
+      expect(byTerminal(listed.bindings)).toEqual([
+        { arrowId: ids[3], terminal: "end", shapeId: ids[2] },
+        { arrowId: ids[3], terminal: "start", shapeId: ids[1] }
+      ]);
     }));
 
   it("update merges only given fields", () =>
@@ -175,8 +179,17 @@ describe("whiteboard document service", () => {
 
       runWhiteboardOp((store) => updateShapes(store, [{ id: ids[1]!, parentId: ids[2]! }]));
       expect(shape(ids[1]!).parentId).toBe(ids[2]);
-      expect(shape(ids[1]!).x).not.toBeCloseTo(500 - 1000, 1);
       expectPagePosition(ids[1]!, { x: 500, y: 500 });
+      // inside a frame rotated +PI/2 the child is rotated -PI/2 locally, so it stays upright on the page
+      const local = shape(ids[1]!).rotation;
+      expect(Math.cos(local)).toBeCloseTo(Math.cos(-Math.PI / 2), 6);
+      expect(Math.sin(local)).toBeCloseTo(Math.sin(-Math.PI / 2), 6);
+
+      runWhiteboardOp((store) => updateShapes(store, [{ id: ids[1]!, parentId: pageId }]));
+      expect(shape(ids[1]!).x).toBeCloseTo(500, 6);
+      expect(shape(ids[1]!).y).toBeCloseTo(500, 6);
+      expect(Math.sin(shape(ids[1]!).rotation)).toBeCloseTo(0, 6);
+      expect(Math.cos(shape(ids[1]!).rotation)).toBeCloseTo(1, 6);
 
       // explicit x/y win
       runWhiteboardOp((store) => updateShapes(store, [{ id: ids[1]!, parentId: ids[0]!, x: 5, y: 6 }]));
@@ -198,6 +211,11 @@ describe("whiteboard document service", () => {
       const bindings = readWhiteboard((store) => store.allRecords().filter((r) => r.typeName === "binding"));
       expect(bindings).toHaveLength(1);
       expect((bindings[0] as unknown as { toId: string }).toId).toBe(ids[2]);
+
+      // deleting the arrow itself removes the bindings it owns
+      runWhiteboardOp((store) => deleteShapes(store, [ids[3]!]));
+      expect(readWhiteboard((store) => store.allRecords().filter((r) => r.typeName === "binding"))).toEqual([]);
+      expect(shapesOf().bindings).toEqual([]);
     }));
 
   it("invalid shape rejects the whole call", () =>
