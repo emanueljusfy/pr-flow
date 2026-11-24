@@ -14,7 +14,12 @@ import {
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import { useEffect, useRef } from "react";
-import { artifactSchema, exportMarkdown, loadMarkdown } from "@/modules/artifacts/components/artifact-editor-schema";
+import {
+  artifactSchema,
+  exportMarkdown,
+  isSameMarkdown,
+  loadMarkdown
+} from "@/modules/artifacts/components/artifact-editor-schema";
 import {
   ArtifactDragHandleMenu,
   artifactFormattingToolbarItems
@@ -40,14 +45,21 @@ export default function ArtifactEditorView({ markdown, loadKey, ariaLabel, onMar
   });
   const lastMarkdown = useRef<string | null>(null);
   const loadedKey = useRef<string | null>(null);
+  /** True while a load is replacing the document: BlockNote reports that as a change. */
+  const loading = useRef(false);
 
   useEffect(() => {
     if (loadedKey.current === loadKey) {
       return;
     }
     loadedKey.current = loadKey;
-    loadMarkdown(editor, markdown);
-    lastMarkdown.current = exportMarkdown(editor);
+    loading.current = true;
+    try {
+      loadMarkdown(editor, markdown);
+      lastMarkdown.current = exportMarkdown(editor);
+    } finally {
+      loading.current = false;
+    }
   }, [editor, loadKey, markdown]);
 
   return (
@@ -62,8 +74,11 @@ export default function ArtifactEditorView({ markdown, loadKey, ariaLabel, onMar
       emojiPicker={false}
       comments={false}
       onChange={() => {
+        if (loading.current) {
+          return;
+        }
         const next = exportMarkdown(editor);
-        if (next === lastMarkdown.current) {
+        if (isSameMarkdown(next, lastMarkdown.current)) {
           return;
         }
         lastMarkdown.current = next;

@@ -32,3 +32,11 @@ export function loadMarkdown(editor: ArtifactEditor, markdown: string): void {
 export function exportMarkdown(editor: ArtifactEditor): string {
   return editor.blocksToMarkdownLossy(editor.document);
 }
+
+/**
+ * True when `next` is what the editor already showed: a load makes BlockNote normalise the document
+ * (an empty tab becomes "\n"), and that is not an edit.
+ */
+export function isSameMarkdown(next: string, previous: string | null): boolean {
+  return previous !== null && next.trimEnd() === previous.trimEnd();
+}
