@@ -25,7 +25,7 @@
 }
 
 .pr-flow-artifact-editor .bn-editor {
-  padding-inline: 0;
+  padding: 1.5rem 2rem;
   color: var(--app-text);
 }
 
