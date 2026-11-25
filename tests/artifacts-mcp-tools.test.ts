@@ -339,7 +339,7 @@ describe("artifact MCP tools", () => {
       );
     }));
 
-  it("artifact tools require the bearer token when set", () =>
+  it("artifact tools: the /api/mcp route requires the bearer token when set", () =>
     withArtifactTestDb(async () => {
       process.env.PR_FLOW_MCP_TOKEN = "secret";
       const response = await POST(
