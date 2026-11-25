@@ -55,6 +55,8 @@ describe("artifact service", () => {
       expect(listArtifacts("relatorio").map((a) => a.title)).toEqual(["Relatório de PRs"]);
       expect(listArtifacts("RELATORIO").map((a) => a.title)).toEqual(["Relatório de PRs"]);
       expect(listArtifacts("relatório").map((a) => a.title)).toEqual(["Relatório de PRs"]);
+      expect(listArtifacts("  relatorio ").map((a) => a.title)).toEqual(["Relatório de PRs"]);
+      expect(listArtifacts("   ")).toHaveLength(2);
       expect(listArtifacts("xyz")).toEqual([]);
       expect(listArtifacts("")).toHaveLength(2);
       expect(listArtifacts(undefined)).toHaveLength(2);
@@ -88,6 +90,14 @@ describe("artifact service", () => {
       expect(edited.content).toBe("# Title\n\nbye $& world");
       expect(edited.revision).toBe(2);
       expect(listVersions(artifact.id)).toHaveLength(2);
+      // overlapping matches count: "aa" occurs twice in "aaa"
+      const overlap = make([{ title: "O", content: "aaa" }]);
+      const overlapError = expectError(
+        () => editTab(AGENT_ACTOR, overlap.id, overlap.tabs[0]!.id, "aa", "X"),
+        "invalid_body"
+      );
+      expect(overlapError.message).toContain("2 ocorrências");
+      expect(getArtifact(overlap.id).tabs[0]!.content).toBe("aaa");
       // replacement text with `$` patterns is inserted literally
       expect(editTab(AGENT_ACTOR, artifact.id, tab.id, "bye", "$& $1").content).toBe("# Title\n\n$& $1 $& world");
     }));
@@ -103,6 +113,11 @@ describe("artifact service", () => {
         ["B", 2],
         ["C", 3]
       ]);
+
+      addTab(AGENT_ACTOR, artifact.id, { title: "first", position: -1 });
+      expect(titles(artifact.id)[0]).toBe("first");
+      expect(getArtifact(artifact.id).tabs.map((t) => t.position)).toEqual([0, 1, 2, 3, 4]);
+      deleteTab(AGENT_ACTOR, artifact.id, getArtifact(artifact.id).tabs[0]!.id);
 
       addTab(AGENT_ACTOR, artifact.id, { title: "far", position: 99 });
       addTab(AGENT_ACTOR, artifact.id, { title: "default" });
@@ -389,6 +404,13 @@ describe("artifact service", () => {
       expect(error.tab).toMatchObject({ id: a.id, content: "agent", revision: 2 });
       expect(getArtifact(artifact.id).tabs[0]!.content).toBe("agent");
       expect(listVersions(artifact.id)).toHaveLength(versionsBefore);
+
+      // a baseRevision ahead of the tab is a conflict too
+      expectError(
+        () => updateTab(USER, artifact.id, a.id, { content: "future", baseRevision: 99 }),
+        "revision_conflict"
+      );
+      expect(getArtifact(artifact.id).tabs[0]!.content).toBe("agent");
 
       // a write to tab B does not move tab A
       updateTab(USER, artifact.id, b.id, { content: "b2", baseRevision: 1 });

@@ -350,7 +350,10 @@ export function editTab(
   }
   return write(actor, artifactId, (tx, now) => {
     const current = requireTab(tx, artifactId, tabId);
-    const occurrences = current.content.split(oldStr).length - 1;
+    let occurrences = 0;
+    for (let at = current.content.indexOf(oldStr); at !== -1; at = current.content.indexOf(oldStr, at + 1)) {
+      occurrences += 1;
+    }
     if (occurrences === 0) {
       throw new ArtifactError("invalid_body", ptBR.artifacts.errors.oldStrNotFound);
     }
