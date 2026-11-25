@@ -89,7 +89,7 @@ export function ArtifactsPage() {
   }
 
   return (
-    <Surface className="flex min-h-[480px] min-w-0 flex-1 overflow-hidden p-0">
+    <Surface className="flex h-[calc(100dvh-12rem)] min-h-[480px] min-w-0 shrink-0 overflow-hidden p-0">
       <ArtifactList
         items={items}
         status={status}
