@@ -251,8 +251,7 @@ function publishNav(url: string, go: (url: string) => void) {
 function Harness({ initialUrl }: { initialUrl: string }) {
   const [url, setUrl] = useState(initialUrl);
   publishNav(url, setUrl);
-  const id = url.split("?")[0]!.split("/")[2] ?? null;
-  return <ArtifactsPage artifactId={id} />;
+  return <ArtifactsPage />;
 }
 
 export function renderArtifacts(initialUrl: string) {

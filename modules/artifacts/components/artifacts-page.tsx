@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Surface } from "@/components/ui/surface";
@@ -12,8 +12,17 @@ import { ptBR } from "@/modules/messages/pt-BR";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
-export function ArtifactsPage({ artifactId }: { artifactId: string | null }) {
-  const router = useRouter();
+/**
+ * Moves the URL without a Next navigation: `/artifacts` and `/artifacts/<id>` are one route with
+ * different params, so `router.push` would remount this page (reloading the list and the stream and
+ * dropping its state). Next keeps `usePathname` and `useSearchParams` in step with `pushState`.
+ */
+function moveTo(url: string) {
+  window.history.pushState(null, "", url);
+}
+
+export function ArtifactsPage() {
+  const artifactId = usePathname().split("/")[2] ?? null;
   const tabParam = useSearchParams().get("tab");
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<ArtifactSummaryDto[]>([]);
@@ -54,15 +63,12 @@ export function ArtifactsPage({ artifactId }: { artifactId: string | null }) {
     documentEvents.current = handlers;
   }, []);
 
-  const openArtifact = useCallback((id: string) => router.push(`/artifacts/${id}`), [router]);
-  const selectTab = useCallback(
-    (tabId: string) => router.push(`/artifacts/${artifactId}?tab=${tabId}`),
-    [artifactId, router]
-  );
+  const openArtifact = useCallback((id: string) => moveTo(`/artifacts/${id}`), []);
+  const selectTab = useCallback((tabId: string) => moveTo(`/artifacts/${artifactId}?tab=${tabId}`), [artifactId]);
   const leave = useCallback(() => {
-    router.push("/artifacts");
+    moveTo("/artifacts");
     void refreshList();
-  }, [refreshList, router]);
+  }, [refreshList]);
 
   const onDocumentChanged = useCallback(() => void refreshList(), [refreshList]);
 
@@ -73,7 +79,7 @@ export function ArtifactsPage({ artifactId }: { artifactId: string | null }) {
       setFocusTitleId(artifact.id);
       setQuery("");
       queryRef.current = "";
-      router.push(`/artifacts/${artifact.id}?tab=${artifact.tabs[0]?.id ?? ""}`);
+      moveTo(`/artifacts/${artifact.id}?tab=${artifact.tabs[0]?.id ?? ""}`);
       await refreshList();
     } catch {
       toast.error(ptBR.artifacts.list.createError);

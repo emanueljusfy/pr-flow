@@ -15,12 +15,8 @@ import {
 
 vi.mock("next/navigation", () => {
   const scope = globalThis as unknown as { __artifactNav: { url: string; go: (url: string) => void } };
-  const router = {
-    push: (url: string) => scope.__artifactNav.go(url),
-    replace: (url: string) => scope.__artifactNav.go(url)
-  };
   return {
-    useRouter: () => router,
+    usePathname: () => scope.__artifactNav.url.split("?")[0],
     useSearchParams: () => new URLSearchParams(scope.__artifactNav.url.split("?")[1] ?? "")
   };
 });
@@ -95,12 +91,14 @@ beforeEach(() => {
   vi.stubGlobal("EventSource", FakeEventSource);
   Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
   vi.clearAllMocks();
+  vi.spyOn(window.history, "pushState").mockImplementation((_state, _title, url) => nav.go(String(url)));
 });
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 describe("artifacts page: list", () => {
